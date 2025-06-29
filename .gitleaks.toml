@@ -1,0 +1,138 @@
+# 🔒 TRAIDER V1 - GitLeaks Security Configuration
+#
+# Comprehensive secrets detection for institutional-grade cryptocurrency trading platform.
+# Detects API keys, tokens, private keys, and other sensitive data that could compromise
+# trading operations or client funds.
+#
+# Risk: CRITICAL - Exposed secrets could lead to financial losses
+# Compliance: Required for institutional security standards
+#
+# See: https://github.com/gitleaks/gitleaks
+# Author: TRAIDER Team
+# Since: 1.0.0-alpha
+
+title = "TRAIDER V1 - Institutional Security Secrets Detection"
+
+# =============================================================================
+# TRADING-SPECIFIC SECRETS
+# =============================================================================
+
+[[rules]]
+id = "exchange-api-key"
+description = "Exchange API Key"
+regex = '''(?i)(binance|coinbase|kraken|ftx|okx|bybit)[-_]?(api[-_]?key|key|secret)['"\s]*[:=]\s*['"]?[A-Za-z0-9+/]{20,}'''
+tags = ["trading", "api", "exchange"]
+
+[[rules]]
+id = "trading-bot-token"
+description = "Trading Bot Token"
+regex = '''(?i)(bot[-_]?token|trading[-_]?token|signal[-_]?token)['"\s]*[:=]\s*['"]?[A-Za-z0-9+/]{20,}'''
+tags = ["trading", "bot", "token"]
+
+[[rules]]
+id = "webhook-secret"
+description = "Webhook Secret"
+regex = '''(?i)(webhook[-_]?secret|hook[-_]?secret)['"\s]*[:=]\s*['"]?[A-Za-z0-9+/]{20,}'''
+tags = ["webhook", "secret"]
+
+# =============================================================================
+# CRYPTOCURRENCY PRIVATE KEYS
+# =============================================================================
+
+[[rules]]
+id = "bitcoin-private-key"
+description = "Bitcoin Private Key"
+regex = '''(?i)(bitcoin|btc)[-_]?(private[-_]?key|privkey|key)['"\s]*[:=]\s*['"]?[5KL][1-9A-HJ-NP-Za-km-z]{50,51}'''
+tags = ["crypto", "bitcoin", "private-key"]
+
+[[rules]]
+id = "ethereum-private-key"
+description = "Ethereum Private Key"
+regex = '''(?i)(ethereum|eth)[-_]?(private[-_]?key|privkey|key)['"\s]*[:=]\s*['"]?0x[a-fA-F0-9]{64}'''
+tags = ["crypto", "ethereum", "private-key"]
+
+[[rules]]
+id = "mnemonic-phrase"
+description = "Cryptocurrency Mnemonic Phrase"
+regex = '''(?i)(mnemonic|seed[-_]?phrase|recovery[-_]?phrase)['"\s]*[:=]\s*['"]?([a-z]+\s+){11,23}[a-z]+'''
+tags = ["crypto", "mnemonic", "seed"]
+
+# =============================================================================
+# STANDARD SECRETS
+# =============================================================================
+
+[[rules]]
+id = "aws-access-key"
+description = "AWS Access Key"
+regex = '''AKIA[0-9A-Z]{16}'''
+tags = ["aws", "access-key"]
+
+[[rules]]
+id = "aws-secret-key"
+description = "AWS Secret Key"
+regex = '''(?i)aws[-_]?secret[-_]?access[-_]?key['"\s]*[:=]\s*['"]?[A-Za-z0-9+/]{40}'''
+tags = ["aws", "secret-key"]
+
+[[rules]]
+id = "github-token"
+description = "GitHub Token"
+regex = '''ghp_[0-9a-zA-Z]{36}'''
+tags = ["github", "token"]
+
+[[rules]]
+id = "jwt-token"
+description = "JWT Token"
+regex = '''eyJ[A-Za-z0-9+/=]+\.eyJ[A-Za-z0-9+/=]+\.[A-Za-z0-9+/=]+'''
+tags = ["jwt", "token"]
+
+[[rules]]
+id = "database-url"
+description = "Database Connection String"
+regex = '''(?i)(database[-_]?url|db[-_]?url|connection[-_]?string)['"\s]*[:=]\s*['"]?(postgresql|mysql|mongodb)://[^\s'"]+'''
+tags = ["database", "connection"]
+
+[[rules]]
+id = "api-key-generic"
+description = "Generic API Key"
+regex = '''(?i)api[-_]?key['"\s]*[:=]\s*['"]?[A-Za-z0-9+/]{20,}'''
+tags = ["api", "key"]
+
+# =============================================================================
+# ALLOWLIST - False Positives
+# =============================================================================
+
+[allowlist]
+description = "Allowlisted files and patterns"
+files = [
+  ".*\\.md$",
+  ".*\\.txt$",
+  ".*test.*",
+  ".*spec.*",
+  ".*mock.*",
+  ".*example.*",
+  ".*template.*"
+]
+
+paths = [
+  "tests/",
+  "test/",
+  "spec/",
+  "docs/",
+  "examples/",
+  "templates/"
+]
+
+regexes = [
+  # Test/example values
+  "test[-_]?key",
+  "example[-_]?key",
+  "sample[-_]?key",
+  "demo[-_]?key",
+  "placeholder",
+  "your[-_]?key[-_]?here",
+  "replace[-_]?with[-_]?actual",
+  # Common false positives
+  "abcdefghijklmnopqrstuvwxyz",
+  "1234567890",
+  "XXXXXXXXXXXXXXXX"
+] 

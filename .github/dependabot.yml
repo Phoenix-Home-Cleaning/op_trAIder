@@ -1,0 +1,216 @@
+# 🔒 TRAIDER V1 - Dependabot Security Configuration
+#
+# Automated dependency management for institutional-grade security compliance.
+# Monitors all package ecosystems with aggressive update schedules for security patches.
+#
+# Performance: Daily security updates, weekly feature updates
+# Risk: CRITICAL - Automated security patches with manual review for major versions
+# Compliance: All dependency updates logged and audited
+#
+# See: https://docs.github.com/en/code-security/dependabot
+# Author: TRAIDER Team
+# Since: 1.0.0-alpha
+
+version: 2
+
+updates:
+  # =============================================================================
+  # FRONTEND DEPENDENCIES (Node.js/npm)
+  # =============================================================================
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    
+    # Security-focused configuration
+    open-pull-requests-limit: 20
+    reviewers:
+      - "traider-security-team"
+    assignees:
+      - "traider-lead-dev"
+    
+    # Commit and PR configuration
+    commit-message:
+      prefix: "security"
+      prefix-development: "deps"
+      include: "scope"
+    
+    # Labels for categorization
+    labels:
+      - "dependencies"
+      - "security"
+      - "automated"
+    
+    # Allow all dependency types
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+    
+    # Group updates by type
+    groups:
+      security-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+          - "minor"
+          - "major"
+      
+      testing-framework:
+        patterns:
+          - "vitest*"
+          - "@vitest/*"
+          - "playwright*"
+          - "@playwright/*"
+        update-types:
+          - "minor"
+          - "patch"
+      
+      build-tools:
+        patterns:
+          - "next*"
+          - "typescript*"
+          - "eslint*"
+          - "@types/*"
+        update-types:
+          - "minor"
+          - "patch"
+      
+      documentation:
+        patterns:
+          - "typedoc*"
+          - "typedoc-plugin-*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # =============================================================================
+  # BACKEND DEPENDENCIES (Python/pip) - Future implementation
+  # =============================================================================
+  - package-ecosystem: "pip"
+    directory: "/backend"
+    schedule:
+      interval: "daily"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    
+    open-pull-requests-limit: 15
+    reviewers:
+      - "traider-security-team"
+    assignees:
+      - "traider-backend-lead"
+    
+    commit-message:
+      prefix: "security"
+      prefix-development: "deps"
+      include: "scope"
+    
+    labels:
+      - "dependencies"
+      - "backend"
+      - "security"
+      - "automated"
+    
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+    
+    groups:
+      security-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+          - "minor"
+          - "major"
+      
+      fastapi-ecosystem:
+        patterns:
+          - "fastapi*"
+          - "uvicorn*"
+          - "pydantic*"
+        update-types:
+          - "minor"
+          - "patch"
+      
+      database-drivers:
+        patterns:
+          - "psycopg*"
+          - "sqlalchemy*"
+          - "alembic*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # =============================================================================
+  # INFRASTRUCTURE DEPENDENCIES (Docker)
+  # =============================================================================
+  - package-ecosystem: "docker"
+    directory: "/infrastructure"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    
+    open-pull-requests-limit: 10
+    reviewers:
+      - "traider-devops-team"
+    assignees:
+      - "traider-infrastructure-lead"
+    
+    commit-message:
+      prefix: "infra"
+      include: "scope"
+    
+    labels:
+      - "dependencies"
+      - "infrastructure"
+      - "docker"
+      - "automated"
+
+  # =============================================================================
+  # GITHUB ACTIONS DEPENDENCIES
+  # =============================================================================
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    
+    open-pull-requests-limit: 10
+    reviewers:
+      - "traider-devops-team"
+    assignees:
+      - "traider-ci-lead"
+    
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "ci-cd"
+      - "automated"
+    
+    groups:
+      actions-core:
+        patterns:
+          - "actions/*"
+        update-types:
+          - "minor"
+          - "patch"
+      
+      security-actions:
+        patterns:
+          - "github/codeql-action*"
+          - "ossf/scorecard-action*"
+          - "securecodewarrior/github-action-add-sarif*"
+        update-types:
+          - "minor"
+          - "patch" 

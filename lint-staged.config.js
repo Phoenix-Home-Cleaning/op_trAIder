@@ -10,8 +10,8 @@ module.exports = {
     'prettier --write',
   ],
 
-  // Package files - dependency security
+  // Package files - dependency security (removed audit as it's handled in CI)
   'package*.json': [
-    'npm audit --audit-level=moderate',
+    'prettier --write',
   ],
 }; 
