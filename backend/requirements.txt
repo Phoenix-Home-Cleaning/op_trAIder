@@ -154,7 +154,7 @@ jupyter==1.0.0
 # =============================================================================
 
 # Process management
-gunicorn==21.2.0
+gunicorn==23.0.0
 
 # Health checks
 psutil==5.9.6
