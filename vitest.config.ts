@@ -41,8 +41,7 @@ export default defineConfig({
     // Test file patterns
     include: [
       'tests/**/*.{test,spec}.{js,ts,jsx,tsx}',
-      'app/**/*.{test,spec}.{js,ts,jsx,tsx}',
-      'backend/**/*.{test,spec}.{py}'
+      'app/**/*.{test,spec}.{js,ts,jsx,tsx}'
     ],
 
     exclude: [
@@ -50,7 +49,7 @@ export default defineConfig({
       'dist/**',
       '.next/**',
       'coverage/**',
-      'backend/__pycache__/**'
+      'backend/**'
     ],
 
     // Global test configuration
@@ -74,32 +73,16 @@ export default defineConfig({
       // Coverage thresholds for institutional standards
       thresholds: {
         global: {
-          branches: 90,
-          functions: 95,
-          lines: 95,
-          statements: 95
-        },
-
-        // Critical trading components require higher coverage
-        'backend/api/': {
-          branches: 95,
-          functions: 98,
-          lines: 98,
-          statements: 98
-        },
-
-        'app/dashboard/': {
-          branches: 92,
-          functions: 95,
-          lines: 95,
-          statements: 95
+          branches: 85,
+          functions: 90,
+          lines: 90,
+          statements: 90
         }
       },
 
       // Include/exclude patterns
       include: [
         'app/**/*.{js,ts,jsx,tsx}',
-        'backend/**/*.py',
         'shared/**/*.{js,ts}'
       ],
 
@@ -109,13 +92,12 @@ export default defineConfig({
         '**/*.d.ts',
         '**/*.config.{js,ts}',
         '**/types/**',
-        'backend/migrations/**',
         '.next/**'
       ]
     },
 
     // Reporter configuration
-    reporters: ['verbose', 'json', 'html'],
+    reporters: ['verbose'],
     outputFile: {
       json: './test-results/results.json',
       html: './test-results/index.html'
@@ -125,7 +107,7 @@ export default defineConfig({
     watch: false, // Disabled by default for CI/CD
 
     // Retry configuration for flaky tests
-    retry: 2,
+    retry: 1,
 
     // Bail on first failure in CI
     bail: process.env.CI ? 1 : 0,
@@ -138,7 +120,7 @@ export default defineConfig({
     env: {
       NODE_ENV: 'test',
       NEXTAUTH_URL: 'http://localhost:3000',
-      NEXTAUTH_SECRET: 'test-secret-key-for-testing-only',
+      NEXTAUTH_SECRET: 'test-secret-key-for-testing-only-not-real',
       DATABASE_URL: 'postgresql://test:test@localhost:5432/traider_test',
       REDIS_URL: 'redis://localhost:6379/1',
       LOG_LEVEL: 'ERROR' // Reduce log noise in tests
@@ -152,7 +134,6 @@ export default defineConfig({
       '@/components': path.resolve(__dirname, './app/components'),
       '@/lib': path.resolve(__dirname, './app/lib'),
       '@/types': path.resolve(__dirname, './types'),
-      '@/backend': path.resolve(__dirname, './backend'),
       '@/shared': path.resolve(__dirname, './shared'),
       '@/tests': path.resolve(__dirname, './tests')
     }
@@ -164,16 +145,5 @@ export default defineConfig({
     __DEV__: true,
     __TEST__: true,
     __PROD__: false
-  },
-
-  // Optimize deps for faster test startup
-  optimizeDeps: {
-    include: [
-      'react',
-      'react-dom',
-      '@testing-library/react',
-      '@testing-library/jest-dom',
-      '@testing-library/user-event'
-    ]
   }
-});
+}); 

@@ -158,6 +158,54 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
         # Note: Organization-level GitLeaks requires license key
+        
+      - name: 🔍 Custom secrets scan (with ignore patterns)
+        run: |
+          echo "::group::Secret Scanning"
+          
+          # Check for actual secrets while ignoring known false positives
+          SECRETS_FOUND=0
+          
+          # Scan for actual high-risk patterns
+          if grep -r -n --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" --include="*.py" \
+            -E "(sk-[a-zA-Z0-9]{48}|xoxb-[0-9]+-[0-9]+-[0-9]+-[a-zA-Z0-9]+)" . || \
+            grep -r -n --include="*.env" --exclude="*.env.example" --exclude="*.env.template" \
+            -E "^[A-Z_]+=.{16,}" . 2>/dev/null; then
+            echo "❌ Real secrets detected!"
+            SECRETS_FOUND=1
+          fi
+          
+          # Check for passwords in non-test files (excluding known safe patterns)
+          if grep -r -n --include="*.ts" --include="*.tsx" --include="*.py" \
+            --exclude-dir="tests" --exclude-dir="test" \
+            --exclude="*.test.*" --exclude="*.spec.*" \
+            -E "password.*=.*['\"][^'\"]{8,}['\"]" . | \
+            grep -v -E "(test|example|placeholder|demo|DB_PASSWORD.*os\.getenv|description.*Password)" | \
+            grep -v "password.*=.*password" | \
+            grep -v ".gitleaksignore"; then
+            echo "⚠️ Potential password found - please review"
+            SECRETS_FOUND=1
+          fi
+          
+          # Check for tokens in non-test files
+          if grep -r -n --include="*.ts" --include="*.tsx" --include="*.py" \
+            --exclude-dir="tests" --exclude-dir="test" \
+            --exclude="*.test.*" --exclude="*.spec.*" \
+            -E "token.*=.*['\"][^'\"]{16,}['\"]" . | \
+            grep -v -E "(test|example|placeholder|demo|description.*token)" | \
+            grep -v ".gitleaksignore"; then
+            echo "⚠️ Potential token found - please review"
+            SECRETS_FOUND=1
+          fi
+          
+          if [ $SECRETS_FOUND -eq 0 ]; then
+            echo "✅ No secrets detected"
+          else
+            echo "❌ $SECRETS_FOUND potential secrets found - please review"
+            exit 1
+          fi
+          
+          echo "::endgroup::"
 
   # =============================================================================
   # PHASE 3: STATIC APPLICATION SECURITY TESTING (SAST)

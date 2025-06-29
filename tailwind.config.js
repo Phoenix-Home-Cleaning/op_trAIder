@@ -21,6 +21,8 @@
  * @author TRAIDER Team
  */
 
+/* eslint-disable @typescript-eslint/no-require-imports */
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
@@ -33,6 +35,13 @@ module.exports = {
     extend: {
       // TRAIDER Brand Colors - Institutional Trading Theme
       colors: {
+        // Base system colors
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        
         // Primary Brand Colors
         primary: {
           50: '#f0f9ff',
@@ -46,6 +55,44 @@ module.exports = {
           800: '#075985',
           900: '#0c4a6e',
           950: '#082f49',
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+        },
+        
+        // Secondary colors
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
+        },
+        
+        // Destructive colors
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        
+        // Muted colors
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        
+        // Accent colors
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        
+        // Popover colors
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        
+        // Card colors
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
         },
 
         // Trading Status Colors

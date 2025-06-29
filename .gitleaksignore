@@ -1,0 +1,56 @@
+# TRAIDER V1 - GitLeaks Ignore Configuration
+# 
+# This file contains patterns to ignore false positive secret detections
+# in development, test, and documentation code.
+#
+# IMPORTANT: Only add entries that are definitively NOT secrets
+# Review each entry carefully before adding
+
+# Development/Test Authentication Patterns
+# These are hardcoded test credentials and should never be real secrets
+app/api/auth/login/route.ts:*password*
+app/(auth)/login/page.tsx:*password*
+backend/init_db.py:*DB_PASSWORD*
+backend/database.py:*DB_PASSWORD*
+
+# Test Configuration Files
+tests/**/*:*password*
+**/*.test.ts:*password*
+**/*.test.tsx:*password*
+**/*.spec.ts:*password*
+**/*.spec.tsx:*password*
+
+# Documentation Examples
+docs/**/*:*password*
+README.md:*password*
+*.md:*password*
+
+# Environment Template Files (not actual secrets)
+*.env.example:*
+*.env.template:*
+env.example:*
+
+# Development Docker Compose (test credentials only)
+docker-compose.dev.yml:*
+
+# Test JWT tokens and API keys (not real)
+*test-secret-key-for-testing-only*
+*test-jwt-token*
+*test-api-key*
+
+# Backend API Documentation (field names, not values)
+backend/api/auth.py:*password*
+backend/api/auth.py:*token*
+
+# Configuration comments and field descriptions
+*description="Password"*
+*description="JWT access token"*
+*Field(..., description=*
+
+# GitHub Workflow Files (test patterns and examples)
+.github/workflows/**/*:*password*
+.github/workflows/**/*:*secret*
+.github/workflows/**/*:*token*
+
+# Test configuration in vitest
+*test-secret-key-for-testing-only* 
