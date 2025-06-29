@@ -1,0 +1,151 @@
+# =============================================================================
+# TRAIDER V1 - Prometheus Configuration
+# =============================================================================
+#
+# Prometheus monitoring configuration for institutional-grade trading platform.
+# Monitors application metrics, infrastructure health, and trading performance.
+#
+# Performance: 15s scrape intervals for real-time monitoring
+# Risk: MEDIUM - Monitoring system failure impacts observability
+# Compliance: All metrics retained for 30 days minimum
+#
+# Author: TRAIDER Team
+# Since: 1.0.0-alpha
+
+global:
+  # Scrape interval for trading systems (15s for real-time monitoring)
+  scrape_interval: 15s
+  
+  # Evaluation interval for alerting rules
+  evaluation_interval: 15s
+  
+  # External labels for multi-cluster setup
+  external_labels:
+    cluster: 'traider-dev'
+    environment: 'development'
+
+# Alertmanager configuration (for production)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#           - alertmanager:9093
+
+# Load rules once and periodically evaluate them
+rule_files:
+  # - "alert_rules.yml"
+  # - "recording_rules.yml"
+
+# Scrape configuration
+scrape_configs:
+  # =============================================================================
+  # PROMETHEUS SELF-MONITORING
+  # =============================================================================
+  
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # =============================================================================
+  # TRAIDER APPLICATION MONITORING
+  # =============================================================================
+  
+  # Backend API monitoring
+  - job_name: 'traider-backend'
+    static_configs:
+      - targets: ['host.docker.internal:8000']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+    honor_labels: true
+    
+  # Frontend monitoring (when metrics endpoint is added)
+  - job_name: 'traider-frontend'
+    static_configs:
+      - targets: ['host.docker.internal:3000']
+    scrape_interval: 30s
+    metrics_path: /api/metrics
+    scrape_timeout: 10s
+    honor_labels: true
+
+  # =============================================================================
+  # INFRASTRUCTURE MONITORING
+  # =============================================================================
+  
+  # PostgreSQL monitoring (via postgres_exporter when added)
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+    scrape_interval: 30s
+    honor_labels: true
+    
+  # Redis monitoring (via redis_exporter when added)  
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 30s
+    honor_labels: true
+
+  # =============================================================================
+  # TRADING-SPECIFIC MONITORING
+  # =============================================================================
+  
+  # Market data feed monitoring
+  - job_name: 'market-data-feeds'
+    static_configs:
+      - targets: ['host.docker.internal:8001']
+    scrape_interval: 5s  # High frequency for market data
+    metrics_path: /metrics
+    scrape_timeout: 3s
+    
+  # Signal generation monitoring
+  - job_name: 'signal-engine'
+    static_configs:
+      - targets: ['host.docker.internal:8002']
+    scrape_interval: 10s
+    metrics_path: /metrics
+    scrape_timeout: 5s
+    
+  # Order execution monitoring
+  - job_name: 'order-execution'
+    static_configs:
+      - targets: ['host.docker.internal:8003']
+    scrape_interval: 5s  # Critical for trading latency
+    metrics_path: /metrics
+    scrape_timeout: 3s
+    
+  # Risk management monitoring
+  - job_name: 'risk-engine'
+    static_configs:
+      - targets: ['host.docker.internal:8004']
+    scrape_interval: 10s
+    metrics_path: /metrics
+    scrape_timeout: 5s
+
+  # =============================================================================
+  # SYSTEM MONITORING
+  # =============================================================================
+  
+  # Node exporter for system metrics (when added)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 30s
+    
+  # Docker container monitoring (via cadvisor when added)
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+# =============================================================================
+# STORAGE CONFIGURATION
+# =============================================================================
+
+# Note: Storage configuration is set via command line flags in docker-compose.yml
+# --storage.tsdb.retention.time=30d
+# --storage.tsdb.retention.size=10GB
+# --storage.tsdb.wal-compression=true 

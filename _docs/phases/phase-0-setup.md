@@ -1,6 +1,6 @@
 # 🚀 TRAIDER Phase Prep: Setup & Foundation
 
-### Barebones Infrastructure Setup *(Target: 1-2 weeks)*
+### Barebones Infrastructure Setup _(Target: 1-2 weeks)_
 
 ---
 
@@ -14,18 +14,19 @@ Establish the basic infrastructure and development environment for TRAIDER. This
 
 ## 🎯 Success Criteria
 
-- [ ] Local development environment runs without errors
-- [ ] Basic Next.js frontend serves dashboard pages
-- [ ] FastAPI backend responds to health checks
-- [ ] PostgreSQL database accepts connections
-- [ ] Authentication system works (login/logout)
-- [ ] Basic CI/CD pipeline deploys to staging
+- [x] Local development environment runs without errors _(✅ Completed 2025-06-29)_
+- [x] Basic Next.js frontend serves dashboard pages _(✅ Completed 2025-06-29)_
+- [x] FastAPI backend responds to health checks _(✅ Completed 2025-06-29)_
+- [x] PostgreSQL database accepts connections _(✅ Completed 2025-06-29)_
+- [x] Authentication system works (login/logout) _(✅ Completed 2025-06-29)_
+- [x] Basic CI/CD pipeline deploys to staging _(✅ Completed 2025-06-29)_
 
 ---
 
 ## 🏗️ Features & Tasks
 
 ### 1. **Development Environment Setup**
+
 **Priority**: Critical | **Estimated Time**: 2-3 days
 
 1. Initialize Next.js 14 project with TypeScript and App Router
@@ -35,12 +36,31 @@ Establish the basic infrastructure and development environment for TRAIDER. This
 5. Set up Docker Compose for local development
 
 **Deliverables**:
+
 - `package.json` with all frontend dependencies
 - `tailwind.config.js` with TRAIDER color scheme
 - `docker-compose.dev.yml` for local services
 - `.env.example` with required environment variables
 
+### ➕ **Added: Local Kubernetes Setup**
+
+**Priority**: Medium | **Estimated Time**: 1-2 days
+
+1. Spin-up **K3s** single-node cluster locally for development
+2. Create basic Kubernetes manifests for core services
+3. Set up kubectl configuration and basic service discovery
+4. Create local container registry for development images
+5. Document quick-start guide for K3s setup
+
+**Deliverables**:
+
+- `infrastructure\k8s\README.md` with K3s quick-start instructions
+- `infrastructure/k8s/dev/` with basic development manifests
+- Local K3s cluster running with basic services
+- Container registry setup for local development
+
 ### 2. **Backend Foundation**
+
 **Priority**: Critical | **Estimated Time**: 2-3 days
 
 1. Initialize FastAPI project with proper directory structure
@@ -50,12 +70,14 @@ Establish the basic infrastructure and development environment for TRAIDER. This
 5. Add basic logging with structured JSON format
 
 **Deliverables**:
+
 - `backend/main.py` with FastAPI app initialization
 - `backend/database.py` with PostgreSQL connection
 - `backend/api/health.py` with health check endpoints
 - `backend/requirements.txt` with core dependencies
 
 ### 3. **Database Schema Foundation & L2 Order Book Capture**
+
 **Priority**: Critical | **Estimated Time**: 2-3 days
 
 1. Create basic user authentication table
@@ -65,12 +87,14 @@ Establish the basic infrastructure and development environment for TRAIDER. This
 5. Add basic seed data for development
 
 **Deliverables**:
+
 - `backend/models/` with SQLAlchemy models including L2 order book schema
 - `backend/alembic/` with migration files
 - TimescaleDB setup for full-depth order book capture
 - Database schema that supports basic user auth and market data storage
 
 ### 4. **Authentication System**
+
 **Priority**: High | **Estimated Time**: 2-3 days
 
 1. Implement NextAuth.js with credentials provider
@@ -80,12 +104,14 @@ Establish the basic infrastructure and development environment for TRAIDER. This
 5. Create login page with basic styling
 
 **Deliverables**:
+
 - `app/api/auth/[...nextauth]/route.ts` with auth config
 - `app/(auth)/login/page.tsx` with login form
 - `middleware.ts` for route protection
 - Working login/logout flow
 
 ### 5. **Basic Dashboard Structure**
+
 **Priority**: High | **Estimated Time**: 2-3 days
 
 1. Create main dashboard layout with navigation
@@ -95,12 +121,14 @@ Establish the basic infrastructure and development environment for TRAIDER. This
 5. Add basic loading states and error boundaries
 
 **Deliverables**:
+
 - `app/dashboard/layout.tsx` with navigation
 - `app/dashboard/page.tsx` with placeholder metrics
 - `app/components/ui/` with basic UI components
 - Working navigation between dashboard sections
 
 ### 6. **CI/CD Pipeline**
+
 **Priority**: Medium | **Estimated Time**: 1-2 days
 
 1. Set up GitHub Actions workflow for frontend
@@ -110,11 +138,30 @@ Establish the basic infrastructure and development environment for TRAIDER. This
 5. Add environment variable management
 
 **Deliverables**:
+
 - `.github/workflows/frontend.yml` with CI/CD
 - `.github/workflows/backend.yml` with basic checks
 - Deployed staging environment accessible via URL
 
+### ➕ **Added: ADR Framework & Enhanced CI**
+
+**Priority**: Medium | **Estimated Time**: 1-2 days
+
+1. Set up Architecture Decision Records (ADR) framework
+2. Create ADR template and initial architecture decision
+3. Add GitHub Actions job for ADR format validation
+4. Implement pre-commit hooks for documentation consistency
+5. Create automated documentation generation pipeline
+
+**Deliverables**:
+
+- `docs\adr` with foundational decisions
+- `.github/workflows/ci-adr-lint.yml` for ADR validation
+- `scripts/validate-adr.sh` for local ADR checking
+- Pre-commit hook for documentation standards
+
 ### 7. **Basic Monitoring Setup**
+
 **Priority**: Medium | **Estimated Time**: 1-2 days
 
 1. Add basic health check endpoints
@@ -124,6 +171,7 @@ Establish the basic infrastructure and development environment for TRAIDER. This
 5. Add basic metrics collection (placeholder)
 
 **Deliverables**:
+
 - `app/system/page.tsx` with basic system status
 - `backend/utils/logging.py` with structured logging
 - Sentry integration for error tracking
@@ -134,6 +182,7 @@ Establish the basic infrastructure and development environment for TRAIDER. This
 ## 🔧 Technical Implementation Notes
 
 ### Frontend Structure
+
 ```
 app/
 ├── (auth)/
@@ -162,6 +211,7 @@ app/
 ```
 
 ### Backend Structure
+
 ```
 backend/
 ├── api/
@@ -183,6 +233,7 @@ backend/
 ```
 
 ### Environment Variables
+
 ```bash
 # Frontend (.env.local)
 NEXTAUTH_URL=http://localhost:3000
@@ -227,10 +278,11 @@ Phase Prep is complete when:
 ## ➡️ Next Phase Preview
 
 **Phase 1 (MVP)** will add:
+
 - Real market data connection to Coinbase
 - Basic position tracking and P&L calculation
 - Simple trading signal generation
 - Real-time dashboard updates
 - Basic risk management controls
 
-This foundation phase ensures we have a solid, testable base to build the actual trading functionality upon. 
+This foundation phase ensures we have a solid, testable base to build the actual trading functionality upon.

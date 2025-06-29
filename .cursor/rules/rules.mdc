@@ -224,8 +224,10 @@ bashnpm run docs:generate    # Generate API docs
 npm run docs:validate    # Check coverage
 npm run docs:deploy      # Update documentation site
 
-Update CHANGELOG.md:
+Update [CHANGELOG.md](mdc:CHANGELOG.md):
 markdown## [Version] - YYYY-MM-DD HH:MM:SS
+
+Update [action_items.md](mdc:_docs/action_items.md)
 
 ### Trading Logic Changes
 - Modified signal generation: [description]

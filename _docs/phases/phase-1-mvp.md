@@ -1,6 +1,6 @@
 # 📈 TRAIDER Phase 1: Minimal Viable Product (MVP)
 
-### Core Trading System Implementation *(Target: 3-4 weeks)*
+### Core Trading System Implementation _(Target: 3-4 weeks)_
 
 ---
 
@@ -27,6 +27,7 @@ Transform the foundation into a working autonomous trading system. This phase im
 ## 🏗️ Features & Tasks
 
 ### 1. **Market Data Integration**
+
 **Priority**: Critical | **Estimated Time**: 4-5 days
 
 1. Implement Coinbase Advanced Trade WebSocket client
@@ -36,12 +37,31 @@ Transform the foundation into a working autonomous trading system. This phase im
 5. Add market data health monitoring
 
 **Deliverables**:
+
 - `backend/services/market_data/websocket_client.py` with Coinbase integration
 - `backend/services/market_data/data_processor.py` for tick processing
 - `backend/models/market_data.py` with TimescaleDB schema
 - Real-time price feeds stored and accessible via API
 
+### ➕ **Added: Data Quality & Validation Framework**
+
+**Priority**: High | **Estimated Time**: 2-3 days
+
+1. Implement comprehensive data validation pipeline
+2. Create anomaly detection for price spikes and gaps
+3. Add data quality metrics and monitoring
+4. Build schema validation for all incoming data
+5. Create data quality dashboard and alerts
+
+**Deliverables**:
+
+- `backend/services/data_quality/validator.py` with comprehensive validation
+- `backend/services/data_quality/anomaly_detector.py` for outlier detection
+- `backend/monitoring/data_quality_metrics.py` with quality tracking
+- Data quality dashboard showing validation status and alerts
+
 ### 2. **Feature Engineering Pipeline**
+
 **Priority**: Critical | **Estimated Time**: 3-4 days
 
 1. Create basic technical indicators (MA5, MA20, RSI, ATR)
@@ -51,12 +71,14 @@ Transform the foundation into a working autonomous trading system. This phase im
 5. Create feature store API endpoints
 
 **Deliverables**:
+
 - `backend/ml/features/technical_indicators.py` with indicator calculations
 - `backend/ml/features/price_features.py` with price-based features
 - `backend/services/feature_engine/` with pipeline orchestration
 - Feature data accessible via `/api/features` endpoints
 
 ### 3. **Signal Generation System with Alpha Module**
+
 **Priority**: Critical | **Estimated Time**: 5-6 days
 
 1. Implement basic momentum strategy (MA crossover + RSI)
@@ -67,6 +89,7 @@ Transform the foundation into a working autonomous trading system. This phase im
 6. Add signal confidence scoring and thresholds
 
 **Deliverables**:
+
 - `backend/ml/strategies/momentum.py` with momentum signals
 - `backend/ml/strategies/mean_reversion.py` with mean-reversion signals
 - `backend/ml/strategies/funding_rate_drift.py` with seasonal funding rate analysis
@@ -74,6 +97,7 @@ Transform the foundation into a working autonomous trading system. This phase im
 - Signal generation service producing signals every 15 seconds
 
 ### 4. **Risk Management Engine**
+
 **Priority**: Critical | **Estimated Time**: 3-4 days
 
 1. Implement volatility-targeted position sizing
@@ -83,12 +107,14 @@ Transform the foundation into a working autonomous trading system. This phase im
 5. Add model confidence-based risk scaling
 
 **Deliverables**:
+
 - `backend/services/risk_engine/position_sizer.py` with vol-targeting
 - `backend/services/risk_engine/circuit_breaker.py` with loss limits
 - `backend/services/risk_engine/validator.py` for pre-trade checks
 - Risk engine blocking trades that exceed limits
 
 ### 5. **Paper Trading Executor with Fee-Aware Back-Tester**
+
 **Priority**: Critical | **Estimated Time**: 4-5 days
 
 1. Create simulated order execution with realistic latency
@@ -99,13 +125,33 @@ Transform the foundation into a working autonomous trading system. This phase im
 6. Implement position tracking and reconciliation
 
 **Deliverables**:
+
 - `backend/services/executor/paper_executor.py` with simulated execution
 - `backend/backtesting/fee_aware_backtester.py` with transaction cost modeling
 - `backend/services/executor/slippage_model.py` for realistic fills with fees
 - `backend/models/trades.py` with comprehensive trade logging
 - Position tracking updated in real-time
 
+### ➕ **Added: Comprehensive Backtesting Service**
+
+**Priority**: Critical | **Estimated Time**: 4-5 days
+
+1. Build **service/backtest/** module with historical tick replay engine
+2. Implement walk-forward cross-validation framework
+3. Create automated performance report generation (HTML/PDF)
+4. Add Monte Carlo simulation for strategy robustness testing
+5. Build backtesting vs live performance comparison system
+
+**Deliverables**:
+
+- `backend/services/backtest/replay_engine.py` with historical tick replay
+- `backend/services/backtest/walk_forward.py` with cross-validation
+- `backend/services/backtest/report_generator.py` auto-generating `reports/*.html`
+- `backend/services/backtest/monte_carlo.py` for robustness testing
+- `app/analysis/page.tsx` with "Backtest vs Live" comparison widget
+
 ### 6. **Portfolio Management System**
+
 **Priority**: High | **Estimated Time**: 2-3 days
 
 1. Implement real-time P&L calculation
@@ -115,12 +161,14 @@ Transform the foundation into a working autonomous trading system. This phase im
 5. Add trade attribution by strategy
 
 **Deliverables**:
+
 - `backend/services/portfolio/pnl_calculator.py` with real-time P&L
 - `backend/services/portfolio/performance.py` with metrics calculation
 - `backend/api/portfolio.py` with portfolio endpoints
 - Real-time portfolio data available via API
 
 ### 7. **Real-time Dashboard Updates**
+
 **Priority**: High | **Estimated Time**: 3-4 days
 
 1. Implement Socket.IO for real-time frontend updates
@@ -130,12 +178,14 @@ Transform the foundation into a working autonomous trading system. This phase im
 5. Add system status indicators with health checks
 
 **Deliverables**:
+
 - `app/lib/socket.ts` with Socket.IO client setup
 - `app/components/charts/PnLChart.tsx` with real-time updates
 - `app/components/trading/PositionCard.tsx` with live data
 - Dashboard updating every second with live data
 
 ### 8. **Trading Control Interface**
+
 **Priority**: High | **Estimated Time**: 2-3 days
 
 1. Create paper/live mode toggle (paper only for MVP)
@@ -145,6 +195,7 @@ Transform the foundation into a working autonomous trading system. This phase im
 5. Create manual trade override capabilities
 
 **Deliverables**:
+
 - `app/settings/trading/page.tsx` with trading controls
 - `app/components/trading/EmergencyStop.tsx` with stop functionality
 - `app/components/trading/RiskControls.tsx` for limit adjustment
@@ -155,33 +206,35 @@ Transform the foundation into a working autonomous trading system. This phase im
 ## 🔧 Technical Implementation Details
 
 ### Trading Loop Architecture
+
 ```python
 # Main trading loop (runs every 15 seconds)
 async def trading_loop():
     # 1. Get latest market data
     market_data = await get_latest_prices()
-    
+
     # 2. Calculate features
     features = await calculate_features(market_data)
-    
+
     # 3. Generate signals
     signals = await generate_signals(features)
-    
+
     # 4. Check risk constraints
     risk_approved = await validate_risk(signals)
-    
+
     # 5. Execute approved trades
     if risk_approved:
         await execute_trades(signals)
-    
+
     # 6. Update portfolio
     await update_portfolio()
-    
+
     # 7. Emit real-time updates
     await emit_dashboard_updates()
 ```
 
 ### Database Schema Extensions
+
 ```sql
 -- Market data (TimescaleDB)
 CREATE TABLE market_data (
@@ -239,31 +292,32 @@ CREATE TABLE positions (
 ```
 
 ### Real-time Update Flow
+
 ```typescript
 // Frontend Socket.IO integration
 useEffect(() => {
-  const socket = io(process.env.NEXT_PUBLIC_WS_URL!)
-  
+  const socket = io(process.env.NEXT_PUBLIC_WS_URL!);
+
   socket.on('pnl_update', (data) => {
-    setPnL(data.total_pnl)
-    setDailyPnL(data.daily_pnl)
-  })
-  
+    setPnL(data.total_pnl);
+    setDailyPnL(data.daily_pnl);
+  });
+
   socket.on('position_update', (data) => {
-    setPositions(data.positions)
-  })
-  
+    setPositions(data.positions);
+  });
+
   socket.on('trade_executed', (data) => {
-    setRecentTrades(prev => [data, ...prev.slice(0, 9)])
-    showTradeNotification(data)
-  })
-  
+    setRecentTrades((prev) => [data, ...prev.slice(0, 9)]);
+    showTradeNotification(data);
+  });
+
   socket.on('risk_alert', (data) => {
-    showRiskAlert(data)
-  })
-  
-  return () => socket.disconnect()
-}, [])
+    showRiskAlert(data);
+  });
+
+  return () => socket.disconnect();
+}, []);
 ```
 
 ---
@@ -271,6 +325,7 @@ useEffect(() => {
 ## 🧪 Testing Strategy
 
 ### Unit Tests
+
 - Feature calculation accuracy
 - Signal generation logic
 - Risk validation rules
@@ -278,12 +333,14 @@ useEffect(() => {
 - Position tracking updates
 
 ### Integration Tests
+
 - Market data → features → signals pipeline
 - Signal → risk check → execution flow
 - Real-time dashboard update propagation
 - Database consistency across services
 
 ### System Tests
+
 - 24-hour autonomous operation test
 - Market data outage recovery
 - Risk limit breach handling
@@ -293,13 +350,13 @@ useEffect(() => {
 
 ## 📊 Performance Targets
 
-| Metric | Target | Measurement |
-|--------|--------|-------------|
-| Signal Generation Latency | < 500ms | Market data to signal output |
-| Dashboard Update Frequency | 1 second | Real-time data refresh |
-| Trade Execution Simulation | < 100ms | Signal to simulated fill |
-| System Uptime | 99.5% | 24-hour continuous operation |
-| Data Storage Efficiency | < 1GB/day | Market data + features + trades |
+| Metric                     | Target    | Measurement                     |
+| -------------------------- | --------- | ------------------------------- |
+| Signal Generation Latency  | < 500ms   | Market data to signal output    |
+| Dashboard Update Frequency | 1 second  | Real-time data refresh          |
+| Trade Execution Simulation | < 100ms   | Signal to simulated fill        |
+| System Uptime              | 99.5%     | 24-hour continuous operation    |
+| Data Storage Efficiency    | < 1GB/day | Market data + features + trades |
 
 ---
 
@@ -335,6 +392,7 @@ Phase 1 (MVP) is complete when:
 ## 📈 Success Metrics
 
 After 1 week of paper trading:
+
 - **Uptime**: >99% system availability
 - **Signal Quality**: >60% win rate on paper trades
 - **Risk Compliance**: 100% of trades within risk limits
@@ -346,6 +404,7 @@ After 1 week of paper trading:
 ## ➡️ Next Phase Preview
 
 **Phase 2 (Enhanced Features)** will add:
+
 - Live trading with real money (small amounts)
 - Advanced ML models and ensemble methods
 - Level-2 order book data and market microstructure
@@ -354,4 +413,4 @@ After 1 week of paper trading:
 - Performance attribution and strategy analysis
 - Slack notifications and alerting system
 
-This MVP phase delivers a complete autonomous trading system that can operate safely in paper mode while providing the foundation for live trading. 
+This MVP phase delivers a complete autonomous trading system that can operate safely in paper mode while providing the foundation for live trading.

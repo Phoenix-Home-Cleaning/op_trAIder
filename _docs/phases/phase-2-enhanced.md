@@ -1,6 +1,6 @@
 # 🚀 TRAIDER Phase 2: Enhanced Features & Live Trading
 
-### Advanced Trading Capabilities & Production Readiness *(Target: 4-5 weeks)*
+### Advanced Trading Capabilities & Production Readiness _(Target: 4-5 weeks)_
 
 ---
 
@@ -28,6 +28,7 @@ Elevate the MVP to production-grade with live trading capabilities, advanced ML 
 ## 🏗️ Features & Tasks
 
 ### 1. **Live Trading Infrastructure**
+
 **Priority**: Critical | **Estimated Time**: 5-6 days
 
 1. Implement Coinbase Advanced Trade REST API for live orders
@@ -37,12 +38,14 @@ Elevate the MVP to production-grade with live trading capabilities, advanced ML 
 5. Implement transaction cost analysis and slippage measurement
 
 **Deliverables**:
+
 - `backend/services/executor/live_executor.py` with real order execution
 - `backend/services/vault/key_manager.py` for secure API key storage
 - `backend/services/executor/order_manager.py` for order lifecycle
 - Live trading mode toggle with comprehensive safety checks
 
 ### 2. **Advanced ML Models & Ensemble**
+
 **Priority**: Critical | **Estimated Time**: 6-7 days
 
 1. Implement XGBoost and Random Forest models for signal generation
@@ -52,12 +55,14 @@ Elevate the MVP to production-grade with live trading capabilities, advanced ML 
 5. Implement MLflow model registry with approval workflow
 
 **Deliverables**:
+
 - `backend/ml/models/xgboost_model.py` with gradient boosting
 - `backend/ml/models/lstm_model.py` with neural network
 - `backend/ml/ensemble/meta_learner.py` with dynamic weighting
 - MLflow integration with model versioning and deployment pipeline
 
 ### 3. **Level-2 Order Book Integration**
+
 **Priority**: High | **Estimated Time**: 4-5 days
 
 1. Extend WebSocket client for Level-2 order book data
@@ -67,12 +72,14 @@ Elevate the MVP to production-grade with live trading capabilities, advanced ML 
 5. Build microstructure-based trading signals
 
 **Deliverables**:
+
 - `backend/services/market_data/orderbook_client.py` with L2 data
 - `backend/ml/features/microstructure.py` with order flow features
 - `backend/ml/strategies/orderflow.py` with microstructure signals
 - Enhanced signal generation using order book dynamics
 
 ### 4. **Advanced Risk Management**
+
 **Priority**: Critical | **Estimated Time**: 5-6 days
 
 1. Implement Value-at-Risk (VaR) and Expected Shortfall (ES) calculation
@@ -82,12 +89,32 @@ Elevate the MVP to production-grade with live trading capabilities, advanced ML 
 5. Add model confidence-based risk scaling
 
 **Deliverables**:
+
 - `backend/services/risk_engine/var_calculator.py` with VaR/ES models
 - `backend/services/risk_engine/correlation_manager.py` for cross-asset risk
 - `backend/services/risk_engine/stress_tester.py` for scenario analysis
 - Risk dashboard with real-time VaR and correlation matrices
 
+### ➕ **Added: Comprehensive Stress Testing Harness**
+
+**Priority**: Critical | **Estimated Time**: 3-4 days
+
+1. Integrate **stress-test harness** (`risk/stress/`) for comprehensive scenario testing
+2. Create synthetic flash-crash scenarios and market volatility simulations
+3. Add latency spike simulation and API outage testing
+4. Build network partition and infrastructure failure testing
+5. Create automated stress test reporting and alerting
+
+**Deliverables**:
+
+- `backend/services/risk/stress/flash_crash_simulator.py` with synthetic crash scenarios
+- `backend/services/risk/stress/latency_simulator.py` for network delay testing
+- `backend/services/risk/stress/api_outage_simulator.py` for stubbed API failures
+- `backend/services/risk/stress/infrastructure_chaos.py` for failure injection
+- Automated stress test reports with pass/fail criteria and remediation steps
+
 ### 5. **Multi-Timeframe Strategy Framework**
+
 **Priority**: High | **Estimated Time**: 4-5 days
 
 1. Create multi-timeframe feature engineering pipeline
@@ -97,12 +124,14 @@ Elevate the MVP to production-grade with live trading capabilities, advanced ML 
 5. Create dynamic strategy weight optimization
 
 **Deliverables**:
+
 - `backend/ml/features/multi_timeframe.py` with cross-timeframe features
 - `backend/ml/strategies/trend_following.py` with multi-TF strategies
 - `backend/ml/strategies/regime_detection.py` for market regime identification
 - Strategy allocation system with performance-based weighting
 
 ### 6. **Comprehensive Monitoring & Alerting**
+
 **Priority**: High | **Estimated Time**: 4-5 days
 
 1. Implement Slack webhook integration for real-time alerts
@@ -112,12 +141,50 @@ Elevate the MVP to production-grade with live trading capabilities, advanced ML 
 5. Add automated daily/weekly performance reports
 
 **Deliverables**:
+
 - `backend/services/notifications/slack_client.py` with alert system
 - `backend/services/notifications/pagerduty_client.py` for critical alerts
 - `backend/services/monitoring/health_checker.py` with system diagnostics
 - Automated alert system with escalation policies
 
+### ➕ **Added: Multi-Source Data Diversification**
+
+**Priority**: High | **Estimated Time**: 3-4 days
+
+1. Add Binance spot + Bybit perp read-only feeds (behind feature flags)
+2. Create unified data feed abstraction layer
+3. Implement cross-venue data validation and consistency checks
+4. Add data source failover and redundancy mechanisms
+5. Build multi-source data quality monitoring
+
+**Deliverables**:
+
+- `backend/services/market_data/binance_client.py` with Binance spot feed
+- `backend/services/market_data/bybit_client.py` with Bybit perpetual feed
+- `backend/services/market_data/unified_feed.py` with abstraction layer
+- `backend/services/market_data/cross_venue_validator.py` for consistency checks
+- Feature flag system for gradual data source rollout
+
+### ➕ **Added: Enhanced Observability & Tracing**
+
+**Priority**: High | **Estimated Time**: 2-3 days
+
+1. Add **OpenTelemetry tracing** across all services
+2. Implement distributed tracing for end-to-end request tracking
+3. Create custom trading metrics and business-specific alerts
+4. Add latency, P&L drawdown, and data feed monitoring
+5. Build comprehensive alerting with Slack/PagerDuty integration
+
+**Deliverables**:
+
+- `backend/observability/tracing.py` with OpenTelemetry integration
+- `backend/observability/custom_metrics.py` with trading-specific metrics
+- `backend/observability/alerting.py` with multi-channel alert routing
+- Slack/PagerDuty alerts for: latency >500ms, P&L drawdown >2%, no-tick >5s
+- Distributed tracing dashboard showing complete request flows
+
 ### 7. **Production Deployment & Infrastructure with DR**
+
 **Priority**: High | **Estimated Time**: 6-7 days
 
 1. Set up active-standby architecture with automatic failover
@@ -128,13 +195,33 @@ Elevate the MVP to production-grade with live trading capabilities, advanced ML 
 6. Build automated deployment pipeline with rollback capabilities
 
 **Deliverables**:
+
 - `infrastructure/terraform/` with production infrastructure as code
 - `infrastructure/docker/` with production Docker configurations
 - Hot-region Postgres replica with automated DB-replay capability
 - Active-standby deployment with <30 second failover time
 - Production monitoring dashboard with key metrics
 
+### ➕ **Added: Kubernetes Migration & Managed Services**
+
+**Priority**: High | **Estimated Time**: 5-6 days
+
+1. Migrate core services to **Managed Kubernetes** (DigitalOcean K8s)
+2. Create Helm charts for all services under `infrastructure/helm/`
+3. Build Terraform module for K8s cluster provisioning
+4. Implement service mesh for inter-service communication
+5. Add horizontal pod autoscaling based on trading load
+
+**Deliverables**:
+
+- `infrastructure/helm/` with Helm charts for all services (market-data, signal-gen, risk-engine, executor)
+- `infrastructure/terraform/k8s_cluster/` Terraform module for managed K8s cluster
+- `infrastructure/k8s/production/` with production-ready manifests
+- Service mesh configuration with automatic load balancing
+- Horizontal Pod Autoscaler (HPA) configurations for trading services
+
 ### 8. **Performance Analytics & Compliance Reporting**
+
 **Priority**: Medium | **Estimated Time**: 4-5 days
 
 1. Build comprehensive performance attribution by strategy
@@ -145,6 +232,7 @@ Elevate the MVP to production-grade with live trading capabilities, advanced ML 
 6. Create automated performance reporting
 
 **Deliverables**:
+
 - `backend/services/analytics/performance_attribution.py` with strategy analysis
 - `backend/services/analytics/risk_metrics.py` with risk-adjusted returns
 - `backend/compliance/sar_ctr_reporting.py` with suspicious activity reporting stubs
@@ -157,6 +245,7 @@ Elevate the MVP to production-grade with live trading capabilities, advanced ML 
 ## 🔧 Advanced Technical Implementation
 
 ### ML Model Pipeline
+
 ```python
 # Advanced ensemble with dynamic weighting
 class AdvancedEnsemble:
@@ -170,52 +259,53 @@ class AdvancedEnsemble:
         }
         self.meta_learner = MetaLearner()
         self.performance_tracker = ModelPerformanceTracker()
-    
+
     async def generate_signals(self, features):
         # Get predictions from all models
         predictions = {}
         for name, model in self.models.items():
             predictions[name] = await model.predict(features)
-        
+
         # Calculate dynamic weights based on recent performance
         weights = self.meta_learner.calculate_weights(
-            predictions, 
+            predictions,
             self.performance_tracker.get_recent_performance()
         )
-        
+
         # Combine signals with dynamic weights
         ensemble_signal = self.combine_signals(predictions, weights)
-        
+
         return ensemble_signal
 ```
 
 ### Advanced Risk Engine
+
 ```python
 # VaR calculation with correlation matrix
 class VaRCalculator:
     def __init__(self):
         self.lookback_days = 252
         self.confidence_levels = [0.95, 0.99]
-    
+
     async def calculate_portfolio_var(self, positions, confidence_level=0.95):
         # Get historical returns
         returns = await self.get_historical_returns(positions)
-        
+
         # Calculate correlation matrix
         correlation_matrix = returns.corr()
-        
+
         # Calculate portfolio volatility
         weights = self.get_position_weights(positions)
         portfolio_vol = np.sqrt(
             weights.T @ correlation_matrix @ weights
         )
-        
+
         # Calculate VaR using normal distribution
         var = norm.ppf(1 - confidence_level) * portfolio_vol * np.sqrt(1)
-        
+
         # Calculate Expected Shortfall
         es = norm.pdf(norm.ppf(1 - confidence_level)) / confidence_level * portfolio_vol
-        
+
         return {
             'var': var,
             'expected_shortfall': es,
@@ -224,20 +314,21 @@ class VaRCalculator:
 ```
 
 ### Real-time Order Book Processing
+
 ```python
 # Level-2 order book processing
 class OrderBookProcessor:
     def __init__(self):
         self.order_books = {}
         self.imbalance_calculator = OrderFlowImbalanceCalculator()
-    
+
     async def process_l2_update(self, symbol, update):
         # Update order book
         if symbol not in self.order_books:
             self.order_books[symbol] = OrderBook(symbol)
-        
+
         self.order_books[symbol].update(update)
-        
+
         # Calculate microstructure features
         features = {
             'bid_ask_spread': self.calculate_spread(symbol),
@@ -245,7 +336,7 @@ class OrderBookProcessor:
             'market_depth': self.calculate_depth(symbol),
             'price_impact': self.estimate_price_impact(symbol)
         }
-        
+
         # Emit features for strategy consumption
         await self.emit_microstructure_features(symbol, features)
 ```
@@ -255,6 +346,7 @@ class OrderBookProcessor:
 ## 🏗️ Production Architecture
 
 ### Active-Standby Setup
+
 ```yaml
 # docker-compose.prod.yml
 version: '3.8'
@@ -266,7 +358,7 @@ services:
       - STANDBY_HOST=traider-standby
     volumes:
       - ./data:/app/data
-    
+
   traider-standby:
     image: traider:latest
     environment:
@@ -274,13 +366,13 @@ services:
       - PRIMARY_HOST=traider-primary
     volumes:
       - ./data:/app/data
-    
+
   postgres-primary:
     image: postgres:15
     environment:
       - POSTGRES_DB=traider
       - POSTGRES_REPLICATION_MODE=master
-    
+
   postgres-standby:
     image: postgres:15
     environment:
@@ -289,6 +381,7 @@ services:
 ```
 
 ### Monitoring Stack
+
 ```yaml
 # monitoring/docker-compose.yml
 version: '3.8'
@@ -296,14 +389,14 @@ services:
   prometheus:
     image: prom/prometheus:latest
     ports:
-      - "9090:9090"
+      - '9090:9090'
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
-  
+
   grafana:
     image: grafana/grafana:latest
     ports:
-      - "3001:3000"
+      - '3001:3000'
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
@@ -315,6 +408,7 @@ services:
 ## 🧪 Advanced Testing Strategy
 
 ### Chaos Engineering Tests
+
 ```python
 # Chaos testing scenarios
 class ChaosTests:
@@ -322,13 +416,13 @@ class ChaosTests:
         # Simulate network partition between services
         await self.partition_network(['market_data', 'risk_engine'])
         await self.verify_graceful_degradation()
-    
+
     async def test_database_failover(self):
         # Force primary database failure
         await self.kill_primary_database()
         await self.verify_standby_promotion()
         await self.verify_data_consistency()
-    
+
     async def test_high_latency_scenario(self):
         # Inject network latency
         await self.inject_latency(500)  # 500ms latency
@@ -336,6 +430,7 @@ class ChaosTests:
 ```
 
 ### Load Testing
+
 ```python
 # Performance testing under load
 class LoadTests:
@@ -343,7 +438,7 @@ class LoadTests:
         # Simulate high-frequency market data
         await self.simulate_market_data_burst(1000)  # 1000 updates/sec
         await self.verify_system_stability()
-    
+
     async def test_concurrent_signal_generation(self):
         # Test multiple concurrent signal calculations
         tasks = [self.generate_signals() for _ in range(10)]
@@ -355,14 +450,14 @@ class LoadTests:
 
 ## 📊 Advanced Performance Targets
 
-| Metric | Target | Measurement |
-|--------|--------|-------------|
-| Live Trade Execution | P95 < 200ms | Signal to exchange order |
-| VaR Calculation | < 1 second | Portfolio risk update |
-| ML Model Inference | < 50ms | Feature vector to prediction |
-| Order Book Processing | < 10ms | L2 update to features |
-| System Failover | < 30 seconds | Primary to standby switch |
-| Data Backup | < 5 minutes | WAL shipping to S3 |
+| Metric                | Target       | Measurement                  |
+| --------------------- | ------------ | ---------------------------- |
+| Live Trade Execution  | P95 < 200ms  | Signal to exchange order     |
+| VaR Calculation       | < 1 second   | Portfolio risk update        |
+| ML Model Inference    | < 50ms       | Feature vector to prediction |
+| Order Book Processing | < 10ms       | L2 update to features        |
+| System Failover       | < 30 seconds | Primary to standby switch    |
+| Data Backup           | < 5 minutes  | WAL shipping to S3           |
 
 ---
 
@@ -386,6 +481,7 @@ Before enabling live trading:
 ## 🚨 Phase 2 Risk Management
 
 ### Capital Allocation Strategy
+
 - **Initial Live Capital**: $1,000-$5,000
 - **Daily Loss Limit**: 2% of capital
 - **Maximum Position Size**: 20% of capital per asset
@@ -393,6 +489,7 @@ Before enabling live trading:
 - **Correlation Limit**: Maximum 0.7 between any two positions
 
 ### Emergency Procedures
+
 - **Immediate Stop**: All trading halted within 5 seconds
 - **Position Liquidation**: All positions closed within 60 seconds
 - **Failover Activation**: Standby system active within 30 seconds
@@ -431,6 +528,7 @@ Phase 2 is complete when:
 ## ➡️ Next Phase Preview
 
 **Phase 3 (Institutional Grade)** will add:
+
 - Multi-exchange connectivity (Binance, Kraken, FTX)
 - Advanced derivatives trading (futures, options)
 - Institutional-grade reporting and compliance
@@ -438,4 +536,4 @@ Phase 2 is complete when:
 - Machine learning model marketplace
 - API for external strategy integration
 
-This enhanced phase transforms TRAIDER from an MVP into a production-ready institutional trading platform capable of managing real capital with advanced risk controls and monitoring. 
+This enhanced phase transforms TRAIDER from an MVP into a production-ready institutional trading platform capable of managing real capital with advanced risk controls and monitoring.
