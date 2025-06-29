@@ -71,7 +71,7 @@ export default defineConfig({
 
     // Environment for performance testing
     env: {
-      NODE_ENV: 'performance',
+      NODE_ENV: 'test',
       TZ: 'UTC',
       // Disable logging to reduce noise in performance measurements
       LOG_LEVEL: 'error',
@@ -97,15 +97,17 @@ export default defineConfig({
   // Optimized build for performance testing
   esbuild: {
     target: 'es2022',
-    minify: false, // Disable minification for accurate profiling
     sourcemap: true,
   },
 
   // Define constants for performance tests
   define: {
-    __PERFORMANCE_TEST__: true,
-    __TEST__: true,
-    __DEV__: false,
-    __PROD__: false,
+    __DEV__: JSON.stringify(true),
+    __PERFORMANCE_MODE__: JSON.stringify(true)
+  },
+
+  build: {
+    sourcemap: true, // Enable source maps for debugging
+    target: 'node18'
   },
 });

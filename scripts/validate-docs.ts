@@ -12,7 +12,7 @@
  */
 
 import { readFileSync, existsSync, readdirSync, statSync } from 'fs';
-import { join, extname, dirname } from 'path';
+import { join, dirname } from 'path';
 import { glob } from 'glob';
 import { execSync } from 'child_process';
 
@@ -415,16 +415,14 @@ class DocumentationValidator {
     const funcLine = func.line - 1;
     
     // Look for JSDoc comment above the function
-    let foundJSDocStart = false;
     for (let i = funcLine - 1; i >= 0; i--) {
-      const line = lines[i].trim();
+      const line = lines[i]?.trim();
       
       // Skip empty lines
-      if (line === '') continue;
+      if (!line || line === '') continue;
       
       // If we found the end of a JSDoc comment, look for the start
       if (line === '*/') {
-        foundJSDocStart = false;
         continue;
       }
       
@@ -435,7 +433,6 @@ class DocumentationValidator {
       
       // If this is a JSDoc line (starts with *)
       if (line.startsWith('*') && !line.startsWith('*/')) {
-        foundJSDocStart = true;
         continue;
       }
       
@@ -477,10 +474,10 @@ class DocumentationValidator {
 
     // Look for JSDoc comment before the method (using same logic as hasJSDocComment)
     for (let i = lines.length - 1; i >= 0; i--) {
-      const line = lines[i].trim();
+      const line = lines[i]?.trim();
       
       // Skip empty lines
-      if (line === '') continue;
+      if (!line || line === '') continue;
       
       // If we found the end of a JSDoc comment, continue looking
       if (line === '*/') {
@@ -573,7 +570,9 @@ class DocumentationValidator {
     let match;
     
     while ((match = linkRegex.exec(content)) !== null) {
-      links.push(match[2]);
+      if (match[2]) {
+        links.push(match[2]);
+      }
     }
     
     return links;
@@ -642,4 +641,5 @@ if (require.main === module) {
   main().catch(console.error);
 }
 
-export { DocumentationValidator, ValidationConfig, ValidationResult }; 
+export type { ValidationConfig, ValidationResult };
+export { DocumentationValidator }; 

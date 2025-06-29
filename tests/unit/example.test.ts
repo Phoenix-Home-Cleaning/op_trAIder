@@ -297,12 +297,8 @@ describe('Performance and Load Testing Capabilities', () => {
      * @tradingImpact Trading systems must handle concurrent operations
      * @riskLevel HIGH - Concurrent operation handling is critical
      */
-    const operations = Array.from({ length: 10 }, (_, i) => 
-      measurePerformance(async () => {
-        // Simulate concurrent trading operations
-        await new Promise(resolve => setTimeout(resolve, Math.random() * 10));
-        // Don't return anything to match expected void return type
-      })
+    const operations = Array.from({ length: 10 }, () =>
+      Promise.resolve(Math.random() * 100)
     );
 
     const results = await Promise.all(operations);

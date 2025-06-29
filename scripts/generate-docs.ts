@@ -12,7 +12,7 @@
  */
 
 import { execSync } from 'child_process';
-import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, statSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { join, dirname, extname, basename } from 'path';
 import { glob } from 'glob';
 
@@ -167,15 +167,13 @@ class DocumentationGenerator {
     const dependencies = await this.analyzeDependencies();
     
     // Frontend dependencies
-    const frontendGraph = this.generateDependencyGraph(
-      dependencies.filter(d => d.path.startsWith('app/'))
-    );
+    const frontendGraph = this.generateDependencyGraph();
     this.writeFile('diagrams/frontend-dependencies.mmd', frontendGraph);
 
     // Backend dependencies (when backend exists)
     const backendDeps = dependencies.filter(d => d.path.startsWith('backend/'));
     if (backendDeps.length > 0) {
-      const backendGraph = this.generateDependencyGraph(backendDeps);
+      const backendGraph = this.generateDependencyGraph();
       this.writeFile('diagrams/backend-dependencies.mmd', backendGraph);
     }
 
@@ -316,9 +314,9 @@ async function emergencyStop(): Promise<void> {
 
     const modules = await this.getModuleStructure();
     
-    for (const module of modules) {
-      const moduleDoc = this.generateModuleDoc(module);
-      this.writeFile(`modules/${module.name}.md`, moduleDoc);
+    for (const moduleItem of modules) {
+      const moduleDoc = this.generateModuleDoc(moduleItem);
+      this.writeFile(`modules/${moduleItem.name}.md`, moduleDoc);
     }
 
     // Generate modules index
@@ -348,7 +346,7 @@ async function emergencyStop(): Promise<void> {
 - **Types**: ${coverage.types}%
 
 ### Missing Documentation
-${coverage.missing.map(item => `- ${item.file}: ${item.missing.join(', ')}`).join('\n')}
+${coverage.missing.map((item: any) => `- ${item.file}: ${item.missing.join(', ')}`).join('\n')}
 
 ### Coverage Trends
 - Previous: ${coverage.previous}%
@@ -356,7 +354,7 @@ ${coverage.missing.map(item => `- ${item.file}: ${item.missing.join(', ')}`).joi
 - Change: ${coverage.change > 0 ? '+' : ''}${coverage.change}%
 
 ## Recommendations
-${coverage.recommendations.map(rec => `- ${rec}`).join('\n')}
+${coverage.recommendations.map((rec: any) => `- ${rec}`).join('\n')}
 `;
 
     this.writeFile('coverage/documentation-coverage.md', reportContent);
@@ -397,43 +395,14 @@ ${coverage.recommendations.map(rec => `- ${rec}`).join('\n')}
    * Generate system overview Mermaid diagram
    */
   private generateSystemDiagram(nodes: ArchitectureNode[]): string {
-    const components = nodes.filter(n => n.type === 'component');
-    const services = nodes.filter(n => n.type === 'service');
-
-    let diagram = `graph TB
-    %% TRAIDER System Architecture Overview
-    %% Generated on ${new Date().toISOString()}
+    let diagram = `graph TB\n`;
     
-    subgraph "Frontend"
-`;
-
-    components.forEach(comp => {
-      diagram += `        ${comp.id}["${comp.name}"]
-`;
-    });
-
-    diagram += `    end
-    
-    subgraph "Backend Services"
-`;
-
-    services.forEach(service => {
-      diagram += `        ${service.id}["${service.name}"]
-`;
-    });
-
-    diagram += `    end
-    
-    %% Connections
-`;
-
-    nodes.forEach(node => {
+    nodes.forEach((node) => {
+      const nodeStyle = this.getNodeStyle(node.type);
+      diagram += `  ${node.id}[${node.name}]${nodeStyle}\n`;
+      
       node.dependencies.forEach(dep => {
-        const depNode = nodes.find(n => n.name === dep);
-        if (depNode) {
-          diagram += `    ${node.id} --> ${depNode.id}
-`;
-        }
+        diagram += `  ${node.id} --> ${dep}\n`;
       });
     });
 
@@ -444,63 +413,28 @@ ${coverage.recommendations.map(rec => `- ${rec}`).join('\n')}
    * Generate component interaction diagram
    */
   private generateComponentDiagram(nodes: ArchitectureNode[]): string {
-    return `sequenceDiagram
-    participant U as User
-    participant D as Dashboard
-    participant API as API Layer
-    participant S as Services
-    participant DB as Database
+    let diagram = `graph LR\n`;
+    
+    nodes.forEach((node) => {
+      const nodeStyle = this.getNodeStyle(node.type);
+      diagram += `  ${node.id}[${node.name}]${nodeStyle}\n`;
+    });
 
-    U->>D: View Trading Dashboard
-    D->>API: Fetch Positions
-    API->>S: Get Portfolio Data
-    S->>DB: Query Positions
-    DB-->>S: Return Data
-    S-->>API: Portfolio Response
-    API-->>D: Position Data
-    D-->>U: Updated Dashboard
-
-    Note over D,S: Real-time updates via WebSocket
-`;
+    return diagram;
   }
 
   /**
    * Generate data flow diagram
    */
   private generateDataFlowDiagram(nodes: ArchitectureNode[]): string {
-    return `flowchart LR
-    subgraph "Data Sources"
-        CB[Coinbase API]
-        MD[Market Data]
-    end
+    let diagram = `flowchart TD\n`;
     
-    subgraph "Processing"
-        FE[Feature Engineering]
-        SG[Signal Generation]
-        RE[Risk Engine]
-    end
-    
-    subgraph "Execution"
-        EX[Order Executor]
-        PM[Portfolio Manager]
-    end
-    
-    subgraph "Storage"
-        TS[(TimescaleDB)]
-        CACHE[(Redis Cache)]
-    end
-    
-    CB --> MD
-    MD --> FE
-    FE --> SG
-    SG --> RE
-    RE --> EX
-    EX --> PM
-    
-    FE --> TS
-    SG --> CACHE
-    PM --> TS
-`;
+    nodes.forEach((node) => {
+      const nodeStyle = this.getNodeStyle(node.type);
+      diagram += `  ${node.id}[${node.name}]${nodeStyle}\n`;
+    });
+
+    return diagram;
   }
 
   /**
@@ -616,20 +550,19 @@ ${coverage.recommendations.map(rec => `- ${rec}`).join('\n')}
     const importRegex = /import.*from\s+['"]([^'"]+)['"]/g;
     const dependencies: string[] = [];
     let match;
-
+    
     while ((match = importRegex.exec(content)) !== null) {
-      if (!match[1].startsWith('.') && !match[1].startsWith('/')) {
+      if (match[1]) {
         dependencies.push(match[1]);
       }
     }
-
-    return [...new Set(dependencies)];
+    
+    return dependencies;
   }
 
   private extractDescription(content: string): string {
-    const docRegex = /\/\*\*\s*\n\s*\*\s*@fileoverview\s+(.*?)\s*\n/;
-    const match = content.match(docRegex);
-    return match ? match[1] : 'No description available';
+    const match = content.match(/@description\s+(.*?)(?=\n\s*\*\s*@|\n\s*\*\/)/s);
+    return match?.[1]?.trim() || 'No description available';
   }
 
   private extractHTTPMethods(content: string): string[] {
@@ -650,15 +583,8 @@ ${coverage.recommendations.map(rec => `- ${rec}`).join('\n')}
     return [];
   }
 
-  private generateDependencyGraph(dependencies: FileInfo[]): string {
-    return `graph TD
-    %% Dependency Graph
-    %% Generated on ${new Date().toISOString()}
-    
-    A[Sample Node]
-    B[Another Node]
-    A --> B
-`;
+  private generateDependencyGraph(): string {
+    return `graph TD\n    A --> B\n`;
   }
 
   private jsonToYaml(obj: any): string {
@@ -667,15 +593,23 @@ ${coverage.recommendations.map(rec => `- ${rec}`).join('\n')}
   }
 
   private async getModuleStructure(): Promise<any[]> {
-    return [];
+    const appFiles = await glob('app/**/*.{ts,tsx}');
+    const backendFiles = await glob('backend/**/*.py');
+    
+    const modules = [
+      ...appFiles.map(file => ({ path: file, type: 'frontend' })),
+      ...backendFiles.map(file => ({ path: file, type: 'backend' }))
+    ];
+
+    return modules;
   }
 
   private generateModuleDoc(module: any): string {
-    return `# ${module.name} Module\n\nGenerated documentation for ${module.name}`;
+    return `# Module: ${module.path}\n\nType: ${module.type}\n`;
   }
 
   private generateModulesIndex(modules: any[]): string {
-    return `# Modules Index\n\nGenerated on ${new Date().toISOString()}`;
+    return `# Module Index\n\n${modules.map(m => `- [${m.path}](./${m.path}.md)`).join('\n')}`;
   }
 
   private async analyzeCoverage(): Promise<any> {
@@ -723,6 +657,21 @@ ${coverage.recommendations.map(rec => `- ${rec}`).join('\n')}
         }
       }
     };
+  }
+
+  private getNodeStyle(type: string): string {
+    switch (type) {
+      case 'component':
+        return ':::fill:#e1f5fe';
+      case 'service':
+        return ':::fill:#f3e5f5';
+      case 'utility':
+        return ':::fill:#e8f5e8';
+      case 'type':
+        return ':::fill:#fff3e0';
+      default:
+        return '';
+    }
   }
 }
 
@@ -782,4 +731,4 @@ if (require.main === module) {
   main().catch(console.error);
 }
 
-export { DocumentationGenerator, DocumentationConfig }; 
+export type { DocumentationConfig, FileInfo, ArchitectureNode }; 

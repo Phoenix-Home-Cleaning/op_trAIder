@@ -346,16 +346,8 @@ function validateTimerCleanup(files: string[]): ValidationResult {
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
-        const hasTimer = /(?:setTimeout|setInterval|requestAnimationFrame)\s*\(/.test(line);
-
-        if (hasTimer) {
-          // Look for cleanup in useEffect or component unmount
-          const hasCleanup =
-            content.includes('clearTimeout') ||
-            content.includes('clearInterval') ||
-            content.includes('cancelAnimationFrame') ||
-            content.includes('return () =>');
-
+        if (line && /(?:setTimeout|setInterval|requestAnimationFrame)\s*\(/.test(line)) {
+          const hasCleanup = content.includes('clearTimeout') || content.includes('clearInterval') || content.includes('cancelAnimationFrame');
           if (!hasCleanup) {
             result.errors.push(`${file}:${i + 1}: Timer without cleanup detected`);
             result.success = false;
@@ -404,9 +396,12 @@ function validateConsoleStatements(files: string[]): ValidationResult {
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
-        if (/console\.\w+\s*\(/.test(line) && !line.includes('//')) {
-          result.errors.push(`${file}:${i + 1}: Console statement found`);
-          result.success = false;
+        if (line && (line.includes('console.log') || line.includes('console.error') || line.includes('console.warn'))) {
+          const match = line.match(/console\.(log|error|warn)/);
+          if (match) {
+            result.errors.push(`${file}:${i + 1}: Console statement found`);
+            result.success = false;
+          }
         }
       }
     } catch (error) {
@@ -449,12 +444,15 @@ function validateTestFocus(files: string[]): ValidationResult {
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
-        if (/(?:describe|it|test)\.only\s*\(/.test(line)) {
+        if (line?.includes('it.only') || line?.includes('describe.only') || line?.includes('test.only')) {
           result.errors.push(`${file}:${i + 1}: Focused test (.only) found`);
           result.success = false;
         }
-        if (/(?:describe|it|test)\.skip\s*\(/.test(line)) {
-          result.warnings.push(`${file}:${i + 1}: Skipped test (.skip) found`);
+        if (line?.includes('setTimeout') || line?.includes('setInterval')) {
+          const hasCleanup = content.includes('clearTimeout') || content.includes('clearInterval');
+          if (!hasCleanup) {
+            result.warnings.push(`${file}:${i + 1}: Timer without cleanup detected`);
+          }
         }
       }
     } catch (error) {

@@ -80,10 +80,13 @@ class ADRGenerator {
 
     const files = readdirSync(this.adrDir)
       .filter(f => f.match(/^adr-\d{3}-/))
-      .map(f => parseInt(f.match(/^adr-(\d{3})-/)?.[1] || '0'))
+      .map(f => {
+        const match = f.match(/^adr-(\d{3})-/);
+        return parseInt(match?.[1] || '0');
+      })
       .sort((a, b) => b - a);
 
-    return files.length > 0 ? files[0] + 1 : 1;
+    return files.length > 0 ? (files[0] ?? 0) + 1 : 1;
   }
 
   /**
@@ -104,15 +107,16 @@ class ADRGenerator {
    */
   private generateADRContent(number: number, config: ADRConfig): string {
     const template = readFileSync(join(this.adrDir, 'template.md'), 'utf-8');
-    const date = new Date().toISOString().split('T')[0];
+    const dateStr = new Date().toISOString().split('T')[0] as string;
+    const technicalStoryValue = config.technicalStory ?? 'N/A';
     
     return template
-      .replace(/ADR-XXX/g, `ADR-${number.toString().padStart(3, '0')}`)
-      .replace(/\[Title\]/g, config.title)
-      .replace(/\[Proposed \| Accepted \| Deprecated \| Superseded\]/g, config.status)
-      .replace(/YYYY-MM-DD/g, date)
-      .replace(/\[List of decision makers\]/g, config.deciders.join(', '))
-      .replace(/\[Link to issue\/story if applicable\]/g, config.technicalStory || 'N/A');
+      .replaceAll('ADR-XXX', `ADR-${number.toString().padStart(3, '0')}`)
+      .replaceAll('[Title]', config.title)
+      .replaceAll('[Proposed | Accepted | Deprecated | Superseded]', config.status)
+      .replaceAll('YYYY-MM-DD', dateStr)
+      .replaceAll('[List of decision makers]', config.deciders.join(', '))
+      .replaceAll('[Link to issue/story if applicable]', technicalStoryValue);
   }
 
   /**
@@ -120,7 +124,7 @@ class ADRGenerator {
    */
   private extractTitle(content: string): string {
     const match = content.match(/^# ADR-\d{3}: (.+)$/m);
-    return match ? match[1] : 'Unknown Title';
+    return match?.[1] ?? 'Unknown Title';
   }
 
   /**
@@ -128,7 +132,7 @@ class ADRGenerator {
    */
   private extractStatus(content: string): string {
     const match = content.match(/\*\*Status\*\*: (.+)$/m);
-    return match ? match[1] : 'Unknown Status';
+    return match?.[1] ?? 'Unknown Status';
   }
 }
 
@@ -208,8 +212,7 @@ Examples:
       const config: ADRConfig = {
         title,
         status: 'Proposed',
-        deciders: ['TRAIDER Team'],
-        technicalStory: undefined
+        deciders: ['TRAIDER Team']
       };
 
       const filepath = await generator.createADR(config);
@@ -237,4 +240,5 @@ if (require.main === module) {
   main().catch(console.error);
 }
 
-export { ADRGenerator, ADRConfig }; 
+export type { ADRConfig };
+export { ADRGenerator }; 
