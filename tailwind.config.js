@@ -1,41 +1,41 @@
 /**
- * @fileoverview Tailwind CSS configuration for TRAIDER V1
+ * @fileoverview Tailwind CSS 4 configuration for TRAIDER V1
  * @module tailwind.config.js
  * 
  * @description
  * Institutional-grade design system configuration for autonomous trading platform.
- * Includes custom color palette, trading-specific components, and responsive
- * breakpoints optimized for financial dashboards.
+ * Updated for Tailwind CSS 4 with modern color system, trading-specific components, 
+ * and responsive breakpoints optimized for financial dashboards.
  * 
  * @design
- * - Professional trading color scheme
+ * - Professional trading color scheme with CSS variables
  * - Responsive grid system for dashboards
  * - Custom components for financial data display
  * 
  * @performance
- * - Purge unused styles in production
- * - Optimized for bundle size
+ * - Optimized for bundle size with CSS 4 features
+ * - Native CSS cascade layers support
  * 
  * @see {@link https://tailwindcss.com/docs/configuration}
  * @since 1.0.0-alpha
  * @author TRAIDER Team
  */
 
-/* eslint-disable @typescript-eslint/no-require-imports */
-
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
     './app/**/*.{js,ts,jsx,tsx,mdx}',
-    './components/**/*.{js,ts,jsx,tsx,mdx}',
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './components/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/**/*.{js,ts,jsx,tsx,mdx}',
+    './shared/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   
   theme: {
     extend: {
       // TRAIDER Brand Colors - Institutional Trading Theme
       colors: {
-        // Base system colors
+        // CSS Custom Properties for dynamic theming
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -55,264 +55,208 @@ module.exports = {
           800: '#075985',
           900: '#0c4a6e',
           950: '#082f49',
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
         },
-        
-        // Secondary colors
+
+        // Secondary Colors for UI Components
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
-        },
-        
-        // Destructive colors
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
-        },
-        
-        // Muted colors
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-        },
-        
-        // Accent colors
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
-        },
-        
-        // Popover colors
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
-        },
-        
-        // Card colors
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+          50: '#f8fafc',
+          100: '#f1f5f9',
+          200: '#e2e8f0',
+          300: '#cbd5e1',
+          400: '#94a3b8',
+          500: '#64748b',
+          600: '#475569',
+          700: '#334155',
+          800: '#1e293b',
+          900: '#0f172a',
+          950: '#020617',
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
         },
 
         // Trading Status Colors
-        success: {
-          50: '#f0fdf4',
-          100: '#dcfce7',
-          200: '#bbf7d0',
-          300: '#86efac',
-          400: '#4ade80',
-          500: '#22c55e', // Profit green
-          600: '#16a34a',
-          700: '#15803d',
-          800: '#166534',
-          900: '#14532d',
-        },
-
-        danger: {
-          50: '#fef2f2',
-          100: '#fee2e2',
-          200: '#fecaca',
-          300: '#fca5a5',
-          400: '#f87171',
-          500: '#ef4444', // Loss red
-          600: '#dc2626',
-          700: '#b91c1c',
-          800: '#991b1b',
-          900: '#7f1d1d',
-        },
-
-        warning: {
-          50: '#fffbeb',
-          100: '#fef3c7',
-          200: '#fde68a',
-          300: '#fcd34d',
-          400: '#fbbf24',
-          500: '#f59e0b', // Alert amber
-          600: '#d97706',
-          700: '#b45309',
-          800: '#92400e',
-          900: '#78350f',
-        },
-
-        // Neutral Colors for Professional UI
-        neutral: {
-          50: '#fafafa',
-          100: '#f5f5f5',
-          200: '#e5e5e5',
-          300: '#d4d4d4',
-          400: '#a3a3a3',
-          500: '#737373',
-          600: '#525252',
-          700: '#404040',
-          800: '#262626',
-          900: '#171717',
-          950: '#0a0a0a',
-        },
-
-        // Dark Theme Colors
-        dark: {
-          bg: '#0f172a',      // Background
-          surface: '#1e293b', // Cards/surfaces
-          border: '#334155',  // Borders
-          text: '#f1f5f9',    // Primary text
-          muted: '#94a3b8',   // Secondary text
-        },
-
-        // Trading-Specific Colors
         trading: {
-          long: '#22c55e',    // Long position
-          short: '#ef4444',   // Short position
-          neutral: '#6b7280', // No position
-          volume: '#8b5cf6',  // Volume bars
-          spread: '#f59e0b',  // Bid-ask spread
+          // Profit/Loss indicators
+          profit: {
+            50: '#f0fdf4',
+            100: '#dcfce7',
+            200: '#bbf7d0',
+            300: '#86efac',
+            400: '#4ade80',
+            500: '#22c55e', // Primary profit green
+            600: '#16a34a',
+            700: '#15803d',
+            800: '#166534',
+            900: '#14532d',
+          },
+          loss: {
+            50: '#fef2f2',
+            100: '#fee2e2',
+            200: '#fecaca',
+            300: '#fca5a5',
+            400: '#f87171',
+            500: '#ef4444', // Primary loss red
+            600: '#dc2626',
+            700: '#b91c1c',
+            800: '#991b1b',
+            900: '#7f1d1d',
+          },
+          
+          // Market status
+          bullish: '#22c55e',
+          bearish: '#ef4444',
+          neutral: '#6b7280',
+          
+          // Order types
+          buy: '#10b981',
+          sell: '#f59e0b',
+          hold: '#6b7280',
+        },
+
+        // Alert and Status Colors
+        destructive: {
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
+        },
+        accent: {
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))',
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))',
+        },
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
+        },
+
+        // Dark theme variations
+        dark: {
+          background: '#0a0a0a',
+          foreground: '#fafafa',
+          card: '#161616',
+          border: '#262626',
+          primary: '#0ea5e9',
+          secondary: '#525252',
         },
       },
 
-      // Typography for Financial Data
-      fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'Consolas', 'monospace'],
-        display: ['Poppins', 'system-ui', 'sans-serif'],
+      // Typography Scale for Financial Data
+      fontSize: {
+        'price-sm': ['0.75rem', { lineHeight: '1rem', fontWeight: '600' }],
+        'price': ['0.875rem', { lineHeight: '1.25rem', fontWeight: '600' }],
+        'price-lg': ['1rem', { lineHeight: '1.5rem', fontWeight: '600' }],
+        'price-xl': ['1.125rem', { lineHeight: '1.75rem', fontWeight: '700' }],
+        'display': ['2.25rem', { lineHeight: '2.5rem', fontWeight: '800' }],
       },
 
-      // Spacing for Dashboard Layouts
+      // Spacing for Trading Components
       spacing: {
         '18': '4.5rem',
         '88': '22rem',
-        '112': '28rem',
         '128': '32rem',
+        'sidebar': '16rem',
+        'chart': '24rem',
       },
 
-      // Screen Breakpoints for Trading Dashboards
+      // Animation for Real-time Updates
+      animation: {
+        'pulse-profit': 'pulse-profit 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'pulse-loss': 'pulse-loss 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'slide-up': 'slide-up 0.3s ease-out',
+        'slide-down': 'slide-down 0.3s ease-out',
+        'flash': 'flash 0.5s ease-in-out',
+        'accordion-down': 'accordion-down 0.2s ease-out',
+        'accordion-up': 'accordion-up 0.2s ease-out',
+      },
+
+      keyframes: {
+        'pulse-profit': {
+          '0%, 100%': { 
+            opacity: '1',
+            backgroundColor: 'rgb(34 197 94 / 0.1)'
+          },
+          '50%': { 
+            opacity: '0.8',
+            backgroundColor: 'rgb(34 197 94 / 0.3)'
+          },
+        },
+        'pulse-loss': {
+          '0%, 100%': { 
+            opacity: '1',
+            backgroundColor: 'rgb(239 68 68 / 0.1)'
+          },
+          '50%': { 
+            opacity: '0.8',
+            backgroundColor: 'rgb(239 68 68 / 0.3)'
+          },
+        },
+        'slide-up': {
+          'from': { transform: 'translateY(100%)', opacity: '0' },
+          'to': { transform: 'translateY(0)', opacity: '1' },
+        },
+        'slide-down': {
+          'from': { transform: 'translateY(-100%)', opacity: '0' },
+          'to': { transform: 'translateY(0)', opacity: '1' },
+        },
+        'flash': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.5' },
+        },
+        'accordion-down': {
+          from: { height: '0' },
+          to: { height: 'var(--radix-accordion-content-height)' },
+        },
+        'accordion-up': {
+          from: { height: 'var(--radix-accordion-content-height)' },
+          to: { height: '0' },
+        },
+      },
+
+      // Box Shadow for Depth
+      boxShadow: {
+        'trading': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        'trading-lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+        'glow': '0 0 20px rgba(14, 165, 233, 0.3)',
+        'glow-profit': '0 0 20px rgba(34, 197, 94, 0.3)',
+        'glow-loss': '0 0 20px rgba(239, 68, 68, 0.3)',
+      },
+
+      // Border Radius for Modern UI
+      borderRadius: {
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
+      },
+
+      // Grid Templates for Trading Layouts
+      gridTemplateColumns: {
+        'dashboard': '16rem 1fr 20rem',
+        'trading': '1fr 24rem',
+        'charts': 'repeat(auto-fit, minmax(300px, 1fr))',
+      },
+
+      // Responsive Breakpoints for Trading Displays
       screens: {
         'xs': '475px',
-        '3xl': '1600px',
-        '4xl': '2000px',
-      },
-
-      // Animation for Live Data Updates
-      animation: {
-        'pulse-success': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'pulse-danger': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'bounce-subtle': 'bounce 1s ease-in-out 2',
-        'fade-in': 'fadeIn 0.5s ease-in-out',
-        'slide-up': 'slideUp 0.3s ease-out',
-        'flash-profit': 'flashProfit 0.5s ease-in-out',
-        'flash-loss': 'flashLoss 0.5s ease-in-out',
-      },
-
-      // Custom Keyframes
-      keyframes: {
-        fadeIn: {
-          '0%': { opacity: '0' },
-          '100%': { opacity: '1' },
-        },
-        slideUp: {
-          '0%': { transform: 'translateY(10px)', opacity: '0' },
-          '100%': { transform: 'translateY(0)', opacity: '1' },
-        },
-        flashProfit: {
-          '0%, 100%': { backgroundColor: 'transparent' },
-          '50%': { backgroundColor: 'rgb(34 197 94 / 0.2)' },
-        },
-        flashLoss: {
-          '0%, 100%': { backgroundColor: 'transparent' },
-          '50%': { backgroundColor: 'rgb(239 68 68 / 0.2)' },
-        },
-      },
-
-      // Box Shadow for Cards and Modals
-      boxShadow: {
-        'card': '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
-        'card-hover': '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-        'modal': '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
-        'glow-success': '0 0 20px rgb(34 197 94 / 0.3)',
-        'glow-danger': '0 0 20px rgb(239 68 68 / 0.3)',
-      },
-
-      // Border Radius for Consistent Design
-      borderRadius: {
-        'card': '0.75rem',
-        'button': '0.5rem',
-      },
-
-      // Grid Template for Dashboard Layouts
-      gridTemplateColumns: {
-        'dashboard': 'minmax(250px, 1fr) 4fr',
-        'cards': 'repeat(auto-fit, minmax(300px, 1fr))',
-        'metrics': 'repeat(auto-fit, minmax(200px, 1fr))',
-      },
-
-      // Z-Index Scale
-      zIndex: {
-        'dropdown': '1000',
-        'modal': '1050',
-        'toast': '1100',
+        'trading-sm': '640px',
+        'trading-md': '768px', 
+        'trading-lg': '1024px',
+        'trading-xl': '1280px',
+        'trading-2xl': '1536px',
+        'ultra': '1920px',
       },
     },
   },
 
-  // Plugins for Enhanced Functionality
-  plugins: [
-    require('@tailwindcss/forms'),
-    require('@tailwindcss/typography'),
-    require('@tailwindcss/aspect-ratio'),
-    
-    // Custom Plugin for Trading Components
-    function({ addComponents, theme }) {
-      addComponents({
-        // Trading Card Component
-        '.trading-card': {
-          backgroundColor: theme('colors.white'),
-          borderRadius: theme('borderRadius.card'),
-          boxShadow: theme('boxShadow.card'),
-          padding: theme('spacing.6'),
-          border: `1px solid ${theme('colors.neutral.200')}`,
-          transition: 'all 0.2s ease-in-out',
-          '&:hover': {
-            boxShadow: theme('boxShadow.card-hover'),
-          },
-        },
-
-        // Metric Display Component
-        '.metric-display': {
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          padding: theme('spacing.4'),
-          backgroundColor: theme('colors.neutral.50'),
-          borderRadius: theme('borderRadius.lg'),
-          border: `1px solid ${theme('colors.neutral.200')}`,
-        },
-
-        // Status Indicator Component
-        '.status-indicator': {
-          display: 'inline-flex',
-          alignItems: 'center',
-          padding: `${theme('spacing.1')} ${theme('spacing.3')}`,
-          borderRadius: theme('borderRadius.full'),
-          fontSize: theme('fontSize.sm'),
-          fontWeight: theme('fontWeight.medium'),
-        },
-
-        // Price Change Component
-        '.price-change': {
-          display: 'inline-flex',
-          alignItems: 'center',
-          fontFamily: theme('fontFamily.mono'),
-          fontWeight: theme('fontWeight.semibold'),
-          '&.positive': {
-            color: theme('colors.success.600'),
-          },
-          '&.negative': {
-            color: theme('colors.danger.600'),
-          },
-        },
-      });
-    },
-  ],
-
-  // Dark Mode Configuration
-  darkMode: 'class',
+  // Tailwind CSS 4 doesn't need explicit plugins configuration
+  // Built-in support for forms, typography, and aspect-ratio
+  plugins: [],
 }; 

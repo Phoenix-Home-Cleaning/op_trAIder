@@ -1,9 +1,9 @@
 /**
- * @fileoverview Next.js configuration for TRAIDER V1
+ * @fileoverview Next.js 15 configuration for TRAIDER V1
  * @module next.config.js
  * 
  * @description
- * Production-ready Next.js configuration for institutional-grade trading platform.
+ * Production-ready Next.js 15 configuration for institutional-grade trading platform.
  * Includes API proxying, security headers, performance optimizations, and
  * development tools integration.
  * 
@@ -104,22 +104,43 @@ const nextConfig = {
   // Webpack configuration for trading-specific optimizations
   webpack: (config, { dev, isServer }) => {
     // Optimize bundle for trading libraries
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const path = require('path');
     config.resolve.alias = {
       ...config.resolve.alias,
       '@': path.resolve(__dirname, 'app'),
     };
 
+    // Resolve symlink issues on Windows
+    config.resolve.symlinks = false;
+    
+    // Additional Windows-specific fixes
+    if (process.platform === 'win32') {
+      config.watchOptions = {
+        ...config.watchOptions,
+        poll: 1000,
+        aggregateTimeout: 300,
+      };
+      
+      // Disable file system caching on Windows to avoid symlink issues
+      config.cache = false;
+    }
+
     // Add bundle analyzer in development
-    if (dev && !isServer) {
-      const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
-      config.plugins.push(
-        new BundleAnalyzerPlugin({
-          analyzerMode: 'disabled',
-          generateStatsFile: true,
-          statsFilename: 'bundle-stats.json',
-        })
-      );
+    if (dev && !isServer && process.env.ANALYZE === 'true') {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+        config.plugins.push(
+          new BundleAnalyzerPlugin({
+            analyzerMode: 'disabled',
+            generateStatsFile: true,
+            statsFilename: 'bundle-stats.json',
+          })
+        );
+      } catch (error) {
+        console.warn('Bundle analyzer not available:', error.message);
+      }
     }
 
     return config;
@@ -144,19 +165,10 @@ const nextConfig = {
   ...(process.env.NODE_ENV === 'development' && {
     // Enable source maps in development
     productionBrowserSourceMaps: false,
-    
-    // Faster builds in development
-    swcMinify: true,
   }),
 
   // Production optimizations
   ...(process.env.NODE_ENV === 'production' && {
-    // Enable all optimizations
-    swcMinify: true,
-    
-    // Optimize images
-    optimizeFonts: true,
-    
     // Generate ETags
     generateEtags: true,
   }),
