@@ -1,0 +1,273 @@
+name: 📚 Documentation Automation
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run daily at 2 AM UTC to catch documentation drift
+    - cron: '0 2 * * *'
+
+jobs:
+  validate-docs:
+    name: 🔍 Validate Documentation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: 📥 Install dependencies
+        run: |
+          npm ci
+          npm install -g tsx typedoc
+      
+      - name: 🔍 Validate documentation
+        run: tsx scripts/validate-docs.ts
+      
+      - name: 📊 Upload validation results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation-validation-results
+          path: docs/coverage/
+          retention-days: 30
+
+  generate-docs:
+    name: 📖 Generate Documentation
+    runs-on: ubuntu-latest
+    needs: validate-docs
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: 📥 Install dependencies
+        run: |
+          npm ci
+          npm install -g tsx typedoc
+          npm install typedoc-plugin-markdown typedoc-plugin-mermaid
+      
+      - name: 🏗️ Generate documentation
+        run: tsx scripts/generate-docs.ts
+        env:
+          NODE_ENV: production
+      
+      - name: 📊 Generate API documentation
+        run: npx typedoc
+      
+      - name: 🔧 Setup custom CSS
+        run: |
+          mkdir -p docs/styles
+          cat > docs/styles/typedoc.css << 'EOF'
+          /* TRAIDER Documentation Styles */
+          :root {
+            --color-primary: #2563eb;
+            --color-secondary: #64748b;
+            --color-accent: #10b981;
+            --color-danger: #ef4444;
+          }
+          
+          .tsd-page-title {
+            color: var(--color-primary);
+            border-bottom: 2px solid var(--color-primary);
+          }
+          
+          .tsd-signature {
+            background: #f8fafc;
+            border-left: 4px solid var(--color-primary);
+          }
+          
+          .tsd-comment {
+            background: #f1f5f9;
+            border-radius: 4px;
+            padding: 1rem;
+          }
+          EOF
+      
+      - name: 📄 Generate README for docs
+        run: |
+          cat > docs/README.md << 'EOF'
+          # 📚 TRAIDER Documentation
+          
+          *Auto-generated on $(date)*
+          
+          ## 📖 Available Documentation
+          
+          - **[API Documentation](api/)** - Complete TypeScript API reference
+          - **[Architecture Diagrams](diagrams/)** - System architecture and data flow
+          - **[OpenAPI Specification](api/openapi.json)** - REST API documentation
+          - **[Runbooks](runbooks/)** - Operational procedures and troubleshooting
+          - **[Performance Metrics](performance/)** - Benchmarks and monitoring
+          - **[Architecture Decision Records](adr/)** - Technical decisions and rationale
+          
+          ## 🔄 Documentation Automation
+          
+          This documentation is automatically generated from code comments and structure:
+          
+          - **API Docs**: Generated from TypeScript JSDoc comments
+          - **Diagrams**: Created from code structure analysis
+          - **OpenAPI**: Extracted from Next.js API route handlers
+          - **Coverage**: Tracks documentation completeness
+          
+          ## 📊 Documentation Health
+          
+          - **Coverage**: Check [coverage reports](coverage/) for completeness
+          - **Validation**: All public APIs must have JSDoc comments
+          - **Examples**: Code examples are validated for compilation
+          - **Links**: Internal links are checked for validity
+          
+          ## 🚀 Getting Started
+          
+          For new developers:
+          1. Start with the [System Overview](diagrams/system-overview.mmd)
+          2. Review [API Documentation](api/) for available functions
+          3. Check [Runbooks](runbooks/) for operational procedures
+          4. Consult [ADRs](adr/) for architectural decisions
+          
+          ---
+          
+          > **Note**: This documentation is automatically updated on every commit to main.
+          > If you find outdated information, it likely means the code has changed
+          > but documentation comments haven't been updated.
+          EOF
+      
+      - name: 🌐 Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        if: github.ref == 'refs/heads/main'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
+          enable_jekyll: false
+          cname: docs.traider.app
+      
+      - name: 📊 Upload documentation artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-documentation
+          path: docs/
+          retention-days: 90
+
+  check-coverage:
+    name: 📊 Documentation Coverage
+    runs-on: ubuntu-latest
+    needs: validate-docs
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: 📥 Install dependencies
+        run: npm ci
+      
+      - name: 📊 Generate coverage report
+        run: |
+          tsx scripts/validate-docs.ts --coverage-only > coverage-report.txt
+          echo "## 📊 Documentation Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          cat coverage-report.txt >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+      
+      - name: 📝 Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const coverage = fs.readFileSync('coverage-report.txt', 'utf8');
+            
+            const body = `## 📊 Documentation Coverage Report
+            
+            \`\`\`
+            ${coverage}
+            \`\`\`
+            
+            > 📝 This report shows the current state of documentation coverage.
+            > Ensure all public functions have JSDoc comments and API routes are documented.
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+  performance-docs:
+    name: ⚡ Performance Documentation
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: 📥 Install dependencies
+        run: npm ci
+      
+      - name: ⚡ Run performance benchmarks
+        run: |
+          # Run performance tests and generate reports
+          npm run test:performance || true
+          npm run benchmark:frontend || true
+      
+      - name: 📊 Generate performance documentation
+        run: |
+          mkdir -p docs/performance
+          echo "# ⚡ Performance Benchmarks" > docs/performance/latest.md
+          echo "" >> docs/performance/latest.md
+          echo "*Generated on $(date)*" >> docs/performance/latest.md
+          echo "" >> docs/performance/latest.md
+          echo "## Latest Benchmark Results" >> docs/performance/latest.md
+          echo "" >> docs/performance/latest.md
+          echo "Performance benchmarks will be added here when tests are implemented." >> docs/performance/latest.md
+      
+      - name: 📊 Upload performance reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-reports
+          path: docs/performance/
+          retention-days: 30
+
+  notify-completion:
+    name: 📢 Notify Completion
+    runs-on: ubuntu-latest
+    needs: [validate-docs, generate-docs, check-coverage]
+    if: always() && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: 📢 Notify documentation update
+        run: |
+          echo "📚 Documentation has been updated!"
+          echo "🌐 Available at: https://docs.traider.app"
+          echo "📊 Coverage reports and validation results are available in artifacts" 

@@ -1,0 +1,69 @@
+{
+  "name": "traider-v1",
+  "version": "1.0.0-alpha",
+  "description": "Institutional-Grade Autonomous Crypto Trading Platform",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "vitest",
+    "test:e2e": "playwright test",
+    "test:performance": "vitest run --config vitest.performance.config.ts",
+    "benchmark:frontend": "tsx scripts/benchmark-frontend.ts",
+    "benchmark:trading": "tsx scripts/benchmark-trading.ts",
+    "docs:generate": "tsx scripts/generate-docs.ts",
+    "docs:validate": "tsx scripts/validate-docs.ts",
+    "docs:api": "typedoc",
+    "docs:serve": "cd docs && python -m http.server 8080",
+    "docs:build": "npm run docs:generate && npm run docs:api",
+    "docs:coverage": "tsx scripts/validate-docs.ts --coverage-only",
+    "docs:watch": "nodemon --watch app --ext ts,tsx --exec 'npm run docs:generate'",
+    "adr:new": "tsx scripts/create-adr.ts",
+    "adr:list": "ls -la docs/adr/",
+    "prepare": "husky install"
+  },
+  "dependencies": {
+    "next": "^14.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "typescript": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "eslint": "^8.0.0",
+    "eslint-config-next": "^14.0.0",
+    "glob": "^10.0.0",
+    "husky": "^8.0.0",
+    "nodemon": "^3.0.0",
+    "playwright": "^1.40.0",
+    "tsx": "^4.0.0",
+    "typedoc": "^0.25.0",
+    "typedoc-plugin-markdown": "^3.17.0",
+    "typedoc-plugin-mermaid": "^1.11.0",
+    "vitest": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/traider.git"
+  },
+  "keywords": [
+    "trading",
+    "cryptocurrency",
+    "autonomous",
+    "institutional",
+    "nextjs",
+    "typescript",
+    "fastapi",
+    "postgresql"
+  ],
+  "author": "TRAIDER Team",
+  "license": "UNLICENSED"
+} 

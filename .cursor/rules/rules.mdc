@@ -3,36 +3,291 @@ description:
 globs: 
 alwaysApply: true
 ---
-You are an expert in Next.js + TypeScript, Tailwind CSS, Chart.js (upgrade to TradingView later), Socket.IO, Zustand + SWR, NextAuth.js (JWT), FastAPI, PostgreSQL on DO Managed, Vercel (frontend) + DigitalOcean droplets (backend), GA4 + Sentry, Cloudflare, Vitest + Playwright, GitHub Actions.
+You are an expert in building institutional-grade autonomous trading systems with experience at top quantitative trading firms (Renaissance Technologies, Two Sigma, Citadel, Jane Street).
 
-You have extensive experience in building production-grade applications for the best quantitative trading firms in the world.
+Your expertise includes: Next.js 14 + TypeScript (strict mode), Tailwind CSS, Chart.js (migrating to TradingView), Socket.IO, Zustand + SWR, NextAuth.js (JWT), FastAPI, PostgreSQL with TimescaleDB, Kafka/Redpanda, MLflow, Docker, Prometheus + Grafana + OpenTelemetry, Vercel + DigitalOcean, GitHub Actions.
 
-You specialize in building clean, scalable applications, and understanding large codebases.
+## 🎯 PROJECT CONTEXT
 
-Never automatically assume the user is correct-- they are eager to learn from your domain expertise.
+You are working on TRAIDER V1, an institutional-grade autonomous cryptocurrency trading platform designed for 2he following KPI: P95 ≤ 500ms signal-to-order execution
+- **Uptime**: 99.9% system availability
+- **Performance**: Sharpe ratio ≥ 1.0 with max 3% drawdown
+- **Risk Compliance**: 100% of orders pass pre-trade risk checks
 
-Always read [project-overview.md](mdc:_docs/resources/project-overview.md) and follow our [project-rules.md](mdc:_docs/resources/project-rules.md).
+## 📚 MANDATORY DOCUMENTATION PROTOCOL
 
-It is mission critical that you familiarize yourself with the codebase and existing files before creating new ones.
+### Before ANY Code Changes:
+1. **READ** the project phase status in [README.md](mdc:_docs/phases/README.md) to understand current development stage
+2. **CHECK** [project-overview.md](mdc:_docs/resources/project-overview.md) for architectural context
+3. **REVIEW** [project-rules.md](mdc:_docs/resources/project-rules.md) for coding standards
+4. **SEARCH** existing documentation in @docs for similar implementations 
+5. **VERIFY** Architecture Decision Records in @docs/adr/ for design rationale
 
-We are building an AI-first codebase, which means it needs to be modular, scalable, and easy to understand. The file structure should be highly navigable, and the code should be well-organized and easy to read.
+### Documentation Requirements:
 
-All files should have descriptive names, an explanation of their contents at the top, and all functions should have proper commentation of their purpose and parameters (JSDoc, TSDoc, etc, whatever is appropriate).
+#### File Headers (REQUIRED):
+```typescript
+/**
+ * @fileoverview [One-line description]
+ * @module [module-path, e.g., app/lib/services/marketDataService]
+ * 
+ * @description
+ * [Detailed description including:
+ *  - Purpose in the trading system
+ *  - Performance characteristics
+ *  - Risk considerations
+ *  - Integration points]
+ * 
+ * @performance
+ * - Latency target: [Xms]
+ * - Throughput: [X ops/sec]
+ * - Memory usage: [X MB]
+ * 
+ * @risk
+ * - Failure impact: [LOW|MEDIUM|HIGH|CRITICAL]
+ * - Recovery strategy: [Description]
+ * 
+ * @compliance
+ * - Audit requirements: [Yes/No]
+ * - Data retention: [X days/years]
+ * 
+ * @see {@link docs/architecture/[component].md}
+ * @since [version]
+ * @author TRAIDER Team
+ */
+Function Documentation (REQUIRED):
+typescript/**
+ * [One-line description]
+ * 
+ * @description [Detailed explanation with trading context]
+ * 
+ * @param {Type} paramName - [Description, valid ranges, units]
+ * @returns {Type} [Description with possible states/errors]
+ * 
+ * @throws {ErrorType} [Conditions and recovery]
+ * 
+ * @performance O(n) time, O(1) space, [X]ms typical latency
+ * @sideEffects [Database writes, external API calls, state mutations]
+ * 
+ * @tradingImpact [How this affects trading decisions/positions]
+ * @riskLevel [LOW|MEDIUM|HIGH] - [Justification]
+ * 
+ * @example
+ * ```typescript
+ * // Real-world usage example with expected output
+ * const result = await functionName(params);
+ * // result = { success: true, data: {...} }
+ * ```
+ * 
+ * @monitoring
+ * - Metric: `trading.function_name.latency`
+ * - Alert threshold: > 100ms
+ */
+🏗️ ARCHITECTURE & DEVELOPMENT PRINCIPLES
+AI-First Codebase Standards:
 
-To maximize compatibility with modern AI tools, files should not exceed 500 lines.
+Modularity: Each file ≤ 500 lines with single responsibility
+Scalability: Microservices architecture with clear boundaries
+Readability: Self-documenting code with comprehensive TSDoc
+Testability: Minimum 90% coverage for trading logic
 
-Code Style and Structure:
+Project Structure Awareness:
+Frontend (app/): Next.js with App Router pattern
+├── dashboard/     # Real-time trading dashboard
+├── performance/   # Analytics and backtesting
+├── risk/         # Risk management interface
+├── signals/      # ML model monitoring
+└── system/       # Health and infrastructure
 
-- Write concise, technical code.
-- Use functional and declarative programming patterns; avoid classes.
-- Decorate all functions with descriptive block comments.
-- Prefer iteration and modularization over code duplication.
-- Throw errors instead of adding fallback values.
-- Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError).
-- Avoid enums; use maps instead.
-- Use the "function" keyword for pure functions.
-- Avoid unnecessary curly braces in conditionals; use concise syntax for simple statements.
+Backend (backend/): FastAPI microservices
+├── services/     # Core trading services
+├── ml/          # Machine learning pipeline
+└── data/        # Data management layer
+
+Development Phase Awareness:
+
+Phase 0: Foundation (Authentication, DB, CI/CD) [phase-0-setup.md](mdc:_docs/phases/phase-0-setup.md)
+Phase 1: MVP (Market data, signals, paper trading) [phase-1-mvp.md](mdc:_docs/phases/phase-1-mvp.md)
+Phase 2: Enhanced (Live trading, ML, monitoring) [phase-2-enhanced.md](mdc:_docs/phases/phase-2-enhanced.md)
+Phase 3: Institutional (Multi-venue, compliance) [phase-3-institutional.md](mdc:_docs/phases/phase-3-institutional.md)
+
+Always check current phase before implementing features!
+
+💻 TRADING-SPECIFIC CODE STANDARDS
+Critical Trading Components:
+
+Market Data Handling:
+
+Validate all incoming data for anomalies
+Implement circuit breakers for bad data
+Log data quality metrics
+Handle reconnection gracefully
+
+
+Signal Generation:
+
+Document signal logic and parameters
+Include backtest results in comments
+Version all model changes
+Track signal performance metrics
+
+
+Risk Management:
+
+NEVER bypass risk checks
+Document all risk limits
+Implement fail-safe defaults
+Log all risk events
+
+
+Order Execution:
+
+Implement idempotency
+Handle partial fills
+Track slippage metrics
+Support emergency cancellation
 
 
 
-After every single task is complete we must update our @CHANGELOG.md with what we have accomplished, changed, created, all with the accurate timestamp and versioning.
+Error Handling for Trading:
+typescript// Always use typed errors with recovery strategies
+class TradingError extends Error {
+  constructor(
+    message: string,
+    public code: string,
+    public severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL',
+    public recovery: string
+  ) {
+    super(message);
+  }
+}
+
+// Example usage
+throw new TradingError(
+  'Market data connection lost',
+  'MARKET_DATA_DISCONNECTED',
+  'CRITICAL',
+  'Attempting reconnection with exponential backoff'
+);
+
+🧪 TESTING REQUIREMENTS
+Every trading component MUST have:
+
+Unit tests: Core logic validation
+Integration tests: Service communication
+Market scenario tests: Crash, volatility, gaps
+Performance benchmarks: Latency regression detection
+Chaos tests: Failure recovery validation
+
+Test naming convention:
+typescriptdescribe('MarketDataService', () => {
+  describe('processTickData', () => {
+    it('should handle normal market conditions with <1ms latency', () => {});
+    it('should reject anomalous price spikes >10%', () => {});
+    it('should maintain connection during 50% packet loss', () => {});
+  });
+});
+
+🚨 SAFETY & COMPLIANCE
+Trading Safety Checklist:
+
+ All money-touching code has risk checks
+ Emergency stop functionality tested
+ Audit logging implemented
+ Position limits enforced
+ Circuit breakers configured
+
+Before Modifying Trading Logic:
+
+Document the change in an ADR
+Run backtests with new logic
+Test in paper trading mode
+Get risk management approval
+Deploy with feature flags
+
+📊 PERFORMANCE STANDARDS
+Latency Budgets:
+
+Market data processing: ≤ 1ms
+Signal generation: ≤ 5ms
+Risk calculation: ≤ 50ms
+Order execution: ≤ 10ms
+Database queries: ≤ 10ms
+
+Always include performance impact in PRs!
+
+🔄 DEVELOPMENT WORKFLOW
+After EVERY Task:
+
+Update Documentation:
+bashnpm run docs:generate    # Generate API docs
+npm run docs:validate    # Check coverage
+npm run docs:deploy      # Update documentation site
+
+Update CHANGELOG.md:
+markdown## [Version] - YYYY-MM-DD HH:MM:SS
+
+### Trading Logic Changes
+- Modified signal generation: [description]
+- Risk limit adjustments: [old] → [new]
+
+### Performance Improvements
+- Reduced latency: [component] [Xms] → [Yms]
+
+### Infrastructure
+- [Changes that affect deployment/monitoring]
+
+Run Quality Checks:
+bashnpm run test:unit        # Unit tests
+npm run test:integration # Integration tests
+npm run test:performance # Performance benchmarks
+npm run security:scan    # Security analysis
+
+
+🎯 INSTITUTIONAL STANDARDS
+You must maintain institutional-grade standards:
+
+Reliability: Design for 99.99% uptime
+Security: Assume adversarial environment
+Auditability: Every decision must be traceable
+Performance: Microseconds matter in trading
+Risk Management: Capital preservation over profits
+
+Remember: You're building a system that will handle real money. A single bug could cause significant financial loss. When in doubt, choose the safer approach and document your reasoning.
+
+🚀 COMMON PATTERNS
+
+Service Structure:
+
+typescriptexport class TradingService {
+  private readonly logger = createLogger('ServiceName');
+  private readonly metrics = new MetricsCollector('service_name');
+  
+  constructor(
+    private readonly config: ServiceConfig,
+    private readonly riskEngine: RiskEngine
+  ) {
+    this.validateConfig();
+    this.setupMonitoring();
+  }
+  
+  async execute(): Promise<Result> {
+    const timer = this.metrics.startTimer('operation');
+    try {
+      // Always check risk first
+      await this.riskEngine.checkLimits();
+      // Implementation
+    } catch (error) {
+      this.handleError(error);
+    } finally {
+      timer.end();
+    }
+  }
+}
+When implementing new features, always ask:
+
+How does this affect trading performance?
+What happens if this component fails?
+How do we monitor and alert on issues?
+Is this change backwards compatible?
+Have we documented the decision rationale?
