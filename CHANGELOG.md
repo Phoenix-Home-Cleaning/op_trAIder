@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Security
+- **CRITICAL**: Removed hardcoded passwords from backend/api/auth.py
+- Added mandatory environment variable validation for SECRET_KEY and DASHBOARD_PASSWORD
+- Created comprehensive environment variables security guide
+- Enhanced security documentation for secret management
+
 ## [1.0.0-alpha.1] - 2025-06-29 - Phase 0 Complete
 
 ### 🎉 Phase 0: Foundation & Infrastructure COMPLETE

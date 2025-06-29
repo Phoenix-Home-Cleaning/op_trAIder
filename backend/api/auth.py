@@ -51,14 +51,22 @@ security = HTTPBearer()
 logger = get_logger(__name__)
 audit_logger = get_audit_logger()
 
-# JWT Configuration
-SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
+# JWT Configuration - Must be set via environment variables
+SECRET_KEY = os.getenv("SECRET_KEY")
+
+# Validate required environment variables
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY environment variable must be set for security")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 
-# Password Configuration
-DASHBOARD_PASSWORD = os.getenv("DASHBOARD_PASSWORD", "traider-admin-2024")
+# Password Configuration - Must be set via environment variables
+DASHBOARD_PASSWORD = os.getenv("DASHBOARD_PASSWORD")
 GUEST_PASSWORD = os.getenv("GUEST_PASSWORD", "")  # Optional guest access
+
+# Validate required environment variables
+if not DASHBOARD_PASSWORD:
+    raise ValueError("DASHBOARD_PASSWORD environment variable must be set for security")
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
