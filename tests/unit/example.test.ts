@@ -25,7 +25,7 @@
  * @author TRAIDER Team
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   createMockUser, 
   createMockPortfolio, 
@@ -301,7 +301,7 @@ describe('Performance and Load Testing Capabilities', () => {
       measurePerformance(async () => {
         // Simulate concurrent trading operations
         await new Promise(resolve => setTimeout(resolve, Math.random() * 10));
-        return `operation-${i}`;
+        // Don't return anything to match expected void return type
       })
     );
 
