@@ -1,32 +1,32 @@
 /**
  * @fileoverview Example Unit Tests - Testing Infrastructure Validation
  * @module tests.unit.example
- * 
+ *
  * @description
  * Comprehensive example tests demonstrating world-class testing standards
  * for the TRAIDER V1 institutional trading platform. These tests validate
  * the testing infrastructure and serve as templates for other test suites.
- * 
+ *
  * @performance
  * - Test execution target: <10ms per test
  * - Memory usage: <1MB per test
  * - Coverage requirement: 100%
- * 
+ *
  * @risk
  * - Failure impact: LOW - Example tests for infrastructure validation
  * - Recovery strategy: No recovery needed, informational tests
- * 
+ *
  * @compliance
  * - Audit requirements: No
  * - Data retention: Standard test log retention
- * 
+ *
  * @see {@link docs/testing/test-standards.md}
  * @since 1.0.0
  * @author TRAIDER Team
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { 
+import {
   createMockUser, 
   createMockPortfolio, 
   createMockTrade,
@@ -192,8 +192,8 @@ describe('Trading Mock Utilities', () => {
     expect(customTrade.symbol).toBe('ETH-USD');
     expect(customTrade.side).toBe('SELL');
     expect(customTrade.quantity).toBe(5.0);
+    });
   });
-});
 
 describe('Error Handling and Edge Cases', () => {
   /**
