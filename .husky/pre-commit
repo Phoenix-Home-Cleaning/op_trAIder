@@ -4,29 +4,25 @@
 echo "🚀 TRAIDER V1 Pre-commit Quality Gates"
 echo "======================================"
 
-# Run lint-staged for comprehensive checks
-echo "🔍 Running lint-staged checks..."
-npx lint-staged
+# Run comprehensive custom pre-commit checks
+echo "🔍 Running comprehensive quality checks..."
+npx tsx scripts/pre-commit-checks.ts
 
-# Check for console.log statements
-echo "🔍 Checking for console.log statements..."
-if git diff --cached --name-only | xargs grep -l "console\." 2>/dev/null; then
-  echo "❌ Console statements found! Remove before commit."
+# If custom checks pass, run lint-staged
+if [ $? -eq 0 ]; then
+  echo ""
+  echo "🔍 Running lint-staged checks..."
+  npx lint-staged
+else
+  echo "❌ Custom quality checks failed - aborting commit"
   exit 1
 fi
 
-# Check for .only in tests
-echo "🔍 Checking for .only() in tests..."
-if git diff --cached --name-only | xargs grep -l "\.only(" 2>/dev/null; then
-  echo "❌ Test .only() found! Remove before commit."
-  exit 1
-fi
-
-# Check TypeScript compilation
-echo "🔍 Checking TypeScript compilation..."
+# Check TypeScript compilation for changed files
 if git diff --cached --name-only | grep -E '\.(ts|tsx)$' > /dev/null; then
+  echo ""
   echo "📖 TypeScript files changed, checking compilation..."
-  npx tsc --noEmit
+  npx tsc --noEmit --incremental false
   if [ $? -ne 0 ]; then
     echo "❌ TypeScript compilation failed!"
     exit 1
@@ -34,14 +30,18 @@ if git diff --cached --name-only | grep -E '\.(ts|tsx)$' > /dev/null; then
 fi
 
 # Validate documentation freshness
-echo "🔍 Validating documentation..."
-npm run docs:validate
+echo ""
+echo "📚 Validating documentation..."
+npm run docs:validate --silent
 
-# Check if documentation needs updating
+# Check JSDoc coverage for TypeScript changes
 if git diff --cached --name-only | grep -E '\.(ts|tsx)$' > /dev/null; then
   echo "📖 Checking JSDoc coverage..."
-  npm run docs:coverage
+  npm run docs:coverage --silent
 fi
 
+# Final success message
+echo ""
 echo "✅ All pre-commit checks passed!"
-echo "🎯 Ready for institutional-grade commit!" 
+echo "🎯 Ready for institutional-grade commit!"
+echo "📊 Commit will be processed with full audit trail" 

@@ -1,0 +1,71 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 TRAIDER V1 Commit Message Validation"
+echo "======================================="
+
+# Get the commit message
+commit_regex='^(feat|fix|docs|style|refactor|perf|test|chore|build|ci|revert)(\(.+\))?: .{1,100}$'
+
+if ! grep -qE "$commit_regex" "$1"; then
+  echo "❌ Invalid commit message format!"
+  echo ""
+  echo "📋 TRAIDER V1 requires conventional commits:"
+  echo "   Format: <type>(scope): <description>"
+  echo ""
+  echo "🏷️  Valid types:"
+  echo "   • feat:     New feature or trading strategy"
+  echo "   • fix:      Bug fix or trading issue resolution"
+  echo "   • docs:     Documentation changes"
+  echo "   • style:    Code style changes (formatting, etc.)"
+  echo "   • refactor: Code refactoring without behavior change"
+  echo "   • perf:     Performance improvements"
+  echo "   • test:     Test additions or modifications"
+  echo "   • chore:    Maintenance tasks"
+  echo "   • build:    Build system or dependency changes"
+  echo "   • ci:       CI/CD pipeline changes"
+  echo "   • revert:   Reverting previous commits"
+  echo ""
+  echo "📝 Example commit messages:"
+  echo "   feat(signals): add momentum-based trading signal"
+  echo "   fix(risk): resolve position sizing calculation bug"
+  echo "   perf(market-data): optimize WebSocket connection handling"
+  echo "   docs(api): update trading endpoints documentation"
+  echo ""
+  echo "🚫 Your commit message:"
+  cat "$1"
+  echo ""
+  echo "💡 Please rewrite your commit message and try again."
+  exit 1
+fi
+
+# Additional validation for trading-critical commits
+commit_msg=$(cat "$1")
+
+# Check for breaking changes in trading logic
+if echo "$commit_msg" | grep -qE "(BREAKING|breaking|major|critical)"; then
+  echo "⚠️  BREAKING CHANGE detected in commit message"
+  echo "🚨 This commit may affect trading operations"
+  echo "📋 Ensure proper testing and gradual rollout"
+  echo ""
+fi
+
+# Check for security-related commits
+if echo "$commit_msg" | grep -qiE "(security|auth|token|key|secret|vulnerability)"; then
+  echo "🔒 Security-related commit detected"
+  echo "🔍 Ensure no sensitive information is included"
+  echo "📋 Consider security review before deployment"
+  echo ""
+fi
+
+# Check for performance-critical commits
+if echo "$commit_msg" | grep -qiE "(perf|performance|latency|speed|optimization)"; then
+  echo "⚡ Performance-critical commit detected"
+  echo "📊 Ensure benchmarks are updated"
+  echo "📋 Monitor latency metrics after deployment"
+  echo ""
+fi
+
+echo "✅ Commit message format validated"
+echo "📝 Message: $(echo "$commit_msg" | head -n1)"
+echo "🎯 Ready for institutional-grade commit!" 

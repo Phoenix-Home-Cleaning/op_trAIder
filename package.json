@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest",
+    "test:unit": "vitest run",
     "test:e2e": "playwright test",
     "test:performance": "vitest run --config vitest.performance.config.ts",
     "benchmark:frontend": "tsx scripts/benchmark-frontend.ts",
@@ -22,6 +23,8 @@
     "docs:watch": "nodemon --watch app --ext ts,tsx --exec 'npm run docs:generate'",
     "adr:new": "tsx scripts/create-adr.ts",
     "adr:list": "ls -la docs/adr/",
+    "precommit:check": "tsx scripts/pre-commit-checks.ts",
+    "commit": "npx git-cz",
     "prepare": "husky install"
   },
   "dependencies": {
@@ -31,13 +34,17 @@
     "typescript": "^5.0.0"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
     "@types/node": "^20.0.0",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
     "eslint": "^8.0.0",
     "eslint-config-next": "^14.0.0",
+    "git-cz": "^4.9.0",
     "glob": "^10.0.0",
     "husky": "^8.0.0",
+    "lint-staged": "^16.1.2",
     "nodemon": "^3.0.0",
     "playwright": "^1.40.0",
     "prettier": "^3.6.2",
