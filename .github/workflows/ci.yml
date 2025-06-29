@@ -1,31 +1,18 @@
-/**
- * @fileoverview Institutional-Grade CI/CD Pipeline for TRAIDER V1
- * @module .github/workflows/ci
- * 
- * @description
- * Comprehensive CI/CD pipeline for autonomous cryptocurrency trading platform.
- * Implements parallel testing, security scanning, performance validation, and
- * deployment automation with institutional-grade quality gates.
- * 
- * @performance
- * - Latency target: <5min total pipeline execution
- * - Throughput: Parallel job execution for optimal resource utilization
- * - Memory usage: Optimized dependency caching
- * 
- * @risk
- * - Failure impact: CRITICAL - Blocks production deployments
- * - Recovery strategy: Automatic retry with exponential backoff
- * 
- * @compliance
- * - Audit requirements: Yes - All pipeline runs logged and retained
- * - Data retention: 90 days for artifacts, 1 year for logs
- * 
- * @see {@link docs/infrastructure/ci-cd-pipeline.md}
- * @since 1.0.0-alpha
- * @author TRAIDER Team
- */
+# 🚀 TRAIDER V1 - Institutional CI/CD Pipeline
+#
+# Comprehensive CI/CD pipeline for autonomous cryptocurrency trading platform.
+# Implements parallel testing, security scanning, performance validation, and
+# deployment automation with institutional-grade quality gates.
+#
+# Performance: <5min total pipeline execution with parallel job execution
+# Risk: CRITICAL - Blocks production deployments on quality failures
+# Compliance: All pipeline runs logged and retained (90 days artifacts, 1 year logs)
+#
+# See: docs/infrastructure/ci-cd-pipeline.md
+# Author: TRAIDER Team
+# Since: 1.0.0-alpha
 
-name: 🚀 TRAIDER V1 - Institutional CI/CD Pipeline
+name: TRAIDER V1 - Institutional CI/CD Pipeline
 
 on:
   push:
@@ -57,7 +44,6 @@ on:
 # Global environment variables for institutional compliance
 env:
   NODE_VERSION: '18'
-  NODE_VERSION_MATRIX: '["18", "20"]'
   FORCE_COLOR: 1
   CI: true
   HUSKY: 0
@@ -73,13 +59,13 @@ jobs:
   # =============================================================================
   
   lint-and-typecheck:
-    name: 🔍 Lint & Type Check
+    name: Lint & Type Check
     runs-on: ubuntu-latest
     timeout-minutes: 10
     
     strategy:
       matrix:
-        node-version: ${{ fromJson(env.NODE_VERSION_MATRIX) }}
+        node-version: [18, 20]
       fail-fast: true
     
     steps:
@@ -171,13 +157,13 @@ jobs:
   # =============================================================================
   
   test-unit:
-    name: 🧪 Unit Tests
+    name: Unit Tests
     runs-on: ubuntu-latest
     timeout-minutes: 15
     
     strategy:
       matrix:
-        node-version: ${{ fromJson(env.NODE_VERSION_MATRIX) }}
+        node-version: [18, 20]
         shard: [1, 2] # Parallel test execution
       fail-fast: false # Allow other shards to complete
     
@@ -233,15 +219,15 @@ jobs:
                 }
               });
               
-              const avgCriticalCoverage = totalCritical > 0 ? criticalCoverage / totalCritical : 100;
-              console.log(\`Critical path coverage: \${avgCriticalCoverage.toFixed(2)}%\`);
-              
-              if (avgCriticalCoverage < 95) {
-                console.error(\`❌ Critical path coverage (\${avgCriticalCoverage.toFixed(2)}%) below required 95%\`);
-                process.exit(1);
-              }
-              
-              console.log('✅ Critical path coverage meets institutional standards');
+                             const avgCriticalCoverage = totalCritical > 0 ? criticalCoverage / totalCritical : 100;
+               process.stdout.write(\`Critical path coverage: \${avgCriticalCoverage.toFixed(2)}%\\n\`);
+               
+               if (avgCriticalCoverage < 95) {
+                 process.stderr.write(\`❌ Critical path coverage (\${avgCriticalCoverage.toFixed(2)}%) below required 95%\\n\`);
+                 process.exit(1);
+               }
+               
+               process.stdout.write('✅ Critical path coverage meets institutional standards\\n');
             "
           else
             echo "⚠️ No coverage report found, skipping critical path validation"
@@ -258,7 +244,7 @@ jobs:
           retention-days: 30
 
   test-integration:
-    name: 🔗 Integration Tests
+    name: Integration Tests
     runs-on: ubuntu-latest
     timeout-minutes: 20
     
@@ -391,7 +377,7 @@ jobs:
   # =============================================================================
   
   security-scan:
-    name: 🛡️ Security Scan
+    name: Security Scan
     runs-on: ubuntu-latest
     timeout-minutes: 15
     
@@ -490,7 +476,7 @@ jobs:
   # =============================================================================
   
   build-and-performance:
-    name: 🏗️ Build & Performance
+    name: Build & Performance
     runs-on: ubuntu-latest
     timeout-minutes: 15
     
@@ -584,7 +570,7 @@ jobs:
   # =============================================================================
   
   quality-gate:
-    name: 🎯 Quality Gate
+    name: Quality Gate
     runs-on: ubuntu-latest
     needs: [lint-and-typecheck, test-unit, test-integration, security-scan, build-and-performance]
     if: always()
@@ -673,7 +659,7 @@ jobs:
   # =============================================================================
   
   notify-completion:
-    name: 📢 Pipeline Notification
+    name: Pipeline Notification
     runs-on: ubuntu-latest
     needs: [quality-gate]
     if: always() && (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
@@ -685,7 +671,11 @@ jobs:
           echo "::group::Pipeline Notification"
           
           QUALITY_GATE_RESULT="${{ needs.quality-gate.result }}"
-          PIPELINE_STATUS="${{ QUALITY_GATE_RESULT == 'success' && 'SUCCESS' || 'FAILED' }}"
+          if [ "$QUALITY_GATE_RESULT" = "success" ]; then
+            PIPELINE_STATUS="SUCCESS"
+          else
+            PIPELINE_STATUS="FAILED"
+          fi
           
           echo "📊 Pipeline Summary:"
           echo "  Status: $PIPELINE_STATUS"
