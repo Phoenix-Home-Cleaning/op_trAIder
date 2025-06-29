@@ -8,7 +8,7 @@ Accepted
 
 The TRAIDER V1 security scanning pipeline encountered multiple critical issues:
 
-1. **GitLeaks License Error**: The workflow was configured to require a `GITLEAKS_LICENSE` secret, but GitLeaks has transitioned to an open-source model and no longer requires a license for basic secret scanning functionality.
+1. **GitLeaks License Error**: The workflow was initially configured to require a `GITLEAKS_LICENSE` secret. While GitLeaks has an open-source version, GitHub organizations require a license key for advanced features and organization-level scanning.
 
 2. **CodeQL SARIF Upload Conflicts**: Multiple CodeQL analysis jobs were attempting to upload SARIF results with the same category, causing the error: "only one run of the codeql/analyze or codeql/upload-sarif actions is allowed per job per tool/category."
 
@@ -23,10 +23,9 @@ These issues were blocking the CI/CD pipeline and preventing proper security val
 We will implement the following fixes to resolve the security workflow issues:
 
 ### GitLeaks License Resolution
-
-- **Remove** the `GITLEAKS_LICENSE` environment variable from the GitLeaks action
-- **Update** the workflow to use GitLeaks v2 in open-source mode
-- **Add** documentation comment explaining the license removal
+- **Restore** the `GITLEAKS_LICENSE` environment variable for organization-level scanning
+- **Configure** GitHub Secrets to store the license key securely
+- **Add** .env.example file with placeholder for local development
 
 ### CodeQL SARIF Upload Fix
 
@@ -40,10 +39,10 @@ We will implement the following fixes to resolve the security workflow issues:
 - **Implement fallback scanning** for initial commits using full repository scan
 - **Use proper commit references** with validation for null/zero commits
 
-### CodeQL Configuration Simplification
-- **Remove advanced queries** that conflict with default setup
-- **Simplify to basic JavaScript analysis** to avoid configuration conflicts
-- **Use unique category names** to prevent SARIF upload collisions
+### CodeQL Configuration Replacement
+- **Replace CodeQL workflow** with ESLint security analysis to avoid default setup conflicts
+- **Leverage GitHub's default CodeQL setup** for SARIF uploads and security scanning
+- **Implement ESLint-based SAST** with security-focused rules and reporting
 
 ### Workflow Optimization
 - **Simplify** the SAST scanning to focus on JavaScript/TypeScript as our primary languages
@@ -73,13 +72,13 @@ We will implement the following fixes to resolve the security workflow issues:
 ## Implementation Details
 
 ### GitLeaks Configuration
-
 ```yaml
 - name: 🔍 GitLeaks secrets scan
   uses: gitleaks/gitleaks-action@v2
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  # Note: GITLEAKS_LICENSE removed - GitLeaks is now open source
+    GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+  # Note: Organization-level GitLeaks requires license key
 ```
 
 ### TruffleHog Configuration
@@ -101,22 +100,29 @@ We will implement the following fixes to resolve the security workflow issues:
     extra_args: --debug --only-verified
 ```
 
-### CodeQL Configuration
+### ESLint Security Analysis Configuration
 ```yaml
-- name: 🔧 Initialize CodeQL
-  uses: github/codeql-action/init@v3
-  with:
-    languages: javascript
+- name: 🔍 ESLint Security Analysis
+  run: |
+    # Run ESLint with security rules
+    npx eslint . --ext .ts,.tsx,.js,.jsx --format json --output-file eslint-results.json || true
+    
+    # Process and validate security-related errors
+    SECURITY_ERRORS=$(jq '[.[] | .messages[] | select(.ruleId | test("security"))] | length' eslint-results.json)
+    if [ "$SECURITY_ERRORS" -gt 0 ]; then
+      echo "::error::Security-related ESLint errors found: $SECURITY_ERRORS"
+      exit 1
+    fi
 
-- name: 🔍 Perform CodeQL Analysis
-  uses: github/codeql-action/analyze@v3
-  with:
-    category: 'traider-security-sast'
+- name: ℹ️ CodeQL Notice
+  run: |
+    echo "::notice::CodeQL analysis is handled by GitHub's default setup. View results in the Security tab."
 ```
 
-### SARIF Upload Categories
-- **CodeQL**: `traider-security-sast`
-- **Trivy**: `trivy-filesystem`
+### Security Analysis Tools
+- **CodeQL**: Handled by GitHub's default setup (automatic SARIF upload)
+- **ESLint**: Custom security analysis with artifact upload
+- **Trivy**: `trivy-filesystem` SARIF category
 - **TruffleHog**: Integrated with action (no separate upload)
 - **GitLeaks**: Integrated with action (no separate upload)
 

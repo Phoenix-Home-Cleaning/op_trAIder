@@ -156,7 +156,8 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        # Note: GITLEAKS_LICENSE removed - GitLeaks is now open source
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+        # Note: Organization-level GitLeaks requires license key
 
   # =============================================================================
   # PHASE 3: STATIC APPLICATION SECURITY TESTING (SAST)
@@ -178,11 +179,6 @@ jobs:
         with:
           fetch-depth: 0
           
-      - name: 🔧 Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: javascript
-          
       - name: 📦 Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -192,10 +188,43 @@ jobs:
       - name: 📥 Install dependencies
         run: npm ci --ignore-scripts
         
-      - name: 🔍 Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+      - name: 🔍 ESLint Security Analysis
+        run: |
+          echo "## 🛡️ Static Application Security Testing Results" >> $GITHUB_STEP_SUMMARY
+          echo "Running ESLint security analysis..." >> $GITHUB_STEP_SUMMARY
+          
+          # Run ESLint with security rules
+          npx eslint . --ext .ts,.tsx,.js,.jsx --format json --output-file eslint-results.json || true
+          
+          # Process results
+          if [ -f "eslint-results.json" ]; then
+            ERRORS=$(jq '[.[] | select(.errorCount > 0)] | length' eslint-results.json)
+            WARNINGS=$(jq '[.[] | select(.warningCount > 0)] | length' eslint-results.json)
+            
+            echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Files with Errors | $ERRORS |" >> $GITHUB_STEP_SUMMARY
+            echo "| Files with Warnings | $WARNINGS |" >> $GITHUB_STEP_SUMMARY
+            
+            # Fail on security-related errors
+            SECURITY_ERRORS=$(jq '[.[] | .messages[] | select(.ruleId | test("security"))] | length' eslint-results.json)
+            if [ "$SECURITY_ERRORS" -gt 0 ]; then
+              echo "::error::Security-related ESLint errors found: $SECURITY_ERRORS"
+              exit 1
+            fi
+          fi
+          
+      - name: 📊 Upload ESLint results
+        uses: actions/upload-artifact@v4
+        if: always()
         with:
-          category: 'traider-security-sast'
+          name: eslint-security-results
+          path: eslint-results.json
+          retention-days: 30
+          
+      - name: ℹ️ CodeQL Notice
+        run: |
+          echo "::notice::CodeQL analysis is handled by GitHub's default setup. Custom CodeQL workflows are disabled to avoid conflicts. View results in the Security tab."
 
   # =============================================================================
   # PHASE 4: CONTAINER SECURITY SCANNING
