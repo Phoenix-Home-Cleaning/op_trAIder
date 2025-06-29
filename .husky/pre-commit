@@ -1,0 +1,47 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🚀 TRAIDER V1 Pre-commit Quality Gates"
+echo "======================================"
+
+# Run lint-staged for comprehensive checks
+echo "🔍 Running lint-staged checks..."
+npx lint-staged
+
+# Check for console.log statements
+echo "🔍 Checking for console.log statements..."
+if git diff --cached --name-only | xargs grep -l "console\." 2>/dev/null; then
+  echo "❌ Console statements found! Remove before commit."
+  exit 1
+fi
+
+# Check for .only in tests
+echo "🔍 Checking for .only() in tests..."
+if git diff --cached --name-only | xargs grep -l "\.only(" 2>/dev/null; then
+  echo "❌ Test .only() found! Remove before commit."
+  exit 1
+fi
+
+# Check TypeScript compilation
+echo "🔍 Checking TypeScript compilation..."
+if git diff --cached --name-only | grep -E '\.(ts|tsx)$' > /dev/null; then
+  echo "📖 TypeScript files changed, checking compilation..."
+  npx tsc --noEmit
+  if [ $? -ne 0 ]; then
+    echo "❌ TypeScript compilation failed!"
+    exit 1
+  fi
+fi
+
+# Validate documentation freshness
+echo "🔍 Validating documentation..."
+npm run docs:validate
+
+# Check if documentation needs updating
+if git diff --cached --name-only | grep -E '\.(ts|tsx)$' > /dev/null; then
+  echo "📖 Checking JSDoc coverage..."
+  npm run docs:coverage
+fi
+
+echo "✅ All pre-commit checks passed!"
+echo "🎯 Ready for institutional-grade commit!" 

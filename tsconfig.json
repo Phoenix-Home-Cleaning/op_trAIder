@@ -1,0 +1,85 @@
+{
+  "compilerOptions": {
+    // Language and Environment
+    "target": "ES2022",
+    "lib": ["dom", "dom.iterable", "ES6", "ES2022"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+
+    // Strict Type Checking (Institutional Grade)
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "exactOptionalPropertyTypes": true,
+
+    // Additional Checks for Trading System Safety
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+
+    // Module Resolution
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./app/*"],
+      "@/components/*": ["./app/components/*"],
+      "@/lib/*": ["./app/lib/*"],
+      "@/hooks/*": ["./app/hooks/*"],
+      "@/types/*": ["./app/types/*"],
+      "@/utils/*": ["./app/utils/*"],
+      "@/config/*": ["./app/config/*"],
+      "@/styles/*": ["./app/styles/*"]
+    },
+
+    // Next.js Plugin
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+
+    // Type Definitions
+    "types": ["node", "vitest/globals"],
+    "typeRoots": ["./node_modules/@types", "./types"]
+  },
+
+  // File Inclusion
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "tests/**/*.ts",
+    "scripts/**/*.ts"
+  ],
+
+  // File Exclusion
+  "exclude": ["node_modules", ".next", "out", "dist", "build", "coverage", "**/*.js", "**/*.jsx"],
+
+  // TypeScript Compiler Options for Development
+  "ts-node": {
+    "esm": true,
+    "compilerOptions": {
+      "module": "ESNext",
+      "target": "ES2022"
+    }
+  }
+}
