@@ -12,6 +12,42 @@
 
 'use client';
 
+/**
+ * Trading signals dashboard component
+ *
+ * @description
+ * Displays machine learning-generated trading signals, strategy monitoring,
+ * and signal performance analytics. Currently shows Phase 0 placeholder
+ * interface with plans for ML integration in Phase 1.
+ *
+ * @returns {JSX.Element} Trading signals dashboard interface
+ *
+ * @throws {Error} If signal data fetching fails (Phase 1+)
+ *
+ * @performance
+ * - Component render time: <50ms
+ * - Signal processing: <5ms per signal (Phase 1+)
+ * - Memory usage: <10MB
+ * - Real-time signal updates (Phase 1+)
+ *
+ * @sideEffects
+ * - Will establish WebSocket connections for real-time signals (Phase 1+)
+ * - Manages component state for signal history
+ * - Logs signal performance metrics
+ *
+ * @tradingImpact Core signal generation interface for automated trading
+ * @riskLevel HIGH - Trading signals directly impact position decisions
+ *
+ * @example
+ * ```tsx
+ * // Displays trading signals dashboard
+ * <SignalsPage />
+ * ```
+ *
+ * @monitoring
+ * - Metric: `signals.dashboard.render_time`
+ * - Alert threshold: > 100ms
+ */
 export default function SignalsPage() {
   return (
     <div className="space-y-6">

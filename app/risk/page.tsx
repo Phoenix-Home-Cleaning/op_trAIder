@@ -12,6 +12,42 @@
 
 'use client';
 
+/**
+ * Risk management dashboard component
+ *
+ * @description
+ * Displays risk management controls, position limits, exposure monitoring,
+ * and compliance settings. Currently shows Phase 0 placeholder interface
+ * with plans for comprehensive risk controls in Phase 1.
+ *
+ * @returns {JSX.Element} Risk management dashboard interface
+ *
+ * @throws {Error} If risk data fetching fails (Phase 1+)
+ *
+ * @performance
+ * - Component render time: <50ms
+ * - Risk calculation: <100ms per portfolio (Phase 1+)
+ * - Memory usage: <15MB
+ * - Real-time risk monitoring (Phase 1+)
+ *
+ * @sideEffects
+ * - Will establish real-time risk monitoring (Phase 1+)
+ * - Manages component state for risk metrics
+ * - Logs risk threshold breaches
+ *
+ * @tradingImpact CRITICAL - Core risk management interface for trading safety
+ * @riskLevel CRITICAL - Risk controls prevent financial losses
+ *
+ * @example
+ * ```tsx
+ * // Displays risk management dashboard
+ * <RiskPage />
+ * ```
+ *
+ * @monitoring
+ * - Metric: `risk.dashboard.render_time`
+ * - Alert threshold: > 100ms
+ */
 export default function RiskPage() {
   return (
     <div className="space-y-6">

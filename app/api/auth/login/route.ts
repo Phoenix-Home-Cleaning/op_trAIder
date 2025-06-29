@@ -59,28 +59,37 @@ interface LoginResponse {
  * @description
  * Handles user login authentication. Validates credentials and returns
  * JWT token for successful authentication. This is a placeholder
- * implementation for Phase 0 development.
+ * implementation for Phase 0 development with demo credentials.
  *
- * @param request - Next.js request object containing login credentials
- * @returns JSON response with authentication result
+ * @param {NextRequest} request - Next.js request object containing login credentials
+ * @returns {Promise<NextResponse<LoginResponse>>} JSON response with authentication result
  *
  * @throws {Error} Invalid credentials or server error
  *
  * @performance
- * - Async processing for non-blocking authentication
+ * - Async processing for non-blocking authentication (<200ms)
  * - Efficient credential validation
- * - Minimal response payload
+ * - Minimal response payload (<1KB)
+ * - Optimized for concurrent login attempts
+ *
+ * @sideEffects
+ * - Logs authentication attempts for security monitoring
+ * - Generates JWT tokens for session management
+ * - Updates user session state
+ * - May trigger rate limiting mechanisms
  *
  * @security
- * - Secure credential validation
- * - JWT token generation
- * - Audit logging for compliance
- * - Rate limiting protection
+ * - Secure credential validation (placeholder in Phase 0)
+ * - JWT token generation with expiration
+ * - Audit logging for compliance requirements
+ * - Rate limiting protection against brute force
+ * - Input validation and sanitization
  *
  * @tradingImpact
  * - Gateway to trading platform access
  * - Ensures authorized user access only
  * - Maintains security audit trail
+ * - Enables role-based trading permissions
  *
  * @riskLevel HIGH - Authentication security critical
  *
@@ -88,13 +97,19 @@ interface LoginResponse {
  * ```typescript
  * // POST /api/auth/login
  * // Body: { username: "admin", password: "password" }
- * // Response: { success: true, token: "jwt-token", user: {...} }
+ * // Response: { 
+ * //   success: true, 
+ * //   token: "jwt-token", 
+ * //   user: { id: "1", username: "admin", role: "administrator" }
+ * // }
  * ```
  *
  * @monitoring
  * - Metric: `auth.login_attempts`
  * - Metric: `auth.login_success_rate`
+ * - Metric: `auth.login_response_time`
  * - Alert threshold: <90% success rate
+ * - Alert threshold: >500ms response time
  */
 export async function POST(request: NextRequest): Promise<NextResponse<LoginResponse>> {
   try {
@@ -171,10 +186,53 @@ export async function POST(request: NextRequest): Promise<NextResponse<LoginResp
  * GET /api/auth/login
  *
  * @description
- * Returns information about the login endpoint.
- * Used for API documentation and health checks.
+ * Returns information about the login endpoint including API documentation,
+ * version information, and demo credentials for Phase 0 development.
+ * Used for API discovery and health checks.
  *
- * @returns JSON response with endpoint information
+ * @returns {Promise<NextResponse>} JSON response with endpoint information
+ *
+ * @throws {Error} If endpoint information retrieval fails
+ *
+ * @performance
+ * - Fast response for API documentation (<50ms)
+ * - Static information with minimal processing
+ * - Lightweight JSON payload (<2KB)
+ * - No authentication required
+ *
+ * @sideEffects
+ * - None - pure informational endpoint
+ * - No logging or state changes
+ * - No external service calls
+ *
+ * @security
+ * - Public endpoint with no sensitive data exposure
+ * - Demo credentials are placeholder only
+ * - No production secrets revealed
+ * - Safe for API discovery tools
+ *
+ * @tradingImpact
+ * - Enables API documentation and discovery
+ * - Facilitates development and testing
+ * - Provides version information for compatibility
+ *
+ * @riskLevel LOW - Informational endpoint only
+ *
+ * @example
+ * ```typescript
+ * // GET /api/auth/login
+ * // Response: {
+ * //   endpoint: "/api/auth/login",
+ * //   method: "POST",
+ * //   description: "User authentication endpoint",
+ * //   version: "1.0.0-alpha",
+ * //   demo_credentials: { admin: {...}, demo: {...} }
+ * // }
+ * ```
+ *
+ * @monitoring
+ * - Metric: `auth.endpoint_info_requests`
+ * - Alert threshold: > 100ms response time
  */
 export async function GET(): Promise<NextResponse> {
   return NextResponse.json({

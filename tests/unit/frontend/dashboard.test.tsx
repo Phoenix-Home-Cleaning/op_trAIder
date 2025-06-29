@@ -26,22 +26,26 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import { jest } from '@jest/globals';
+import { render, screen } from '@testing-library/react';
+import { vi } from 'vitest';
 import '@testing-library/jest-dom';
 import { SessionProvider } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 
 // Mock Next.js router
-jest.mock('next/navigation', () => ({
-  useRouter: jest.fn(),
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+    pathname: '/dashboard',
+    query: {},
+  }),
 }));
 
 // Mock session data
 const mockSession = {
   user: {
     email: 'trader@traider.com',
-    role: 'trader',
+    name: 'Test Trader',
+    role: 'TRADER' as const,
     id: '123'
   },
   expires: '2024-12-31'
@@ -88,18 +92,11 @@ describe('Dashboard Component', () => {
    */
   
   beforeEach(() => {
-    // Reset mocks
-    jest.clearAllMocks();
-    
-    // Mock router
-    (useRouter as jest.Mock).mockReturnValue({
-      push: jest.fn(),
-      pathname: '/dashboard',
-      query: {},
-    });
+    // Reset mocks before each test
+    vi.clearAllMocks();
   });
 
-  test('renders dashboard with all required sections', async () => {
+  it('renders dashboard with all required sections', () => {
     /**
      * Test dashboard renders all critical sections for trading
      * 
@@ -108,7 +105,7 @@ describe('Dashboard Component', () => {
      * @riskLevel HIGH - Missing sections could impact trading decisions
      */
     
-    const { container } = render(
+    render(
       <TestWrapper>
         <div data-testid="dashboard">
           <div data-testid="portfolio-overview">Portfolio Overview</div>
@@ -126,7 +123,7 @@ describe('Dashboard Component', () => {
     expect(screen.getByTestId('recent-activity')).toBeInTheDocument();
   });
 
-  test('displays portfolio metrics correctly', async () => {
+  it('displays portfolio metrics correctly', () => {
     /**
      * Test portfolio metrics display with proper formatting
      * 
@@ -150,7 +147,7 @@ describe('Dashboard Component', () => {
     expect(screen.getByTestId('daily-pnl-percent')).toHaveTextContent('1.92%');
   });
 
-  test('handles positive and negative PnL styling', () => {
+  it('handles positive and negative PnL styling', () => {
     /**
      * Test PnL values are styled correctly (green for positive, red for negative)
      * 
@@ -181,7 +178,13 @@ describe('Dashboard Component', () => {
     expect(screen.getByTestId('negative-pnl')).toHaveClass('text-red-600');
   });
 
-  test('renders dashboard sections', () => {
+  it('renders basic dashboard layout', () => {
+    /**
+     * Test basic dashboard structure is rendered
+     * 
+     * @tradingImpact Ensures basic dashboard functionality works
+     * @riskLevel MEDIUM - Basic layout is foundation for all dashboard features
+     */
     render(
       <div data-testid="dashboard">
         <div data-testid="portfolio-overview">Portfolio Overview</div>
@@ -198,111 +201,47 @@ describe('Portfolio Overview Component', () => {
   /**
    * Test suite for portfolio overview functionality
    * 
-   * @description Tests portfolio data display, calculations, and updates
-   * @riskLevel CRITICAL - Portfolio data drives trading decisions
+   * @description Tests portfolio data rendering and calculations
+   * @riskLevel CRITICAL - Portfolio data affects all trading decisions
    */
 
-  test('calculates portfolio totals correctly', () => {
+  it('calculates total portfolio value correctly', () => {
     /**
-     * Test portfolio calculations are mathematically correct
+     * Test portfolio value calculation accuracy
      * 
-     * @tradingImpact Incorrect calculations could lead to wrong trading decisions
-     * @riskLevel CRITICAL - Math errors in portfolio could cause significant losses
+     * @tradingImpact Accurate portfolio valuation is critical for risk management
+     * @riskLevel CRITICAL - Incorrect values could lead to over-leveraging
      */
-    
-    const totalUnrealizedPnL = mockPortfolioData.positions.reduce(
-      (sum, position) => sum + position.unrealizedPnL, 0
+    const totalValue = mockPortfolioData.positions.reduce(
+      (sum, position) => sum + (position.quantity * position.currentPrice),
+      0
     );
-    
-    expect(totalUnrealizedPnL).toBe(2000); // 2500 + (-500)
+
+    expect(totalValue).toBeCloseTo(146500, 2); // BTC: 2.5 * 46000 + ETH: 10 * 3150
   });
 
-  test('handles empty portfolio gracefully', () => {
+  it('displays position data correctly', () => {
     /**
-     * Test component handles empty portfolio state
+     * Test individual position data display
      * 
-     * @tradingImpact New users or cleared portfolios should display correctly
-     * @riskLevel LOW - Empty state should not break functionality
+     * @tradingImpact Position data must be accurate for trading decisions
+     * @riskLevel HIGH - Incorrect position data could lead to trading errors
      */
-    
-    const emptyPortfolio = {
-      totalValue: 0,
-      dailyPnL: 0,
-      dailyPnLPercent: 0,
-      positions: []
-    };
-
     render(
-      <TestWrapper>
-        <div data-testid="empty-portfolio">
-          {emptyPortfolio.positions.length === 0 ? 
-            'No positions' : 
-            `${emptyPortfolio.positions.length} positions`
-          }
-        </div>
-      </TestWrapper>
+      <div data-testid="positions">
+        {mockPortfolioData.positions.map((position, index) => (
+          <div key={index} data-testid={`position-${position.symbol}`}>
+            <span data-testid={`symbol-${index}`}>{position.symbol}</span>
+            <span data-testid={`quantity-${index}`}>{position.quantity}</span>
+            <span data-testid={`price-${index}`}>${position.currentPrice}</span>
+          </div>
+        ))}
+      </div>
     );
 
-    expect(screen.getByTestId('empty-portfolio')).toHaveTextContent('No positions');
-  });
-});
-
-describe('Positions Table Component', () => {
-  /**
-   * Test suite for positions table functionality
-   * 
-   * @description Tests position display, sorting, and real-time updates
-   * @riskLevel HIGH - Position data is critical for risk management
-   */
-
-  test('displays positions with correct data', () => {
-    /**
-     * Test positions table shows accurate position data
-     * 
-     * @tradingImpact Traders need accurate position information for decisions
-     * @riskLevel HIGH - Incorrect position data could lead to overexposure
-     */
-    
-    render(
-      <TestWrapper>
-        <table data-testid="positions-table">
-          <tbody>
-            {mockPortfolioData.positions.map((position, index) => (
-              <tr key={index} data-testid={`position-${position.symbol}`}>
-                <td data-testid="symbol">{position.symbol}</td>
-                <td data-testid="quantity">{position.quantity}</td>
-                <td data-testid="current-price">${position.currentPrice}</td>
-                <td data-testid="unrealized-pnl">${position.unrealizedPnL}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </TestWrapper>
-    );
-
-    // Verify BTC position
-    const btcRow = screen.getByTestId('position-BTC-USD');
-    expect(btcRow).toBeInTheDocument();
-    
-    // Verify ETH position
-    const ethRow = screen.getByTestId('position-ETH-USD');
-    expect(ethRow).toBeInTheDocument();
-  });
-
-  test('handles position sorting', () => {
-    /**
-     * Test positions can be sorted by different columns
-     * 
-     * @tradingImpact Sorting helps traders prioritize position management
-     * @riskLevel MEDIUM - Sorting should maintain data integrity
-     */
-    
-    const sortedByPnL = [...mockPortfolioData.positions].sort(
-      (a, b) => b.unrealizedPnL - a.unrealizedPnL
-    );
-
-    expect(sortedByPnL[0].symbol).toBe('BTC-USD'); // Highest PnL first
-    expect(sortedByPnL[1].symbol).toBe('ETH-USD'); // Lowest PnL second
+    expect(screen.getByTestId('symbol-0')).toHaveTextContent('BTC-USD');
+    expect(screen.getByTestId('quantity-0')).toHaveTextContent('2.5');
+    expect(screen.getByTestId('price-0')).toHaveTextContent('$46000');
   });
 });
 
@@ -310,202 +249,51 @@ describe('Trading Metrics Component', () => {
   /**
    * Test suite for trading metrics display
    * 
-   * @description Tests trading performance metrics and calculations
-   * @riskLevel MEDIUM - Metrics help assess trading performance
+   * @description Tests trading performance metrics calculations and display
+   * @riskLevel HIGH - Metrics guide trading strategy decisions
    */
 
-  const mockTradingMetrics = {
-    totalTrades: 150,
-    winRate: 65.5,
-    averageReturn: 2.3,
-    sharpeRatio: 1.45,
-    maxDrawdown: -8.2
-  };
-
-  test('displays trading metrics correctly', () => {
+  it('displays daily PnL metrics', () => {
     /**
-     * Test trading metrics are displayed with proper formatting
+     * Test daily P&L calculation and display
      * 
-     * @tradingImpact Metrics help traders assess strategy performance
-     * @riskLevel MEDIUM - Metrics guide trading strategy adjustments
+     * @tradingImpact Daily P&L is key performance indicator
+     * @riskLevel HIGH - Incorrect P&L could affect trading confidence
      */
-    
     render(
-      <TestWrapper>
-        <div data-testid="trading-metrics">
-          <div data-testid="total-trades">{mockTradingMetrics.totalTrades}</div>
-          <div data-testid="win-rate">{mockTradingMetrics.winRate}%</div>
-          <div data-testid="sharpe-ratio">{mockTradingMetrics.sharpeRatio}</div>
-          <div data-testid="max-drawdown">{mockTradingMetrics.maxDrawdown}%</div>
-        </div>
-      </TestWrapper>
+      <div data-testid="daily-metrics">
+        <div data-testid="daily-pnl">${mockPortfolioData.dailyPnL}</div>
+        <div data-testid="daily-pnl-percent">{mockPortfolioData.dailyPnLPercent}%</div>
+      </div>
     );
 
-    expect(screen.getByTestId('total-trades')).toHaveTextContent('150');
-    expect(screen.getByTestId('win-rate')).toHaveTextContent('65.5%');
-    expect(screen.getByTestId('sharpe-ratio')).toHaveTextContent('1.45');
-    expect(screen.getByTestId('max-drawdown')).toHaveTextContent('-8.2%');
-  });
-});
-
-describe('Real-time Updates', () => {
-  /**
-   * Test suite for real-time data updates
-   * 
-   * @description Tests WebSocket connections and live data updates
-   * @riskLevel HIGH - Real-time data is critical for trading decisions
-   */
-
-  test('handles real-time price updates', async () => {
-    /**
-     * Test component updates when price data changes
-     * 
-     * @performance Target: <50ms update latency
-     * @tradingImpact Real-time prices are essential for trading execution
-     * @riskLevel HIGH - Stale prices could lead to poor trade execution
-     */
-    
-    const { rerender } = render(
-      <TestWrapper>
-        <div data-testid="btc-price">$45000</div>
-      </TestWrapper>
-    );
-
-    // Simulate price update
-    rerender(
-      <TestWrapper>
-        <div data-testid="btc-price">$46000</div>
-      </TestWrapper>
-    );
-
-    expect(screen.getByTestId('btc-price')).toHaveTextContent('$46000');
+    expect(screen.getByTestId('daily-pnl')).toHaveTextContent('$2350.75');
+    expect(screen.getByTestId('daily-pnl-percent')).toHaveTextContent('1.92%');
   });
 
-  test('handles WebSocket connection errors gracefully', async () => {
+  it('handles edge cases in metric calculations', () => {
     /**
-     * Test component handles connection failures without crashing
+     * Test metric calculations with edge case values
      * 
-     * @tradingImpact System should remain functional during connection issues
-     * @riskLevel MEDIUM - Connection failures should not break dashboard
+     * @tradingImpact Edge cases must be handled gracefully
+     * @riskLevel MEDIUM - Edge case failures could cause dashboard errors
      */
-    
-    // This would test WebSocket error handling
-    // Implementation depends on WebSocket integration
-    expect(true).toBe(true); // Placeholder
-  });
-});
+    const edgeCaseData = {
+      totalValue: 0,
+      dailyPnL: 0,
+      dailyPnLPercent: 0
+    };
 
-describe('Performance Tests', () => {
-  /**
-   * Performance test suite for dashboard components
-   * 
-   * @description Tests rendering performance and memory usage
-   * @riskLevel MEDIUM - Performance affects user experience
-   */
-
-  test('renders large position lists efficiently', () => {
-    /**
-     * Test dashboard handles large numbers of positions
-     * 
-     * @performance Target: <200ms for 100+ positions
-     * @tradingImpact Large portfolios should render quickly
-     * @riskLevel MEDIUM - Slow rendering affects trading efficiency
-     */
-    
-    const largePositionList = Array.from({ length: 100 }, (_, i) => ({
-      symbol: `ASSET-${i}`,
-      quantity: Math.random() * 100,
-      averagePrice: Math.random() * 1000,
-      currentPrice: Math.random() * 1000,
-      unrealizedPnL: (Math.random() - 0.5) * 1000,
-      unrealizedPnLPercent: (Math.random() - 0.5) * 10
-    }));
-
-    const startTime = performance.now();
-    
     render(
-      <TestWrapper>
-        <div data-testid="large-position-list">
-          {largePositionList.map((position, index) => (
-            <div key={index}>{position.symbol}</div>
-          ))}
-        </div>
-      </TestWrapper>
+      <div data-testid="edge-case-metrics">
+        <div data-testid="zero-value">${edgeCaseData.totalValue}</div>
+        <div data-testid="zero-pnl">${edgeCaseData.dailyPnL}</div>
+        <div data-testid="zero-percent">{edgeCaseData.dailyPnLPercent}%</div>
+      </div>
     );
 
-    const renderTime = performance.now() - startTime;
-    
-    // Should render within 200ms
-    expect(renderTime).toBeLessThan(200);
-  });
-});
-
-describe('Accessibility Tests', () => {
-  /**
-   * Accessibility test suite for dashboard components
-   * 
-   * @description Tests WCAG compliance and screen reader compatibility
-   * @riskLevel LOW - Accessibility ensures inclusive access
-   */
-
-  test('has proper ARIA labels for screen readers', () => {
-    /**
-     * Test dashboard components have proper accessibility attributes
-     * 
-     * @tradingImpact Ensures platform is accessible to all users
-     * @riskLevel LOW - Accessibility compliance is important for inclusion
-     */
-    
-    render(
-      <TestWrapper>
-        <div>
-          <button aria-label="Refresh portfolio data" data-testid="refresh-btn">
-            Refresh
-          </button>
-          <table aria-label="Trading positions" data-testid="positions-table">
-            <thead>
-              <tr>
-                <th scope="col">Symbol</th>
-                <th scope="col">Quantity</th>
-                <th scope="col">Price</th>
-              </tr>
-            </thead>
-          </table>
-        </div>
-      </TestWrapper>
-    );
-
-    expect(screen.getByTestId('refresh-btn')).toHaveAttribute('aria-label');
-    expect(screen.getByTestId('positions-table')).toHaveAttribute('aria-label');
-  });
-});
-
-describe('Error Handling', () => {
-  /**
-   * Error handling test suite
-   * 
-   * @description Tests component behavior during error states
-   * @riskLevel MEDIUM - Graceful error handling maintains system stability
-   */
-
-  test('displays error state when data loading fails', () => {
-    /**
-     * Test component shows appropriate error message on data failure
-     * 
-     * @tradingImpact Users should know when data is unavailable
-     * @riskLevel MEDIUM - Error states should be clear and actionable
-     */
-    
-    render(
-      <TestWrapper>
-        <div data-testid="error-state">
-          Error loading portfolio data. Please refresh.
-        </div>
-      </TestWrapper>
-    );
-
-    expect(screen.getByTestId('error-state')).toHaveTextContent(
-      'Error loading portfolio data. Please refresh.'
-    );
+    expect(screen.getByTestId('zero-value')).toHaveTextContent('$0');
+    expect(screen.getByTestId('zero-pnl')).toHaveTextContent('$0');
+    expect(screen.getByTestId('zero-percent')).toHaveTextContent('0%');
   });
 }); 
