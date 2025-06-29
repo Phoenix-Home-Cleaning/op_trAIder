@@ -6,11 +6,15 @@ Accepted
 
 ## Context
 
-The TRAIDER V1 security scanning pipeline encountered two critical issues:
+The TRAIDER V1 security scanning pipeline encountered multiple critical issues:
 
 1. **GitLeaks License Error**: The workflow was configured to require a `GITLEAKS_LICENSE` secret, but GitLeaks has transitioned to an open-source model and no longer requires a license for basic secret scanning functionality.
 
 2. **CodeQL SARIF Upload Conflicts**: Multiple CodeQL analysis jobs were attempting to upload SARIF results with the same category, causing the error: "only one run of the codeql/analyze or codeql/upload-sarif actions is allowed per job per tool/category."
+
+3. **TruffleHog BASE/HEAD Commit Issues**: TruffleHog was failing when BASE and HEAD commits were the same, particularly on initial commits or when `github.event.before` was not available.
+
+4. **CodeQL Default Setup Conflicts**: Advanced CodeQL configuration was conflicting with GitHub's default CodeQL setup, causing "cannot be processed when the default setup is enabled" errors.
 
 These issues were blocking the CI/CD pipeline and preventing proper security validation of code changes.
 
@@ -31,8 +35,17 @@ We will implement the following fixes to resolve the security workflow issues:
 - **Remove** the redundant SARIF upload step that was causing conflicts
 - **Add** unique categories for different scan types (Trivy filesystem scans)
 
-### Workflow Optimization
+### TruffleHog Configuration Fix
+- **Add conditional logic** to handle cases where BASE and HEAD commits are the same
+- **Implement fallback scanning** for initial commits using full repository scan
+- **Use proper commit references** with validation for null/zero commits
 
+### CodeQL Configuration Simplification
+- **Remove advanced queries** that conflict with default setup
+- **Simplify to basic JavaScript analysis** to avoid configuration conflicts
+- **Use unique category names** to prevent SARIF upload collisions
+
+### Workflow Optimization
 - **Simplify** the SAST scanning to focus on JavaScript/TypeScript as our primary languages
 - **Ensure** each security tool has a unique category for SARIF uploads
 - **Maintain** comprehensive security coverage while eliminating conflicts
@@ -69,26 +82,43 @@ We will implement the following fixes to resolve the security workflow issues:
   # Note: GITLEAKS_LICENSE removed - GitLeaks is now open source
 ```
 
-### CodeQL Configuration
+### TruffleHog Configuration
+```yaml
+- name: 🔐 Run TruffleHog secrets scan
+  uses: trufflesecurity/trufflehog@main
+  if: github.event.before && github.event.before != '0000000000000000000000000000000000000000'
+  with:
+    path: ./
+    base: ${{ github.event.before }}
+    head: ${{ github.sha }}
+    extra_args: --debug --only-verified
 
+- name: 🔐 Run TruffleHog full scan (fallback)
+  uses: trufflesecurity/trufflehog@main
+  if: github.event.before == '0000000000000000000000000000000000000000' || !github.event.before
+  with:
+    path: ./
+    extra_args: --debug --only-verified
+```
+
+### CodeQL Configuration
 ```yaml
 - name: 🔧 Initialize CodeQL
   uses: github/codeql-action/init@v3
   with:
     languages: javascript
-    queries: +security-and-quality
 
 - name: 🔍 Perform CodeQL Analysis
   uses: github/codeql-action/analyze@v3
   with:
-    category: '/language:javascript'
+    category: 'traider-security-sast'
 ```
 
 ### SARIF Upload Categories
-
-- **CodeQL**: `/language:javascript`
+- **CodeQL**: `traider-security-sast`
 - **Trivy**: `trivy-filesystem`
 - **TruffleHog**: Integrated with action (no separate upload)
+- **GitLeaks**: Integrated with action (no separate upload)
 
 ## Monitoring and Validation
 

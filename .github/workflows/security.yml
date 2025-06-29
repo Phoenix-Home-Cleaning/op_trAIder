@@ -138,10 +138,18 @@ jobs:
           
       - name: 🔐 Run TruffleHog secrets scan
         uses: trufflesecurity/trufflehog@main
+        if: github.event.before && github.event.before != '0000000000000000000000000000000000000000'
         with:
           path: ./
-          base: ${{ github.event.repository.default_branch }}
-          head: HEAD
+          base: ${{ github.event.before }}
+          head: ${{ github.sha }}
+          extra_args: --debug --only-verified
+          
+      - name: 🔐 Run TruffleHog full scan (fallback)
+        uses: trufflesecurity/trufflehog@main
+        if: github.event.before == '0000000000000000000000000000000000000000' || !github.event.before
+        with:
+          path: ./
           extra_args: --debug --only-verified
           
       - name: 🔍 GitLeaks secrets scan
@@ -174,7 +182,6 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: javascript
-          queries: +security-and-quality
           
       - name: 📦 Setup Node.js
         uses: actions/setup-node@v4
@@ -188,7 +195,7 @@ jobs:
       - name: 🔍 Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
-          category: "/language:javascript"
+          category: 'traider-security-sast'
 
   # =============================================================================
   # PHASE 4: CONTAINER SECURITY SCANNING

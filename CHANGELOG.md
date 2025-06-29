@@ -4,14 +4,16 @@
 
 ### Fixed
 
-- **🔒 Security Workflow Critical Issues** - Resolved GitLeaks license and CodeQL SARIF upload conflicts
+- **🔒 Security Workflow Critical Issues** - Resolved multiple CI/CD pipeline blocking issues
   - **GitLeaks License Resolution**: Removed `GITLEAKS_LICENSE` requirement as GitLeaks is now open source
   - **CodeQL SARIF Conflicts**: Eliminated duplicate SARIF uploads causing "only one run per category" errors
+  - **TruffleHog BASE/HEAD Issues**: Fixed BASE and HEAD commit conflicts with conditional logic and fallback scanning
+  - **CodeQL Default Setup Conflicts**: Simplified configuration to avoid conflicts with GitHub's default CodeQL setup
   - **Workflow Optimization**: Simplified SAST scanning from matrix strategy to single JavaScript analysis
-  - **Unique SARIF Categories**: Added distinct categories for each security tool (CodeQL, Trivy, TruffleHog)
+  - **Unique SARIF Categories**: Added distinct categories for each security tool (CodeQL, Trivy, TruffleHog, GitLeaks)
   - **CI/CD Pipeline Unblocked**: Security scans now complete successfully without blocking deployments
   - **Maintained Security Coverage**: All critical security validations remain active (secrets, SAST, dependencies)
-  - **Documentation**: Created ADR-003 documenting security workflow architecture decisions
+  - **Documentation**: Created comprehensive ADR-003 documenting all security workflow architecture decisions
 
 ### Added
 
