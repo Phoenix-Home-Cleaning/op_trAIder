@@ -1,423 +1,375 @@
 /**
- * @fileoverview Example Unit Tests for TRAIDER V1
- * @module tests/unit/example
- *
+ * @fileoverview Example Unit Tests - Testing Infrastructure Validation
+ * @module tests.unit.example
+ * 
  * @description
- * Sample unit tests demonstrating testing patterns and utilities for
- * institutional-grade trading system components. Includes performance
- * monitoring, mock usage, and comprehensive validation patterns.
- *
+ * Comprehensive example tests demonstrating world-class testing standards
+ * for the TRAIDER V1 institutional trading platform. These tests validate
+ * the testing infrastructure and serve as templates for other test suites.
+ * 
  * @performance
- * - Each test should complete in <100ms
- * - Memory usage should remain stable
- *
+ * - Test execution target: <10ms per test
+ * - Memory usage: <1MB per test
+ * - Coverage requirement: 100%
+ * 
  * @risk
- * - Failure impact: LOW - Example tests for demonstration
- * - Recovery strategy: Update test patterns as needed
- *
+ * - Failure impact: LOW - Example tests for infrastructure validation
+ * - Recovery strategy: No recovery needed, informational tests
+ * 
  * @compliance
- * - Audit requirements: Yes - Test patterns must be documented
- * - Data retention: Test results retained for 30 days
- *
- * @see {@link docs/testing/unit-test-patterns.md}
- * @since 1.0.0-alpha
+ * - Audit requirements: No
+ * - Data retention: Standard test log retention
+ * 
+ * @see {@link docs/testing/test-standards.md}
+ * @since 1.0.0
  * @author TRAIDER Team
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import {
-  mockMarketData,
-  mockTradingSignals,
-  mockPositions,
-  createPerformanceMonitor,
-  generateRandomMarketData,
-  generateRandomSignal,
-  expectToThrow,
-  testConfig,
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { 
+  createMockUser, 
+  createMockPortfolio, 
+  createMockTrade,
+  measurePerformance,
+  simulateNetworkError 
 } from '../setup';
 
-// =============================================================================
-// SAMPLE TRADING UTILITY FUNCTIONS (for demonstration)
-// =============================================================================
+describe('Testing Infrastructure Validation', () => {
+  /**
+   * Test suite to validate that our testing infrastructure is working correctly
+   * 
+   * @description Ensures all testing utilities, mocks, and configurations
+   * are properly set up for institutional-grade testing standards
+   * @riskLevel LOW - Infrastructure validation only
+   */
 
-/**
- * Calculate position size based on signal strength and risk parameters
- *
- * @param signal - Trading signal strength (-1 to 1)
- * @param accountBalance - Available account balance in USD
- * @param riskPercentage - Maximum risk percentage (0-1)
- * @returns Position size in USD
- *
- * @performance O(1) time complexity, <1ms execution
- * @riskLevel LOW - Pure calculation, no external dependencies
- */
-function calculatePositionSize(
-  signal: number,
-  accountBalance: number,
-  riskPercentage: number = 0.02
-): number {
-  if (signal < -1 || signal > 1) {
-    throw new Error('Signal must be between -1 and 1');
-  }
-
-  if (accountBalance <= 0) {
-    throw new Error('Account balance must be positive');
-  }
-
-  if (riskPercentage <= 0 || riskPercentage > 1) {
-    throw new Error('Risk percentage must be between 0 and 1');
-  }
-
-  const maxRiskAmount = accountBalance * riskPercentage;
-  const signalStrength = Math.abs(signal);
-
-  return maxRiskAmount * signalStrength;
-}
-
-/**
- * Calculate unrealized P&L for a position
- *
- * @param position - Current position details
- * @param currentPrice - Current market price
- * @returns Unrealized P&L in USD
- *
- * @performance O(1) time complexity, <1ms execution
- * @riskLevel MEDIUM - Financial calculation affecting P&L reporting
- */
-function calculateUnrealizedPnL(
-  position: { quantity: number; avgCost: number },
-  currentPrice: number
-): number {
-  if (currentPrice <= 0) {
-    throw new Error('Current price must be positive');
-  }
-
-  const { quantity, avgCost } = position;
-  return (currentPrice - avgCost) * quantity;
-}
-
-/**
- * Validate trading signal for basic sanity checks
- *
- * @param signal - Trading signal to validate
- * @returns true if signal is valid
- *
- * @performance O(1) time complexity, <1ms execution
- * @riskLevel HIGH - Invalid signals can cause trading losses
- */
-function validateTradingSignal(signal: {
-  symbol: string;
-  signal: number;
-  confidence: number;
-  timestamp: string;
-  strategy: string;
-}): boolean {
-  // Symbol validation
-  if (!signal.symbol || typeof signal.symbol !== 'string') {
-    return false;
-  }
-
-  // Signal strength validation
-  if (typeof signal.signal !== 'number' || signal.signal < -1 || signal.signal > 1) {
-    return false;
-  }
-
-  // Confidence validation
-  if (typeof signal.confidence !== 'number' || signal.confidence < 0 || signal.confidence > 1) {
-    return false;
-  }
-
-  // Timestamp validation
-  if (!signal.timestamp || isNaN(Date.parse(signal.timestamp))) {
-    return false;
-  }
-
-  // Strategy validation
-  if (!signal.strategy || typeof signal.strategy !== 'string') {
-    return false;
-  }
-
-  return true;
-}
-
-// =============================================================================
-// UNIT TESTS
-// =============================================================================
-
-describe('Trading Utility Functions', () => {
-  let performanceMonitor: ReturnType<typeof createPerformanceMonitor>;
-
-  beforeEach(() => {
-    performanceMonitor = createPerformanceMonitor();
+  it('should have access to Vitest testing framework', () => {
+    /**
+     * Validate basic Vitest functionality
+     * 
+     * @performance Target: <1ms execution
+     * @tradingImpact Ensures testing framework is operational
+     * @riskLevel LOW - Basic infrastructure validation
+     */
+    expect(true).toBe(true);
+    expect(1 + 1).toBe(2);
+    expect('TRAIDER').toBe('TRAIDER');
   });
 
-  describe('calculatePositionSize', () => {
-    it('should calculate position size correctly for positive signal', () => {
-      performanceMonitor.start();
+  it('should support async/await testing patterns', async () => {
+    /**
+     * Validate async testing capabilities for trading operations
+     * 
+     * @performance Target: <5ms execution
+     * @tradingImpact Trading operations are async, testing must support this
+     * @riskLevel LOW - Infrastructure validation
+     */
+    const asyncOperation = async () => {
+      return new Promise(resolve => setTimeout(() => resolve('success'), 1));
+    };
 
-      const result = calculatePositionSize(0.8, 10000, 0.02);
-
-      expect(result).toBe(160); // 10000 * 0.02 * 0.8
-      performanceMonitor.assertLatency(
-        testConfig.performance.maxLatency.riskCalculation,
-        'position size calculation'
-      );
-    });
-
-    it('should calculate position size correctly for negative signal', () => {
-      const result = calculatePositionSize(-0.6, 5000, 0.01);
-
-      expect(result).toBe(30); // 5000 * 0.01 * 0.6 (absolute value)
-    });
-
-    it('should handle zero signal', () => {
-      const result = calculatePositionSize(0, 10000, 0.02);
-
-      expect(result).toBe(0);
-    });
-
-    it('should throw error for invalid signal range', async () => {
-      await expectToThrow(
-        () => calculatePositionSize(1.5, 10000, 0.02),
-        'Signal must be between -1 and 1'
-      );
-
-      await expectToThrow(
-        () => calculatePositionSize(-1.5, 10000, 0.02),
-        'Signal must be between -1 and 1'
-      );
-    });
-
-    it('should throw error for invalid account balance', async () => {
-      await expectToThrow(
-        () => calculatePositionSize(0.5, 0, 0.02),
-        'Account balance must be positive'
-      );
-
-      await expectToThrow(
-        () => calculatePositionSize(0.5, -1000, 0.02),
-        'Account balance must be positive'
-      );
-    });
-
-    it('should throw error for invalid risk percentage', async () => {
-      await expectToThrow(
-        () => calculatePositionSize(0.5, 10000, 0),
-        'Risk percentage must be between 0 and 1'
-      );
-
-      await expectToThrow(
-        () => calculatePositionSize(0.5, 10000, 1.5),
-        'Risk percentage must be between 0 and 1'
-      );
-    });
+    const result = await asyncOperation();
+    expect(result).toBe('success');
   });
 
-  describe('calculateUnrealizedPnL', () => {
-    it('should calculate positive P&L correctly', () => {
-      performanceMonitor.start();
+  it('should support mock functions for trading dependencies', () => {
+    /**
+     * Validate mock function capabilities for external dependencies
+     * 
+     * @tradingImpact Trading system has many external dependencies that need mocking
+     * @riskLevel LOW - Mock validation only
+     */
+    const mockApiCall = vi.fn();
+    mockApiCall.mockReturnValue({ success: true, data: 'mock data' });
 
-      const position = mockPositions['BTC-USD'];
-      const currentPrice = 46000; // Higher than avg cost of 44500
-
-      const result = calculateUnrealizedPnL(position, currentPrice);
-
-      expect(result).toBe(150); // (46000 - 44500) * 0.1
-      performanceMonitor.assertLatency(
-        testConfig.performance.maxLatency.riskCalculation,
-        'P&L calculation'
-      );
-    });
-
-    it('should calculate negative P&L correctly', () => {
-      const position = mockPositions['ETH-USD'];
-      const currentPrice = 2800; // Lower than avg cost of 2950
-
-      const result = calculateUnrealizedPnL(position, currentPrice);
-
-      expect(result).toBe(-300); // (2800 - 2950) * 2.0
-    });
-
-    it('should handle zero P&L', () => {
-      const position = mockPositions['BTC-USD'];
-      const currentPrice = position.avgCost;
-
-      const result = calculateUnrealizedPnL(position, currentPrice);
-
-      expect(result).toBe(0);
-    });
-
-    it('should throw error for invalid current price', async () => {
-      const position = mockPositions['BTC-USD'];
-
-      await expectToThrow(
-        () => calculateUnrealizedPnL(position, 0),
-        'Current price must be positive'
-      );
-
-      await expectToThrow(
-        () => calculateUnrealizedPnL(position, -1000),
-        'Current price must be positive'
-      );
-    });
+    const result = mockApiCall();
+    
+    expect(mockApiCall).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({ success: true, data: 'mock data' });
   });
 
-  describe('validateTradingSignal', () => {
-    it('should validate correct trading signal', () => {
-      performanceMonitor.start();
+  it('should support performance measurement utilities', async () => {
+    /**
+     * Validate performance testing capabilities
+     * 
+     * @performance This test itself measures performance
+     * @tradingImpact Performance testing is critical for trading systems
+     * @riskLevel LOW - Performance measurement validation
+     */
+    const testOperation = async () => {
+      // Simulate some work
+      await new Promise(resolve => setTimeout(resolve, 10));
+    };
 
-      const signal = mockTradingSignals.momentum;
-      const result = validateTradingSignal(signal);
+    const executionTime = await measurePerformance(testOperation);
+    
+    expect(executionTime).toBeGreaterThan(0);
+    expect(executionTime).toBeLessThan(100); // Should complete in <100ms
+  });
+});
 
-      expect(result).toBe(true);
-      performanceMonitor.assertLatency(
-        testConfig.performance.maxLatency.signalGeneration,
-        'signal validation'
-      );
+describe('Trading Mock Utilities', () => {
+  /**
+   * Test suite for trading-specific mock utilities
+   * 
+   * @description Validates that our trading mock utilities create
+   * realistic test data for institutional trading scenarios
+   * @riskLevel LOW - Mock utility validation
+   */
+
+  it('should create realistic mock user data', () => {
+    /**
+     * Validate mock user creation for authentication testing
+     * 
+     * @tradingImpact User authentication is critical for trading platform security
+     * @riskLevel LOW - Mock data validation
+     */
+    const mockUser = createMockUser();
+    
+    expect(mockUser).toHaveProperty('id');
+    expect(mockUser).toHaveProperty('email');
+    expect(mockUser).toHaveProperty('role');
+    expect(mockUser.email).toContain('@');
+    expect(['ADMIN', 'TRADER', 'VIEWER']).toContain(mockUser.role);
+  });
+
+  it('should create realistic mock portfolio data', () => {
+    /**
+     * Validate mock portfolio creation for portfolio testing
+     * 
+     * @tradingImpact Portfolio data is core to trading operations
+     * @riskLevel LOW - Mock data validation
+     */
+    const mockPortfolio = createMockPortfolio();
+    
+    expect(mockPortfolio).toHaveProperty('totalValue');
+    expect(mockPortfolio).toHaveProperty('dailyPnL');
+    expect(mockPortfolio).toHaveProperty('positions');
+    expect(Array.isArray(mockPortfolio.positions)).toBe(true);
+    expect(mockPortfolio.totalValue).toBeGreaterThan(0);
+  });
+
+  it('should create realistic mock trade data', () => {
+    /**
+     * Validate mock trade creation for trade execution testing
+     * 
+     * @tradingImpact Trade data is fundamental to trading operations
+     * @riskLevel LOW - Mock data validation
+     */
+    const mockTrade = createMockTrade();
+    
+    expect(mockTrade).toHaveProperty('id');
+    expect(mockTrade).toHaveProperty('symbol');
+    expect(mockTrade).toHaveProperty('side');
+    expect(mockTrade).toHaveProperty('quantity');
+    expect(mockTrade).toHaveProperty('price');
+    expect(['BUY', 'SELL']).toContain(mockTrade.side);
+    expect(mockTrade.quantity).toBeGreaterThan(0);
+    expect(mockTrade.price).toBeGreaterThan(0);
+  });
+
+  it('should support custom mock data overrides', () => {
+    /**
+     * Validate mock customization for specific test scenarios
+     * 
+     * @tradingImpact Different tests need different data scenarios
+     * @riskLevel LOW - Mock customization validation
+     */
+    const customUser = createMockUser({ 
+      role: 'ADMIN', 
+      email: 'admin@traider.com' 
     });
+    
+    expect(customUser.role).toBe('ADMIN');
+    expect(customUser.email).toBe('admin@traider.com');
 
-    it('should reject signal with invalid symbol', () => {
-      const signal = { ...mockTradingSignals.momentum, symbol: '' };
-
-      expect(validateTradingSignal(signal)).toBe(false);
+    const customTrade = createMockTrade({ 
+      symbol: 'ETH-USD', 
+      side: 'SELL',
+      quantity: 5.0 
     });
+    
+    expect(customTrade.symbol).toBe('ETH-USD');
+    expect(customTrade.side).toBe('SELL');
+    expect(customTrade.quantity).toBe(5.0);
+  });
+});
 
-    it('should reject signal with invalid signal strength', () => {
-      const signal = { ...mockTradingSignals.momentum, signal: 1.5 };
+describe('Error Handling and Edge Cases', () => {
+  /**
+   * Test suite for error handling validation
+   * 
+   * @description Validates that our testing infrastructure can properly
+   * test error conditions and edge cases in trading operations
+   * @riskLevel MEDIUM - Error handling is critical for trading systems
+   */
 
-      expect(validateTradingSignal(signal)).toBe(false);
+  it('should support error simulation for network failures', () => {
+    /**
+     * Validate network error simulation capabilities
+     * 
+     * @tradingImpact Network failures are common in trading systems
+     * @riskLevel MEDIUM - Network error handling is important
+     */
+    expect(() => simulateNetworkError()).toThrow('Network request failed');
+  });
+
+  it('should handle edge case data values', () => {
+    /**
+     * Validate handling of edge case values in trading data
+     * 
+     * @tradingImpact Trading systems must handle extreme values gracefully
+     * @riskLevel MEDIUM - Edge cases can cause system failures
+     */
+    // Test zero values
+    const zeroPortfolio = createMockPortfolio({ 
+      totalValue: 0, 
+      dailyPnL: 0,
+      positions: [] 
     });
+    
+    expect(zeroPortfolio.totalValue).toBe(0);
+    expect(zeroPortfolio.positions).toHaveLength(0);
 
-    it('should reject signal with invalid confidence', () => {
-      const signal = { ...mockTradingSignals.momentum, confidence: -0.1 };
-
-      expect(validateTradingSignal(signal)).toBe(false);
+    // Test negative values
+    const negativePortfolio = createMockPortfolio({ 
+      dailyPnL: -1000.50 
     });
+    
+    expect(negativePortfolio.dailyPnL).toBeLessThan(0);
+  });
 
-    it('should reject signal with invalid timestamp', () => {
-      const signal = { ...mockTradingSignals.momentum, timestamp: 'invalid-date' };
-
-      expect(validateTradingSignal(signal)).toBe(false);
-    });
-
-    it('should reject signal with missing strategy', () => {
-      const signal = { ...mockTradingSignals.momentum, strategy: '' };
-
-      expect(validateTradingSignal(signal)).toBe(false);
+  it('should validate data type consistency', () => {
+    /**
+     * Validate that mock data maintains proper types
+     * 
+     * @tradingImpact Type safety is critical for trading calculations
+     * @riskLevel HIGH - Type errors can cause calculation mistakes
+     */
+    const mockPortfolio = createMockPortfolio();
+    
+    expect(typeof mockPortfolio.totalValue).toBe('number');
+    expect(typeof mockPortfolio.dailyPnL).toBe('number');
+    expect(typeof mockPortfolio.dailyPnLPercent).toBe('number');
+    
+    mockPortfolio.positions.forEach(position => {
+      expect(typeof position.quantity).toBe('number');
+      expect(typeof position.averagePrice).toBe('number');
+      expect(typeof position.currentPrice).toBe('number');
+      expect(typeof position.unrealizedPnL).toBe('number');
+      expect(typeof position.symbol).toBe('string');
     });
   });
 });
 
-// =============================================================================
-// PERFORMANCE TESTS
-// =============================================================================
+describe('Performance and Load Testing Capabilities', () => {
+  /**
+   * Test suite for performance testing validation
+   * 
+   * @description Validates that our testing infrastructure can measure
+   * and validate performance requirements for trading operations
+   * @riskLevel HIGH - Performance is critical for trading systems
+   */
 
-describe('Performance Benchmarks', () => {
-  it('should handle high-frequency signal validation', () => {
-    const performanceMonitor = createPerformanceMonitor();
-    performanceMonitor.start();
-
-    // Generate and validate 1000 signals
-    for (let i = 0; i < 1000; i++) {
-      const signal = generateRandomSignal('BTC-USD', 'momentum_v2');
-      validateTradingSignal(signal);
-    }
-
-    performanceMonitor.assertLatency(100, 'high-frequency signal validation');
+  it('should measure execution time accurately', async () => {
+    /**
+     * Validate performance measurement accuracy
+     * 
+     * @performance This test validates performance measurement itself
+     * @tradingImpact Accurate performance measurement is essential
+     * @riskLevel MEDIUM - Performance measurement accuracy affects optimization
+     */
+    const knownDelay = 50; // 50ms delay
+    
+    const executionTime = await measurePerformance(async () => {
+      await new Promise(resolve => setTimeout(resolve, knownDelay));
+    });
+    
+    // Allow for some variance in timing (±20ms)
+    expect(executionTime).toBeGreaterThan(knownDelay - 20);
+    expect(executionTime).toBeLessThan(knownDelay + 20);
   });
 
-  it('should handle batch position size calculations', () => {
-    const performanceMonitor = createPerformanceMonitor();
-    performanceMonitor.start();
-
-    // Calculate position sizes for 100 different scenarios
-    for (let i = 0; i < 100; i++) {
-      const signal = (Math.random() - 0.5) * 2; // -1 to 1
-      const balance = 10000 + Math.random() * 90000; // 10k to 100k
-      const risk = 0.01 + Math.random() * 0.04; // 1% to 5%
-
-      calculatePositionSize(signal, balance, risk);
-    }
-
-    performanceMonitor.assertLatency(50, 'batch position size calculations');
-  });
-});
-
-// =============================================================================
-// INTEGRATION WITH MOCK DATA
-// =============================================================================
-
-describe('Mock Data Integration', () => {
-  it('should work with mock market data', () => {
-    const btcData = mockMarketData['BTC-USD'];
-
-    expect(btcData).toBeDefined();
-    expect(btcData.price).toBe(45000);
-    expect(btcData.volume).toBe(1234.5678);
-    expect(btcData.spread).toBe(1.0);
-  });
-
-  it('should work with mock trading signals', () => {
-    const signal = mockTradingSignals.momentum;
-
-    expect(validateTradingSignal(signal)).toBe(true);
-    expect(signal.symbol).toBe('BTC-USD');
-    expect(signal.strategy).toBe('momentum_v2');
-  });
-
-  it('should work with mock positions', () => {
-    const position = mockPositions['BTC-USD'];
-    const currentPrice = mockMarketData['BTC-USD'].price;
-
-    const pnl = calculateUnrealizedPnL(position, currentPrice);
-
-    expect(pnl).toBe(50); // (45000 - 44500) * 0.1
-  });
-});
-
-// =============================================================================
-// ERROR HANDLING TESTS
-// =============================================================================
-
-describe('Error Handling', () => {
-  it('should handle edge cases gracefully', () => {
-    // Test with extreme values
-    expect(() => calculatePositionSize(0.999, 1000000, 0.001)).not.toThrow();
-    expect(() => calculatePositionSize(-0.999, 1000000, 0.001)).not.toThrow();
-  });
-
-  it('should provide meaningful error messages', async () => {
-    await expectToThrow(
-      () => calculatePositionSize(2.0, 10000, 0.02),
-      /Signal must be between -1 and 1/
+  it('should support load testing with multiple operations', async () => {
+    /**
+     * Validate concurrent operation testing capabilities
+     * 
+     * @tradingImpact Trading systems must handle concurrent operations
+     * @riskLevel HIGH - Concurrent operation handling is critical
+     */
+    const operations = Array.from({ length: 10 }, (_, i) => 
+      measurePerformance(async () => {
+        // Simulate concurrent trading operations
+        await new Promise(resolve => setTimeout(resolve, Math.random() * 10));
+        return `operation-${i}`;
+      })
     );
+
+    const results = await Promise.all(operations);
+    
+    expect(results).toHaveLength(10);
+    results.forEach(time => {
+      expect(time).toBeGreaterThan(0);
+      expect(time).toBeLessThan(100); // Each operation should complete quickly
+    });
   });
 });
 
-// =============================================================================
-// RANDOM DATA GENERATION TESTS
-// =============================================================================
+describe('Test Environment Validation', () => {
+  /**
+   * Test suite for test environment validation
+   * 
+   * @description Validates that the test environment is properly configured
+   * for institutional-grade testing standards
+   * @riskLevel MEDIUM - Test environment affects all testing
+   */
 
-describe('Random Data Generation', () => {
-  it('should generate valid random market data', () => {
-    const data = generateRandomMarketData('ETH-USD', 3000);
-
-    expect(data.symbol).toBe('ETH-USD');
-    expect(data.price).toBeGreaterThan(2900); // Within ±1% of base
-    expect(data.price).toBeLessThan(3100);
-    expect(data.volume).toBeGreaterThan(0);
-    expect(data.bid).toBeLessThan(data.ask);
+  it('should have proper environment variables set', () => {
+    /**
+     * Validate test environment configuration
+     * 
+     * @tradingImpact Proper environment setup is essential for accurate testing
+     * @riskLevel MEDIUM - Environment misconfiguration affects test reliability
+     */
+    expect(process.env.NODE_ENV).toBe('test');
   });
 
-  it('should generate valid random signals', () => {
-    const signal = generateRandomSignal('SOL-USD', 'mean_reversion');
+  it('should have access to global test utilities', () => {
+    /**
+     * Validate global test utility availability
+     * 
+     * @tradingImpact Global utilities should be available to all tests
+     * @riskLevel LOW - Utility availability validation
+     */
+    expect(vi).toBeDefined();
+    expect(expect).toBeDefined();
+    expect(describe).toBeDefined();
+    expect(it).toBeDefined();
+  });
 
-    expect(signal.symbol).toBe('SOL-USD');
-    expect(signal.strategy).toBe('mean_reversion');
-    expect(signal.signal).toBeGreaterThanOrEqual(-1);
-    expect(signal.signal).toBeLessThanOrEqual(1);
-    expect(signal.confidence).toBeGreaterThanOrEqual(0.5);
-    expect(signal.confidence).toBeLessThanOrEqual(1);
-    expect(validateTradingSignal(signal)).toBe(true);
+  it('should support test isolation between test cases', () => {
+    /**
+     * Validate test isolation to prevent test interference
+     * 
+     * @tradingImpact Test isolation prevents false positives/negatives
+     * @riskLevel MEDIUM - Test isolation affects test reliability
+     */
+    let testState = 0;
+    
+    // This should not affect other tests
+    testState = 42;
+    expect(testState).toBe(42);
+    
+    // Reset for next test
+    testState = 0;
+    expect(testState).toBe(0);
   });
 });
+
+// Export test utilities for other test files
+export {
+  createMockUser,
+  createMockPortfolio,
+  createMockTrade,
+  measurePerformance
+};

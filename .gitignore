@@ -156,3 +156,7 @@ docs/runbooks/
 *.temp
 .tmp/
 .temp/
+
+# Test results and coverage
+test-results/
+*.lcov
