@@ -28,7 +28,7 @@ jobs:
       
       - name: 📥 Install dependencies
         run: |
-          npm ci
+          npm ci --prefer-offline --no-audit
           npm install -g tsx typedoc
       
       - name: 🔍 Validate documentation
@@ -62,7 +62,7 @@ jobs:
       
       - name: 📥 Install dependencies
         run: |
-          npm ci
+          npm ci --prefer-offline --no-audit
           npm install -g tsx typedoc
           npm install typedoc-plugin-markdown typedoc-plugin-mermaid
       
@@ -182,7 +182,7 @@ jobs:
           cache: 'npm'
       
       - name: 📥 Install dependencies
-        run: npm ci
+        run: npm ci --prefer-offline --no-audit
       
       - name: 📊 Generate coverage report
         run: |
@@ -233,7 +233,7 @@ jobs:
           cache: 'npm'
       
       - name: 📥 Install dependencies
-        run: npm ci
+        run: npm ci --prefer-offline --no-audit
       
       - name: ⚡ Run performance benchmarks
         run: |

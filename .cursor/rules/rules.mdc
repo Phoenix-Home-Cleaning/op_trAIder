@@ -20,8 +20,8 @@ You are working on TRAIDER V1, an institutional-grade autonomous cryptocurrency 
 1. **READ** the project phase status in [README.md](mdc:_docs/phases/README.md) to understand current development stage
 2. **CHECK** [project-overview.md](mdc:_docs/resources/project-overview.md) for architectural context
 3. **REVIEW** [project-rules.md](mdc:_docs/resources/project-rules.md) for coding standards
-4. **SEARCH** existing documentation in @docs for similar implementations 
-5. **VERIFY** Architecture Decision Records in @docs/adr/ for design rationale
+4. **SEARCH** existing documentation in 'docs/' for similar implementations 
+5. **VERIFY** Architecture Decision Records in 'docs/adr/' for design rationale
 
 ### Documentation Requirements:
 
