@@ -148,7 +148,7 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+        # Note: GITLEAKS_LICENSE removed - GitLeaks is now open source
 
   # =============================================================================
   # PHASE 3: STATIC APPLICATION SECURITY TESTING (SAST)
@@ -164,11 +164,6 @@ jobs:
       security-events: write
       actions: read
     
-    strategy:
-      matrix:
-        language: ['javascript', 'typescript']
-      fail-fast: false
-    
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -178,7 +173,7 @@ jobs:
       - name: 🔧 Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: ${{ matrix.language }}
+          languages: javascript
           queries: +security-and-quality
           
       - name: 📦 Setup Node.js
@@ -193,13 +188,7 @@ jobs:
       - name: 🔍 Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
-          category: "/language:${{matrix.language}}"
-          
-      - name: 📊 Upload SARIF results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: ../results/javascript.sarif
+          category: "/language:javascript"
 
   # =============================================================================
   # PHASE 4: CONTAINER SECURITY SCANNING
@@ -232,6 +221,7 @@ jobs:
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
+          category: 'trivy-filesystem'
 
   # =============================================================================
   # PHASE 5: SECURITY COMPLIANCE VALIDATION
