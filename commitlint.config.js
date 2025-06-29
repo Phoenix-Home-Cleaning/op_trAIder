@@ -62,6 +62,7 @@ module.exports = {
         'ml',
         
         // Infrastructure
+        'infrastructure',
         'ci',
         'deployment',
         'monitoring',
