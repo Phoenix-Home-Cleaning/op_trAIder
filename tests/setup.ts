@@ -79,11 +79,23 @@ global.WebSocket = vi.fn(() => ({
   readyState: 1,
 })) as any;
 
-// Mock performance API
+// Mock performance API with complete interface
 global.performance = {
   now: vi.fn(() => Date.now()),
   mark: vi.fn(),
   measure: vi.fn(),
+  clearMarks: vi.fn(),
+  clearMeasures: vi.fn(),
+  getEntries: vi.fn(() => []),
+  getEntriesByName: vi.fn(() => []),
+  getEntriesByType: vi.fn(() => []),
+  markResourceTiming: vi.fn(), // Fix for undici's markResourceTiming calls
+  timing: {
+    navigationStart: Date.now(),
+    loadEventEnd: Date.now(),
+  },
+  timeOrigin: Date.now(),
+  toJSON: vi.fn(() => ({})),
 } as any;
 
 // Mock crypto API for secure operations (if not available)
