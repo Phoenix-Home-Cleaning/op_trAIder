@@ -1,5 +1,15 @@
 # 🔐 Environment Variables Security Guide
 
+## 📦 Environment Templates
+
+`.env.example` (tracked in Git) enumerates **every** variable referenced in code, Docker Compose, or CI.
+To configure a local environment run:
+
+```bash
+cp .env.example .env
+pwsh scripts/generate-secrets.ps1 -Environment development
+```
+
 ## Overview
 
 This document outlines the required environment variables for TRAIDER V1 and provides security best practices for managing sensitive configuration data.
@@ -14,7 +24,7 @@ The following environment variables **MUST** be set for the application to start
 # JWT Authentication (REQUIRED)
 SECRET_KEY=your-super-secret-jwt-key-change-in-production
 
-# Dashboard Authentication (REQUIRED)  
+# Dashboard Authentication (REQUIRED)
 DASHBOARD_PASSWORD=your-secure-dashboard-password-change-in-production
 ```
 
@@ -37,15 +47,17 @@ openssl rand -base64 32
 ### 2. Environment Variable Management
 
 #### Development
+
 ```bash
 # Copy example file
-cp backend/env.example backend/.env
+cp .env.example .env
 
 # Edit with secure values
-nano backend/.env
+nano .env
 ```
 
 #### Production
+
 - Use container orchestration secrets (Kubernetes secrets, Docker secrets)
 - Use cloud provider secret managers (AWS Secrets Manager, Azure Key Vault)
 - Never commit secrets to version control
@@ -58,24 +70,24 @@ nano backend/.env
 
 ```bash
 # Secure file permissions
-chmod 600 backend/.env
+chmod 600 .env
 ```
 
 ## 📋 Complete Environment Configuration
 
 ### Required Variables
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `SECRET_KEY` | JWT signing key | `a1b2c3d4e5f6...` |
-| `DASHBOARD_PASSWORD` | Dashboard access password | `SecurePass123!` |
+| Variable             | Description               | Example           |
+| -------------------- | ------------------------- | ----------------- |
+| `SECRET_KEY`         | JWT signing key           | `a1b2c3d4e5f6...` |
+| `DASHBOARD_PASSWORD` | Dashboard access password | `SecurePass123!`  |
 
 ### Optional Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `GUEST_PASSWORD` | Guest access password | `""` (disabled) |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | Token expiration | `60` |
+| Variable                      | Description           | Default         |
+| ----------------------------- | --------------------- | --------------- |
+| `GUEST_PASSWORD`              | Guest access password | `""` (disabled) |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Token expiration      | `60`            |
 
 ## 🚨 Security Incidents
 
@@ -105,7 +117,7 @@ The application performs startup validation:
 # Validates required environment variables
 if not SECRET_KEY:
     raise ValueError("SECRET_KEY environment variable must be set for security")
-    
+
 if not DASHBOARD_PASSWORD:
     raise ValueError("DASHBOARD_PASSWORD environment variable must be set for security")
 ```
@@ -118,4 +130,4 @@ if not DASHBOARD_PASSWORD:
 
 ---
 
-**⚠️ CRITICAL**: Never commit actual secrets to version control. Always use placeholder values in example files. 
+**⚠️ CRITICAL**: Never commit actual secrets to version control. Always use placeholder values in example files.
