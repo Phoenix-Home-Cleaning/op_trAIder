@@ -54,9 +54,11 @@ backend/api/auth.py:*token*
 .github/workflows/**/*:*password*
 .github/workflows/**/*:*secret*
 .github/workflows/**/*:*token*
-.github/workflows/security.yml:*secret*
-.github/workflows/security.yml:*password*
-.github/workflows/security.yml:*token*
+.github/workflows/security.yml:sk-[a-zA-Z0-9]
+.github/workflows/security.yml:xoxb-[0-9]
+.github/workflows/security.yml:password.*=.*['\"]
+.github/workflows/security.yml:token.*=.*['\"]
+.github/workflows/security.yml:^[A-Z_]+=.{16,}
 .github/workflows/ci.yml:*secret*
 .github/workflows/ci.yml:*password*
 .github/workflows/ci.yml:*token*
