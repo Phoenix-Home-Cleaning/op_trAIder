@@ -3,8 +3,8 @@
  * @module tests.integration.auth-e2e
  * 
  * @description
- * Comprehensive end-to-end tests for TRAIDER V1 authentication flow.
- * Tests complete user journey from login page through API authentication
+ * Comprehensive end-to-end tests for TRAIDER V1 NextAuth authentication flow.
+ * Tests complete user journey from login page through NextAuth authentication
  * to ensure real functionality beyond unit-level mocks.
  * 
  * @performance
@@ -25,8 +25,9 @@
  * @author TRAIDER Team
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { NextRequest } from 'next/server';
+import type { CredentialsConfig } from 'next-auth/providers/credentials';
 
 // Import the actual route handlers
 import { POST, GET } from '../../app/api/route';
@@ -35,13 +36,16 @@ describe('Authentication End-to-End Integration Tests', () => {
   /**
    * Test suite for complete authentication flow validation
    * 
-   * @description Tests real authentication workflow from frontend to backend
+   * @description Tests real authentication workflow with NextAuth integration
    * @riskLevel CRITICAL - Authentication security is system foundation
    */
 
   beforeEach(() => {
     // Reset environment for each test
-    global.fetch = vi.fn();
+    vi.clearAllMocks();
+    vi.stubEnv('NODE_ENV', 'test');
+    vi.stubEnv('NEXTAUTH_SECRET', 'test-secret-key-for-testing');
+    vi.stubEnv('NEXT_PUBLIC_API_URL', 'http://localhost:8000');
   });
 
   afterEach(() => {
@@ -49,24 +53,22 @@ describe('Authentication End-to-End Integration Tests', () => {
     vi.restoreAllMocks();
   });
 
-  describe('Complete Authentication Flow', () => {
+  describe('API Authentication Redirection', () => {
     /**
-     * Test suite for end-to-end authentication workflow
+     * Test suite for API authentication redirection behavior
      * 
-     * @description Validates complete user authentication journey
-     * @riskLevel CRITICAL - Authentication flow must work perfectly
+     * @description Validates that old API correctly redirects to NextAuth
+     * @riskLevel HIGH - Proper redirection prevents authentication confusion
      */
 
-    it('completes full admin authentication workflow', async () => {
+    it('redirects authentication requests to NextAuth endpoints', async () => {
       /**
-       * Test complete admin authentication from login to token validation
+       * Test that POST /api correctly redirects auth requests to NextAuth
        * 
-       * @performance Target: <500ms complete flow
-       * @tradingImpact Admin authentication enables full platform access
-       * @riskLevel CRITICAL - Admin access provides elevated privileges
+       * @tradingImpact Ensures users are directed to correct authentication
+       * @riskLevel HIGH - Authentication routing is critical
        */
 
-      // Step 1: Simulate login form submission to unified API
       const loginRequest = new NextRequest('http://localhost:3000/api', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -76,43 +78,137 @@ describe('Authentication End-to-End Integration Tests', () => {
         })
       });
 
-      // Step 2: Process authentication through unified API
-      const loginResponse = await POST(loginRequest);
-      const loginData = await loginResponse.json();
+      const response = await POST(loginRequest);
+      const data = await response.json();
 
-      // Step 3: Verify successful authentication
-      expect(loginResponse.status).toBe(200);
-      expect(loginData.success).toBe(true);
-      expect(loginData.token).toBeDefined();
-      expect(loginData.user).toBeDefined();
-      expect(loginData.user.role).toBe('administrator');
+      // Verify redirection response
+      expect(response.status).toBe(410); // Gone - moved to NextAuth
+      expect(data.error).toBe('Authentication moved to NextAuth.js');
+      expect(data.auth_endpoints).toEqual({
+        signin: '/api/auth/signin',
+        signout: '/api/auth/signout',
+        session: '/api/auth/session',
+      });
+      expect(data.message).toBe('Use NextAuth.js endpoints for authentication');
+    });
 
-      // Step 4: Validate token format (matches login page expectations)
-      expect(loginData.token).toMatch(/^traider-jwt-\d+-[a-z0-9]+$/);
+    it('provides API information with authentication details', async () => {
+      /**
+       * Test that GET /api provides authentication information
+       * 
+       * @tradingImpact Helps users understand authentication system
+       * @riskLevel LOW - Information endpoint for user guidance
+       */
+
+      const infoRequest = new NextRequest('http://localhost:3000/api', {
+        method: 'GET'
+      });
+
+      const response = await GET(infoRequest);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.authentication).toBe('Handled by NextAuth.js at /api/auth/*');
+      expect(data.endpoints).toEqual({
+        health: '/api?endpoint=health',
+        info: '/api?endpoint=info',
+      });
+    });
+  });
+
+  describe('NextAuth Credentials Provider Flow', () => {
+    /**
+     * Test suite for NextAuth credentials provider authentication
+     * 
+     * @description Tests complete NextAuth authentication workflow
+     * @riskLevel CRITICAL - NextAuth flow must work perfectly
+     */
+
+    it('completes full admin authentication workflow', async () => {
+      /**
+       * Test complete admin authentication through NextAuth
+       * 
+       * @performance Target: <500ms complete flow
+       * @tradingImpact Admin authentication enables full platform access
+       * @riskLevel CRITICAL - Admin access provides elevated privileges
+       */
+
+      // Mock successful backend response - must be set up before calling authorize
+      const mockFetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          access_token: 'test-jwt-token',
+          token_type: 'bearer',
+          expires_in: 28800,
+          user: {
+            id: '1',
+            username: 'admin',
+            role: 'administrator',
+            permissions: ['trading.execute', 'trading.view', 'risk.manage', 'system.admin']
+          }
+        })
+      });
+
+      // Set up global fetch mock
+      global.fetch = mockFetch;
+
+      // Dynamically import authOptions after environment and fetch setup
+      const { authOptions } = await import('../../app/api/auth/[...nextauth]/route');
+
+      // Add console spy to capture authentication logs
+      const consoleSpy = vi.spyOn(console, 'log');
+      const consoleErrorSpy = vi.spyOn(console, 'error');
+
+      // Test NextAuth credentials provider
+      const credentialsProvider = authOptions.providers.find(
+        provider => provider.id === 'credentials'
+      ) as CredentialsConfig;
       
-      // Step 5: Verify user data structure
-      expect(loginData.user).toEqual({
+      expect(credentialsProvider).toBeDefined();
+      expect(credentialsProvider.authorize).toBeDefined();
+      
+      // @ts-expect-error Test-specific type handling
+      const authResult = await credentialsProvider.authorize!({
+        username: 'admin',
+        password: 'password'
+      }, {} as any);
+
+      // Debug logging
+      console.log('Mock fetch calls:', mockFetch.mock.calls);
+      console.log('Auth result:', authResult);
+      console.log('Console logs:', consoleSpy.mock.calls);
+      console.log('Console errors:', consoleErrorSpy.mock.calls);
+
+      // Verify authentication result
+      expect(authResult).toEqual({
         id: '1',
         username: 'admin',
-        role: 'administrator'
+        name: 'admin',
+        email: 'admin@traider.local',
+        role: 'ADMIN',
+        permissions: ['trading.execute', 'trading.view', 'risk.manage', 'system.admin'],
+        lastLogin: expect.any(String)
       });
 
-      // Step 6: Test API health check with authentication context
-      const healthRequest = new NextRequest('http://localhost:3000/api?endpoint=health', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${loginData.token}`,
-          'Content-Type': 'application/json'
+      // Verify fetch was called correctly
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:8000/auth/login',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            username: 'admin',
+            password: 'password',
+            remember_me: false,
+          }),
         }
-      });
+      );
 
-      const healthResponse = await GET(healthRequest);
-      const healthData = await healthResponse.json();
-
-      // Step 7: Verify health check responds correctly
-      expect(healthResponse.status).toBe(200);
-      expect(healthData.status).toBe('healthy');
-      expect(healthData.version).toBe('1.0.0-alpha');
+      // Clean up spies
+      consoleSpy.mockRestore();
+      consoleErrorSpy.mockRestore();
     });
 
     it('completes full demo user authentication workflow', async () => {
@@ -124,40 +220,45 @@ describe('Authentication End-to-End Integration Tests', () => {
        * @riskLevel HIGH - Demo access must be properly restricted
        */
 
-      // Step 1: Demo user login
-      const loginRequest = new NextRequest('http://localhost:3000/api', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: 'demo',
-          password: 'demo123'
+      // Mock successful backend response for demo user
+      const mockFetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          access_token: 'test-jwt-token',
+          token_type: 'bearer',
+          expires_in: 28800,
+          user: {
+            id: '2',
+            username: 'demo',
+            role: 'trader',
+            permissions: ['trading.execute', 'trading.view', 'risk.view']
+          }
         })
       });
 
-      const loginResponse = await POST(loginRequest);
-      const loginData = await loginResponse.json();
+      global.fetch = mockFetch;
 
-      // Step 2: Verify demo authentication
-      expect(loginResponse.status).toBe(200);
-      expect(loginData.success).toBe(true);
-      expect(loginData.user.role).toBe('trader');
-      expect(loginData.user.id).toBe('2');
+      // Dynamically import authOptions after environment and fetch setup
+      const { authOptions } = await import('../../app/api/auth/[...nextauth]/route');
 
-      // Step 3: Test auth info endpoint
-      const authInfoRequest = new NextRequest('http://localhost:3000/api?endpoint=auth', {
-        method: 'GET'
-      });
-
-      const authInfoResponse = await GET(authInfoRequest);
-      const authInfoData = await authInfoResponse.json();
-
-      // Step 4: Verify auth info includes demo credentials
-      expect(authInfoResponse.status).toBe(200);
-      expect(authInfoData.demo_credentials).toBeDefined();
-      expect(authInfoData.demo_credentials.demo).toEqual({
+      const credentialsProvider = authOptions.providers.find(
+        provider => provider.id === 'credentials'
+      ) as CredentialsConfig;
+      
+      // @ts-expect-error Test-specific type handling
+      const authResult = await credentialsProvider.authorize!({
         username: 'demo',
-        password: 'demo123',
-        role: 'trader'
+        password: 'demo123'
+      }, {} as any);
+
+      expect(authResult).toEqual({
+        id: '2',
+        username: 'demo',
+        name: 'demo',
+        email: 'demo@traider.local',
+        role: 'TRADER',
+        permissions: ['trading.execute', 'trading.view', 'risk.view'],
+        lastLogin: expect.any(String)
       });
     });
 
@@ -169,35 +270,32 @@ describe('Authentication End-to-End Integration Tests', () => {
        * @riskLevel CRITICAL - Security boundary enforcement
        */
 
-      // Step 1: Invalid credentials
-      const invalidRequest = new NextRequest('http://localhost:3000/api', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: 'invalid',
-          password: 'wrong'
+      // Mock failed backend response
+      const mockFetch = vi.fn().mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        statusText: 'Unauthorized',
+        json: async () => ({
+          detail: 'Invalid credentials'
         })
       });
 
-      const invalidResponse = await POST(invalidRequest);
-      const invalidData = await invalidResponse.json();
+      global.fetch = mockFetch;
 
-      // Step 2: Verify proper rejection
-      expect(invalidResponse.status).toBe(401);
-      expect(invalidData.success).toBe(false);
-      expect(invalidData.message).toBe('Invalid username or password');
-      expect(invalidData.token).toBeUndefined();
-      expect(invalidData.user).toBeUndefined();
+      // Dynamically import authOptions after environment and fetch setup
+      const { authOptions } = await import('../../app/api/auth/[...nextauth]/route');
 
-      // Step 3: Test that API endpoints work without authentication
-      const healthRequest = new NextRequest('http://localhost:3000/api?endpoint=health', {
-        method: 'GET'
-      });
-
-      const healthResponse = await GET(healthRequest);
+      const credentialsProvider = authOptions.providers.find(
+        provider => provider.id === 'credentials'
+      ) as CredentialsConfig;
       
-      // Step 4: Health check should work without auth (public endpoint)
-      expect(healthResponse.status).toBe(200);
+      // @ts-expect-error Test-specific type handling
+      const authResult = await credentialsProvider.authorize!({
+        username: 'invalid',
+        password: 'wrong'
+      }, {} as any);
+
+      expect(authResult).toBeNull();
     });
 
     it('validates input sanitization throughout flow', async () => {
@@ -208,227 +306,209 @@ describe('Authentication End-to-End Integration Tests', () => {
        * @riskLevel HIGH - Security input validation critical
        */
 
-      // Step 1: Test empty credentials
-      const emptyRequest = new NextRequest('http://localhost:3000/api', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
-      });
+      // Dynamically import authOptions after environment setup
+      const { authOptions } = await import('../../app/api/auth/[...nextauth]/route');
 
-      const emptyResponse = await POST(emptyRequest);
-      const emptyData = await emptyResponse.json();
+      const credentialsProvider = authOptions.providers.find(
+        provider => provider.id === 'credentials'
+      ) as CredentialsConfig;
+      
+      // Test empty credentials
+      // @ts-expect-error Test-specific type handling
+      const emptyResult = await credentialsProvider.authorize!({
+        username: '',
+        password: ''
+      }, {} as any);
 
-      expect(emptyResponse.status).toBe(400);
-      expect(emptyData.message).toBe('Username and password are required');
+      expect(emptyResult).toBeNull();
 
-      // Step 2: Test malformed JSON
-      const malformedRequest = new NextRequest('http://localhost:3000/api', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: 'invalid-json'
-      });
+      // Test missing username
+      // @ts-expect-error Test-specific type handling
+      const missingUsernameResult = await credentialsProvider.authorize!({
+        username: '',
+        password: 'password'
+      }, {} as any);
 
-      const malformedResponse = await POST(malformedRequest);
-      expect(malformedResponse.status).toBe(500);
+      expect(missingUsernameResult).toBeNull();
 
-      // Step 3: Test SQL injection attempt
-      const injectionRequest = new NextRequest('http://localhost:3000/api', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: "admin'; DROP TABLE users; --",
-          password: "password"
-        })
-      });
+      // Test missing password
+      // @ts-expect-error Test-specific type handling
+      const missingPasswordResult = await credentialsProvider.authorize!({
+        username: 'admin',
+        password: ''
+      }, {} as any);
 
-      const injectionResponse = await POST(injectionRequest);
-      const injectionData = await injectionResponse.json();
-
-      // Should fail authentication, not crash
-      expect(injectionResponse.status).toBe(401);
-      expect(injectionData.success).toBe(false);
+      expect(missingPasswordResult).toBeNull();
     });
+  });
 
-    it('validates API endpoint routing consistency', async () => {
+  describe('API Integration', () => {
+    /**
+     * Test suite for API integration with authentication system
+     * 
+     * @description Tests API endpoints work correctly with authentication changes
+     * @riskLevel MEDIUM - API functionality validation
+     */
+
+    it('health check endpoint works without authentication', async () => {
       /**
-       * Test unified API endpoint routing works correctly
+       * Test that health check works without authentication
        * 
-       * @tradingImpact API routing must be consistent and reliable
-       * @riskLevel MEDIUM - API consistency affects user experience
+       * @tradingImpact Health checks must be publicly accessible
+       * @riskLevel LOW - Public endpoint functionality
        */
 
-      // Step 1: Test default API info endpoint
-      const infoRequest = new NextRequest('http://localhost:3000/api', {
-        method: 'GET'
-      });
-
-      const infoResponse = await GET(infoRequest);
-      const infoData = await infoResponse.json();
-
-      expect(infoResponse.status).toBe(200);
-      expect(infoData.name).toBe('TRAIDER V1 API');
-      expect(infoData.version).toBe('1.0.0-alpha');
-      expect(infoData.endpoints).toBeDefined();
-
-      // Step 2: Test health endpoint routing
       const healthRequest = new NextRequest('http://localhost:3000/api?endpoint=health', {
         method: 'GET'
       });
 
-      const healthResponse = await GET(healthRequest);
-      const healthData = await healthResponse.json();
+      const response = await GET(healthRequest);
+      const data = await response.json();
 
-      expect(healthResponse.status).toBe(200);
-      expect(healthData.status).toBe('healthy');
-
-      // Step 3: Test auth info endpoint routing
-      const authRequest = new NextRequest('http://localhost:3000/api?endpoint=auth', {
-        method: 'GET'
-      });
-
-      const authResponse = await GET(authRequest);
-      const authData = await authResponse.json();
-
-      expect(authResponse.status).toBe(200);
-      expect(authData.endpoint).toBe('/api?endpoint=auth');
-      expect(authData.demo_credentials).toBeDefined();
-
-      // Step 4: Test unknown endpoint handling
-      const unknownRequest = new NextRequest('http://localhost:3000/api?endpoint=unknown', {
-        method: 'GET'
-      });
-
-      const unknownResponse = await GET(unknownRequest);
-
-      // Should fall back to default API info
-      expect(unknownResponse.status).toBe(200);
+      expect(response.status).toBe(200);
+      expect(data.status).toBe('healthy');
+      expect(data.timestamp).toBeDefined();
+      expect(data.version).toBe('1.0.0-alpha');
+      expect(data.services).toBeDefined();
+      expect(data.system).toBeDefined();
     });
 
-    it('validates token generation and format consistency', async () => {
+    it('API info endpoint provides authentication guidance', async () => {
       /**
-       * Test token generation consistency across multiple requests
+       * Test that API info endpoint provides authentication guidance
        * 
-       * @tradingImpact Token consistency ensures reliable authentication
-       * @riskLevel HIGH - Token security is critical for session management
+       * @tradingImpact Helps users understand authentication requirements
+       * @riskLevel LOW - Information endpoint for user guidance
        */
 
-      const tokens = [];
+      const infoRequest = new NextRequest('http://localhost:3000/api?endpoint=info', {
+        method: 'GET'
+      });
 
-      // Generate multiple tokens
-      for (let i = 0; i < 3; i++) {
-        const request = new NextRequest('http://localhost:3000/api', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: 'admin',
-            password: 'password'
-          })
-        });
+      const response = await GET(infoRequest);
+      const data = await response.json();
 
-        const response = await POST(request);
-        const data = await response.json();
-
-        expect(response.status).toBe(200);
-        expect(data.token).toBeDefined();
-        tokens.push(data.token);
-      }
-
-      // Verify all tokens are unique
-      const uniqueTokens = new Set(tokens);
-      expect(uniqueTokens.size).toBe(tokens.length);
-
-      // Verify all tokens match expected format
-      tokens.forEach(token => {
-        expect(token).toMatch(/^traider-jwt-\d+-[a-z0-9]+$/);
-        expect(token.length).toBeGreaterThan(20);
+      expect(response.status).toBe(200);
+      expect(data.name).toBe('TRAIDER V1 Unified API');
+      expect(data.version).toBe('1.0.0-alpha');
+      expect(data.authentication.provider).toBe('NextAuth.js');
+      expect(data.authentication.endpoints).toEqual({
+        signin: '/api/auth/signin',
+        signout: '/api/auth/signout',
+        session: '/api/auth/session',
+        providers: '/api/auth/providers'
       });
     });
   });
 
   describe('Performance and Reliability', () => {
     /**
-     * Test suite for authentication performance and reliability
+     * Test suite for performance and reliability validation
      * 
-     * @description Validates authentication meets performance requirements
-     * @riskLevel MEDIUM - Performance affects user experience
+     * @description Tests authentication performance meets institutional standards
+     * @riskLevel HIGH - Performance critical for trading operations
      */
 
     it('completes authentication within performance targets', async () => {
       /**
-       * Test authentication performance meets institutional requirements
+       * Test that authentication completes within performance targets
        * 
-       * @performance Target: <200ms authentication time
-       * @tradingImpact Fast authentication improves trading workflow
-       * @riskLevel MEDIUM - Performance affects user satisfaction
+       * @performance Target: <500ms complete authentication flow
+       * @tradingImpact Fast authentication reduces trading latency
+       * @riskLevel MEDIUM - Performance impact on trading operations
        */
 
-      const startTime = Date.now();
-
-      const request = new NextRequest('http://localhost:3000/api', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: 'admin',
-          password: 'password'
+      const mockFetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          access_token: 'test-jwt-token',
+          token_type: 'bearer',
+          expires_in: 28800,
+          user: {
+            id: '1',
+            username: 'admin',
+            role: 'administrator',
+            permissions: ['trading.execute', 'trading.view', 'risk.manage', 'system.admin']
+          }
         })
       });
 
-      const response = await POST(request);
-      const data = await response.json();
+      global.fetch = mockFetch;
 
+      // Dynamically import authOptions after environment and fetch setup
+      const { authOptions } = await import('../../app/api/auth/[...nextauth]/route');
+
+      const credentialsProvider = authOptions.providers.find(
+        provider => provider.id === 'credentials'
+      ) as CredentialsConfig;
+
+      const startTime = Date.now();
+      
+      // @ts-expect-error Test-specific type handling
+      const authResult = await credentialsProvider.authorize!({
+        username: 'admin',
+        password: 'password'
+      }, {} as any);
+      
       const endTime = Date.now();
       const duration = endTime - startTime;
 
-      // Verify functionality
-      expect(response.status).toBe(200);
-      expect(data.success).toBe(true);
-
-      // Verify performance target
-      expect(duration).toBeLessThan(200); // 200ms target
+      expect(authResult).toBeDefined();
+      expect(duration).toBeLessThan(500); // Performance target: <500ms
     });
 
     it('handles concurrent authentication requests', async () => {
       /**
-       * Test authentication under concurrent load
+       * Test concurrent authentication request handling
        * 
        * @performance Target: Handle 10 concurrent requests
-       * @tradingImpact Concurrent access needed for multiple users
-       * @riskLevel MEDIUM - Concurrency affects scalability
+       * @tradingImpact Multiple users must be able to authenticate simultaneously
+       * @riskLevel HIGH - Concurrent access critical for multi-user platform
        */
 
-      const requests = Array.from({ length: 5 }, () => 
-        new NextRequest('http://localhost:3000/api', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: 'admin',
-            password: 'password'
+      // Mock successful backend responses for concurrent requests
+      const mockFetch = vi.fn()
+        .mockResolvedValue({
+          ok: true,
+          json: async () => ({
+            access_token: 'test-jwt-token',
+            token_type: 'bearer',
+            expires_in: 28800,
+            user: {
+              id: '1',
+              username: 'admin',
+              role: 'administrator',
+              permissions: ['trading.execute', 'trading.view', 'risk.manage', 'system.admin']
+            }
           })
-        })
+        });
+
+      global.fetch = mockFetch;
+
+      // Dynamically import authOptions after environment and fetch setup
+      const { authOptions } = await import('../../app/api/auth/[...nextauth]/route');
+
+      const credentialsProvider = authOptions.providers.find(
+        provider => provider.id === 'credentials'
+      ) as CredentialsConfig;
+
+      // Create 5 concurrent authentication requests
+      const authPromises = Array.from({ length: 5 }, () =>
+        // @ts-expect-error Test-specific type handling
+        credentialsProvider.authorize!({
+          username: 'admin',
+          password: 'password'
+        }, {} as any)
       );
 
-      const responses = await Promise.all(
-        requests.map(request => POST(request))
-      );
+      const results = await Promise.all(authPromises);
 
-      const results = await Promise.all(
-        responses.map(response => response.json())
-      );
-
-      // All requests should succeed
-      responses.forEach(response => {
-        expect(response.status).toBe(200);
+      // Verify all requests completed successfully
+      expect(results).toHaveLength(5);
+      results.forEach(result => {
+        expect(result).toBeDefined();
+        expect(result?.username).toBe('admin');
       });
-
-      results.forEach(data => {
-        expect(data.success).toBe(true);
-        expect(data.token).toBeDefined();
-      });
-
-      // All tokens should be unique
-      const tokens = results.map(data => data.token);
-      const uniqueTokens = new Set(tokens);
-      expect(uniqueTokens.size).toBe(tokens.length);
     });
   });
 }); 

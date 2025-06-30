@@ -213,45 +213,82 @@ def verify_token(token: str) -> Dict[str, Any]:
     except JWTError as exc:
         raise AuthenticationError(f"Token validation failed: {str(exc)}", "TOKEN_INVALID")
 
-def authenticate_user(username: str, password: str) -> Optional[Dict[str, Any]]:
+async def authenticate_user(username: str, password: str) -> Optional[Dict[str, Any]]:
     """
-    Authenticate user credentials.
+    Authenticate user credentials against database.
     
     @param username Username to authenticate
     @param password Password to verify
     @returns User information if authenticated, None otherwise
     
     @performance <100ms authentication
-    @sideEffects Logs authentication attempts
+    @sideEffects Logs authentication attempts, updates last_login
     
     @tradingImpact CRITICAL - System access control
     @riskLevel CRITICAL - Authentication security
     """
     
-    # For Phase 0, we use simple password-based authentication
-    # In Phase 1+, this will integrate with user database
-    
     user_info = None
     
-    # Admin user authentication
-    if username.lower() in ["admin", "traider", "owner"] and password == DASHBOARD_PASSWORD:
-        user_info = {
-            "user_id": "admin",
-            "username": "admin",
-            "role": "admin",
-            "permissions": ["read", "write", "admin", "trading"],
-            "created_at": time.time(),
-        }
-    
-    # Guest user authentication (if enabled)
-    elif username.lower() == "guest" and GUEST_PASSWORD and password == GUEST_PASSWORD:
-        user_info = {
-            "user_id": "guest",
-            "username": "guest",
-            "role": "guest",
-            "permissions": ["read"],
-            "created_at": time.time(),
-        }
+    try:
+        # Import database connection here to avoid circular imports
+        from database import get_raw_connection
+        
+        # Get database connection
+        async with get_raw_connection() as conn:
+            # Query user from database
+            user_query = """
+                SELECT id, username, email, password_hash, role, permissions, 
+                       is_active, login_attempts, locked_until
+                FROM users 
+                WHERE username = $1 AND is_active = true
+            """
+            
+            user_record = await conn.fetchrow(user_query, username)
+            
+            if not user_record:
+                logger.warning(f"Authentication failed: User '{username}' not found")
+                return None
+            
+            # Check if account is locked
+            if user_record['locked_until'] and user_record['locked_until'] > datetime.now(timezone.utc):
+                logger.warning(f"Authentication failed: Account '{username}' is locked")
+                return None
+            
+            # Verify password
+            if not verify_password(password, user_record['password_hash']):
+                # Increment login attempts
+                await conn.execute(
+                    "UPDATE users SET login_attempts = login_attempts + 1 WHERE id = $1",
+                    user_record['id']
+                )
+                
+                logger.warning(f"Authentication failed: Invalid password for user '{username}'")
+                return None
+            
+            # Reset login attempts and update last login on successful authentication
+            await conn.execute("""
+                UPDATE users SET 
+                    login_attempts = 0, 
+                    last_login = CURRENT_TIMESTAMP 
+                WHERE id = $1
+            """, user_record['id'])
+            
+            # Build user info
+            user_info = {
+                "user_id": str(user_record['id']),
+                "username": user_record['username'],
+                "email": user_record['email'],
+                "role": user_record['role'],
+                "permissions": user_record['permissions'] or [],
+                "created_at": time.time(),
+            }
+            
+            logger.info(f"User '{username}' authenticated successfully")
+            
+    except Exception as error:
+        logger.error(f"Database error during authentication: {error}")
+        return None
     
     # Log authentication attempt
     audit_logger.info(
@@ -376,7 +413,7 @@ async def login(login_request: LoginRequest) -> LoginResponse:
     
     try:
         # Authenticate user
-        user = authenticate_user(login_request.username, login_request.password)
+        user = await authenticate_user(login_request.username, login_request.password)
         
         if not user:
             # Log failed authentication

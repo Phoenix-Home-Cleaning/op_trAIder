@@ -29,6 +29,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 
 /**
  * Login form state interface
@@ -46,6 +47,7 @@ interface LoginForm {
  * @description
  * Renders the login form with validation and authentication handling.
  * Implements secure login flow with proper error handling and loading states.
+ * Uses NextAuth.js for secure authentication with FastAPI backend integration.
  *
  * @returns JSX element representing the login page
  *
@@ -56,7 +58,7 @@ interface LoginForm {
  *
  * @security
  * - Form validation prevents injection attacks
- * - Secure credential handling
+ * - Secure credential handling via NextAuth
  * - Rate limiting protection (backend)
  *
  * @tradingImpact
@@ -110,7 +112,7 @@ export default function LoginPage() {
    * Handle form submission
    *
    * @description
-   * Validates form data and submits login request to backend.
+   * Validates form data and submits login request via NextAuth.
    * Handles success/error states and redirects on successful authentication.
    *
    * @param e - Form submission event
@@ -123,7 +125,7 @@ export default function LoginPage() {
    * - Error handling with user-friendly messages
    *
    * @security
-   * - Credentials sent securely to backend
+   * - Credentials handled securely by NextAuth
    * - No sensitive data stored in client state
    * - Proper error handling prevents information leakage
    */
@@ -138,30 +140,34 @@ export default function LoginPage() {
         throw new Error('Please fill in all fields');
       }
 
-      // TODO: Replace with actual authentication API call
-      // This is a placeholder for Phase 0
-      const response = await fetch('/api', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+      // Use NextAuth signIn with credentials provider
+      const result = await signIn('credentials', {
+        username: formData.username,
+        password: formData.password,
+        redirect: false, // Handle redirect manually
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Login failed');
+      if (result?.error) {
+        // Handle authentication errors
+        switch (result.error) {
+          case 'CredentialsSignin':
+            setError('Invalid username or password');
+            break;
+          case 'CallbackRouteError':
+            setError('Authentication service temporarily unavailable');
+            break;
+          default:
+            setError('Login failed. Please try again.');
+        }
+        return;
       }
 
-      const data = await response.json();
-
-      // Store authentication token (if provided)
-      if (data.token) {
-        localStorage.setItem('auth_token', data.token);
+      if (result?.ok) {
+        // Redirect to dashboard on successful login
+        router.push('/dashboard');
+      } else {
+        setError('Unexpected error during login');
       }
-
-      // Redirect to dashboard on successful login
-      router.push('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
@@ -222,45 +228,69 @@ export default function LoginPage() {
 
               {/* Error Message */}
               {error && (
-                <div className="p-3 text-sm text-danger bg-danger/10 border border-danger/20 rounded-md">
-                  {error}
+                <div className="rounded-md bg-red-50 p-4">
+                  <div className="flex">
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-red-800">
+                        Authentication Error
+                      </h3>
+                      <div className="mt-2 text-sm text-red-700">
+                        <p>{error}</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
 
               {/* Submit Button */}
-              <button type="submit" disabled={isLoading} className="btn-primary w-full">
-                {isLoading ? (
-                  <div className="flex items-center justify-center space-x-2">
-                    <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                    <span>Signing in...</span>
-                  </div>
-                ) : (
-                  'Sign in'
-                )}
-              </button>
-            </form>
-          </div>
-        </div>
-
-        {/* Phase 0 Notice */}
-        <div className="text-center">
-          <div className="p-4 bg-warning/10 border border-warning/20 rounded-lg">
-            <div className="flex items-center justify-center space-x-2 mb-2">
-              <div className="w-4 h-4 rounded-full bg-warning/20 flex items-center justify-center">
-                <div className="w-2 h-2 rounded-full bg-warning" />
+              <div>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? (
+                    <>
+                      <svg
+                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Signing in...
+                    </>
+                  ) : (
+                    'Sign in'
+                  )}
+                </button>
               </div>
-              <span className="text-sm font-medium">Phase 0 Development</span>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Authentication is currently in development. Use demo credentials for testing.
-            </p>
-          </div>
-        </div>
+            </form>
 
-        {/* Footer */}
-        <div className="text-center text-xs text-muted-foreground">
-          <p>© 2024 TRAIDER Team. All rights reserved.</p>
-          <p className="mt-1">Institutional-grade autonomous cryptocurrency trading platform</p>
+            {/* Demo Credentials */}
+            <div className="mt-6 p-4 bg-muted rounded-md">
+              <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                Demo Credentials (Phase 0)
+              </h4>
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p><strong>Admin:</strong> admin / password</p>
+                <p><strong>Demo:</strong> demo / demo123</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

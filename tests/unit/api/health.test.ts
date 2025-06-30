@@ -297,8 +297,7 @@ describe('Health API Endpoint - Integration Tests', () => {
 
       // Verify endpoints information
       expect(data.endpoints).toHaveProperty('health');
-      expect(data.endpoints).toHaveProperty('auth');
-      expect(data.endpoints).toHaveProperty('login');
+      expect(data.endpoints).toHaveProperty('info');
     });
   });
 });

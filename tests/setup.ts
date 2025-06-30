@@ -32,6 +32,12 @@ beforeAll(() => {
   }
   process.env.NEXTAUTH_URL = 'http://localhost:3000';
   process.env.NEXTAUTH_SECRET = 'test-secret-key';
+  process.env.NEXT_PUBLIC_API_URL = 'http://localhost:8000';
+
+  // Register global fetch stub for tests
+  if (!global.fetch) {
+    vi.stubGlobal('fetch', vi.fn());
+  }
 });
 
 // Clean up after each test

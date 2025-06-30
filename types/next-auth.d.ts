@@ -20,14 +20,20 @@ declare module "next-auth" {
    * to the standard NextAuth User interface.
    */
   interface User {
-    /** User's role in the trading platform */
-    role: "ADMIN" | "TRADER" | "VIEWER"
-    /** User's email address */
-    email: string
-    /** User's display name */
-    name: string
     /** User's unique identifier */
     id: string
+    /** User's username */
+    username: string
+    /** User's display name */
+    name: string
+    /** User's email address */
+    email: string
+    /** User's role in the trading platform */
+    role: "ADMIN" | "TRADER" | "VIEWER"
+    /** User's permissions array */
+    permissions: string[]
+    /** Last login timestamp */
+    lastLogin?: string
   }
 
   /**
@@ -38,14 +44,20 @@ declare module "next-auth" {
    */
   interface Session {
     user: {
-      /** User's role in the trading platform */
-      role: "ADMIN" | "TRADER" | "VIEWER"
-      /** User's email address */
-      email: string
-      /** User's display name */
-      name: string
       /** User's unique identifier */
       id: string
+      /** User's username */
+      username: string
+      /** User's display name */
+      name: string
+      /** User's email address */
+      email: string
+      /** User's role in the trading platform */
+      role: "ADMIN" | "TRADER" | "VIEWER"
+      /** User's permissions array */
+      permissions: string[]
+      /** Last login timestamp */
+      lastLogin?: string
     }
   }
 }
@@ -58,9 +70,17 @@ declare module "next-auth/jwt" {
    * secure role-based access control.
    */
   interface JWT {
-    /** User's role in the trading platform */
-    role: "ADMIN" | "TRADER" | "VIEWER"
+    /** User's unique identifier */
+    id: string
+    /** User's username */
+    username: string
     /** User's email address */
     email: string
+    /** User's role in the trading platform */
+    role: "ADMIN" | "TRADER" | "VIEWER"
+    /** User's permissions array */
+    permissions: string[]
+    /** Last login timestamp */
+    lastLogin?: string
   }
 } 

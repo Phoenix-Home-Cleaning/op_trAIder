@@ -79,9 +79,15 @@ export default withAuth(
        * ```
        */
       authorized: ({ token }) => {
-        // For Phase 0, allow all authenticated users
-        // Phase 1+ will implement role-based access control
-        return !!token;
+        // Check if user has a valid token with role information
+        if (!token) {
+          return false;
+        }
+
+        // For Phase 0, allow all authenticated users with valid roles
+        // Phase 1+ will implement granular role-based access control
+        const validRoles = ['ADMIN', 'TRADER', 'VIEWER'];
+        return validRoles.includes(token.role as string);
       },
     },
   }

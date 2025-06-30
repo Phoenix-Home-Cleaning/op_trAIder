@@ -5,6 +5,7 @@
  * @description
  * Single API route file to handle all endpoints and avoid Windows EISDIR issues.
  * This is a Phase 0 workaround for the Next.js 15 Windows filesystem problem.
+ * Authentication is now handled by NextAuth.js routes.
  * 
  * @performance
  * - All endpoints: <200ms response time
@@ -38,23 +39,6 @@ interface HealthResponse {
   };
 }
 
-// Authentication interfaces
-interface LoginRequest {
-  username: string;
-  password: string;
-}
-
-interface LoginResponse {
-  success: boolean;
-  message: string;
-  token?: string;
-  user?: {
-    id: string;
-    username: string;
-    role: string;
-  };
-}
-
 /**
  * GET /api - API information and health check
  */
@@ -67,8 +51,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     switch (endpoint) {
       case 'health':
         return handleHealthCheck();
-      case 'auth':
-        return handleAuthInfo();
+      case 'info':
+        return handleApiInfo();
       default:
         return NextResponse.json({
           name: 'TRAIDER V1 API',
@@ -77,9 +61,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           phase: 'Phase 0 - Foundation',
           endpoints: {
             health: '/api?endpoint=health',
-            auth: '/api?endpoint=auth',
-            login: 'POST /api (with credentials)',
+            info: '/api?endpoint=info',
           },
+          authentication: 'Handled by NextAuth.js at /api/auth/*',
           note: 'Unified API endpoint for Windows compatibility',
         });
     }
@@ -92,28 +76,21 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 }
 
 /**
- * POST /api - Authentication and other POST operations
+ * POST /api - Future POST operations (authentication removed)
  */
-export async function POST(request: NextRequest): Promise<NextResponse> {
-  const url = new URL(request.url);
-  const endpoint = url.searchParams.get('endpoint');
-  
-  try {
-    // Handle authentication by default, or route based on endpoint parameter
-    if (endpoint === 'auth' || !endpoint) {
-      return handleLogin(request);
-    }
-    
-    return NextResponse.json(
-      { error: 'Endpoint not found', available_endpoints: ['auth'] },
-      { status: 404 }
-    );
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Internal server error', message: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
-  }
+export async function POST(): Promise<NextResponse> {
+  return NextResponse.json(
+    { 
+      error: 'Authentication moved to NextAuth.js',
+      auth_endpoints: {
+        signin: '/api/auth/signin',
+        signout: '/api/auth/signout',
+        session: '/api/auth/session',
+      },
+      message: 'Use NextAuth.js endpoints for authentication'
+    },
+    { status: 410 } // Gone - resource permanently moved
+  );
 }
 
 /**
@@ -178,76 +155,36 @@ async function handleHealthCheck(): Promise<NextResponse<HealthResponse>> {
 }
 
 /**
- * Handle authentication info requests
+ * Handle API information requests
  */
-async function handleAuthInfo(): Promise<NextResponse> {
+async function handleApiInfo(): Promise<NextResponse> {
   return NextResponse.json({
-    endpoint: '/api?endpoint=auth',
-    methods: ['GET', 'POST'],
+    name: 'TRAIDER V1 Unified API',
     version: '1.0.0-alpha',
-    description: 'Authentication endpoint for TRAIDER V1',
-    phase: 'Phase 0 - Demo Implementation',
-    demo_credentials: {
-      admin: { username: 'admin', password: 'password', role: 'administrator' },
-      demo: { username: 'demo', password: 'demo123', role: 'trader' },
-    },
-  });
-}
-
-/**
- * Handle login requests
- */
-async function handleLogin(request: NextRequest): Promise<NextResponse<LoginResponse>> {
-  try {
-    const body: LoginRequest = await request.json();
-    const { username, password } = body;
-
-    if (!username || !password) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Username and password are required',
-        },
-        { status: 400 }
-      );
-    }
-
-    // Phase 0 demo credentials
-    const isValidCredentials =
-      (username === 'admin' && password === 'password') ||
-      (username === 'demo' && password === 'demo123');
-
-    if (!isValidCredentials) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Invalid username or password',
-        },
-        { status: 401 }
-      );
-    }
-
-    const token = `traider-jwt-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
-    const user = {
-      id: username === 'admin' ? '1' : '2',
-      username,
-      role: username === 'admin' ? 'administrator' : 'trader',
-    };
-
-    return NextResponse.json({
-      success: true,
-      message: 'Authentication successful',
-      token,
-      user,
-    });
-  } catch {
-    return NextResponse.json(
-      {
-        success: false,
-        message: 'Internal server error',
+    description: 'Unified API endpoint for TRAIDER V1 - Windows compatibility workaround',
+    phase: 'Phase 0 - Foundation',
+    endpoints: {
+      health: {
+        path: '/api?endpoint=health',
+        method: 'GET',
+        description: 'System health check'
       },
-      { status: 500 }
-    );
-  }
+      info: {
+        path: '/api?endpoint=info',
+        method: 'GET',
+        description: 'API information'
+      }
+    },
+    authentication: {
+      provider: 'NextAuth.js',
+      endpoints: {
+        signin: '/api/auth/signin',
+        signout: '/api/auth/signout',
+        session: '/api/auth/session',
+        providers: '/api/auth/providers'
+      },
+      note: 'Authentication handled by NextAuth.js with FastAPI backend integration'
+    },
+    note: 'This unified endpoint exists to work around Windows EISDIR issues in Next.js 15'
+  });
 } 

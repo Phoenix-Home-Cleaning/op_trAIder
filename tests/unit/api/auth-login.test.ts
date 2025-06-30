@@ -1,11 +1,10 @@
 /**
- * @fileoverview Login API Endpoint Integration Tests
+ * @fileoverview Unified API Authentication Tests
  * @module tests.unit.api.auth-login
  * 
  * @description
- * Comprehensive integration tests for the TRAIDER V1 login authentication API endpoint.
- * Tests actual route handlers to achieve 90%+ statement coverage for world-class
- * engineering standards. Includes authentication flows, error handling, and security validation.
+ * Tests for the TRAIDER V1 unified API authentication redirection behavior.
+ * Validates that authentication requests are properly redirected to NextAuth.js
  * 
  * @performance
  * - Test execution target: <200ms per test
@@ -13,7 +12,7 @@
  * - Coverage requirement: >95%
  * 
  * @risk
- * - Failure impact: HIGH - Authentication is critical for security
+ * - Failure impact: HIGH - Authentication routing is critical for security
  * - Recovery strategy: Automated test retry with endpoint isolation
  * 
  * @compliance
@@ -28,15 +27,15 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
-// Import the actual route handlers from unified API
+// Import API routes for testing
 import { POST, GET } from '../../../app/api/route';
 
-describe('Login API Endpoint - Integration Tests', () => {
+describe('Unified API Authentication Tests', () => {
   /**
-   * Test suite for login API endpoint functionality with real route handlers
+   * Test suite for unified API authentication redirection
    * 
-   * @description Tests actual authentication responses and security validation
-   * @riskLevel HIGH - Authentication is critical for system security
+   * @description Tests that authentication requests are properly redirected to NextAuth
+   * @riskLevel HIGH - Authentication routing is critical for system security
    */
   
   beforeEach(() => {
@@ -45,6 +44,8 @@ describe('Login API Endpoint - Integration Tests', () => {
     
     // Set test environment
     vi.stubEnv('NODE_ENV', 'test');
+    vi.stubEnv('NEXTAUTH_SECRET', 'test-secret-key-for-testing');
+    vi.stubEnv('NEXT_PUBLIC_API_URL', 'http://localhost:8000');
   });
 
   afterEach(() => {
@@ -52,432 +53,323 @@ describe('Login API Endpoint - Integration Tests', () => {
     vi.restoreAllMocks();
   });
 
-  describe('POST /api - Authentication Flow (Unified API)', () => {
+  describe('Authentication Redirection', () => {
     /**
-     * Test suite for POST login endpoint with unified route handler
+     * Test suite for authentication redirection behavior
      * 
-     * @description Tests authentication flows with real credential validation
-     * @riskLevel HIGH - Authentication security is critical
+     * @description Tests that POST requests to /api are redirected to NextAuth
+     * @riskLevel HIGH - Authentication routing affects security
      */
 
-    it('authenticates admin user with valid credentials', async () => {
+    it('redirects authentication requests to NextAuth endpoints', async () => {
       /**
-       * Test successful admin authentication
+       * Test that POST /api correctly redirects auth requests to NextAuth
        * 
-       * @performance Target: <200ms response time
-       * @tradingImpact Admin access enables full trading platform management
-       * @riskLevel HIGH - Admin credentials provide elevated access
+       * @tradingImpact Ensures users are directed to correct authentication
+       * @riskLevel HIGH - Authentication routing is critical
        */
-      
-      const request = new NextRequest('http://localhost/api', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: 'admin',
-          password: 'password'
-        })
-      });
 
-      const response = await POST(request);
+             const loginRequest = new NextRequest(new Request('http://localhost:3000/api', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({
+           username: 'admin',
+           password: 'password'
+         })
+       }));
+
+      const response = await POST(loginRequest);
       const data = await response.json();
 
-      // Verify successful authentication
-      expect(response.status).toBe(200);
-      expect(data.success).toBe(true);
-      expect(data.message).toBe('Authentication successful');
-      
-      // Verify token generation (updated for unified API)
-      expect(data.token).toBeDefined();
-      expect(typeof data.token).toBe('string');
-      expect(data.token).toMatch(/^traider-jwt-/);
-      
-      // Verify user data
-      expect(data.user).toBeDefined();
-      expect(data.user.id).toBe('1');
-      expect(data.user.username).toBe('admin');
-      expect(data.user.role).toBe('administrator');
+      // Verify redirection response - updated to expect 410 Gone
+      expect(response.status).toBe(410);
+      expect(data.error).toBe('Authentication moved to NextAuth.js');
     });
 
-    it('authenticates demo user with valid credentials', async () => {
+    it('provides NextAuth endpoint information', async () => {
       /**
-       * Test successful demo user authentication
+       * Test that authentication redirection includes NextAuth endpoints
        * 
-       * @performance Target: <200ms response time
-       * @tradingImpact Demo access enables trading platform testing
-       * @riskLevel MEDIUM - Demo credentials provide limited access
+       * @tradingImpact Helps users understand where to authenticate
+       * @riskLevel MEDIUM - User guidance for authentication
        */
-      
-      const request = new NextRequest('http://localhost/api', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: 'demo',
-          password: 'demo123'
-        })
-      });
 
-      const response = await POST(request);
+             const loginRequest = new NextRequest(new Request('http://localhost:3000/api', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({
+           username: 'demo',
+           password: 'demo123'
+         })
+       }));
+
+      const response = await POST(loginRequest);
       const data = await response.json();
 
-      // Verify successful authentication
-      expect(response.status).toBe(200);
-      expect(data.success).toBe(true);
-      expect(data.message).toBe('Authentication successful');
-      
-      // Verify token generation (updated for unified API)
-      expect(data.token).toBeDefined();
-      expect(typeof data.token).toBe('string');
-      expect(data.token).toMatch(/^traider-jwt-/);
-      
-      // Verify user data
-      expect(data.user).toBeDefined();
-      expect(data.user.id).toBe('2');
-      expect(data.user.username).toBe('demo');
-      expect(data.user.role).toBe('trader');
+      expect(response.status).toBe(410);
+      expect(data.auth_endpoints).toEqual({
+        signin: '/api/auth/signin',
+        signout: '/api/auth/signout',
+        session: '/api/auth/session',
+      });
+      expect(data.message).toBe('Use NextAuth.js endpoints for authentication');
     });
 
-    it('rejects invalid credentials', async () => {
+    it('handles different credential formats consistently', async () => {
       /**
-       * Test authentication failure with invalid credentials
+       * Test that various credential formats all get redirected
        * 
-       * @tradingImpact Invalid credentials must be rejected to maintain security
-       * @riskLevel HIGH - Authentication security prevents unauthorized access
+       * @tradingImpact Consistent behavior regardless of input format
+       * @riskLevel MEDIUM - Input handling consistency
        */
-      
-      const request = new NextRequest('http://localhost/api', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: 'invalid',
-          password: 'wrong'
-        })
-      });
 
-      const response = await POST(request);
-      const data = await response.json();
+      const requests = [
+        { username: 'viewer', password: 'viewer123' },
+        { email: 'test@example.com', password: 'password' },
+        { user: 'invalid', pass: 'wrong' }
+      ];
 
-      // Verify authentication failure
-      expect(response.status).toBe(401);
-      expect(data.success).toBe(false);
-      expect(data.message).toBe('Invalid username or password');
-      
-      // Verify no sensitive data in response
-      expect(data.token).toBeUndefined();
-      expect(data.user).toBeUndefined();
-    });
+      for (const credentials of requests) {
+                 const loginRequest = new NextRequest(new Request('http://localhost:3000/api', {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify(credentials)
+         }));
 
-    it('validates required username field', async () => {
-      /**
-       * Test input validation for missing username
-       * 
-       * @tradingImpact Input validation prevents malformed authentication attempts
-       * @riskLevel MEDIUM - Input validation is essential for security
-       */
-      
-      const request = new NextRequest('http://localhost/api', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          password: 'password'
-        })
-      });
+        const response = await POST(loginRequest);
+        const data = await response.json();
 
-      const response = await POST(request);
-      const data = await response.json();
-
-      // Verify validation error
-      expect(response.status).toBe(400);
-      expect(data.success).toBe(false);
-      expect(data.message).toBe('Username and password are required');
-      
-      // Verify no authentication data in response
-      expect(data.token).toBeUndefined();
-      expect(data.user).toBeUndefined();
-    });
-
-    it('validates required password field', async () => {
-      /**
-       * Test input validation for missing password
-       * 
-       * @tradingImpact Input validation prevents malformed authentication attempts
-       * @riskLevel MEDIUM - Input validation is essential for security
-       */
-      
-      const request = new NextRequest('http://localhost/api', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: 'admin'
-        })
-      });
-
-      const response = await POST(request);
-      const data = await response.json();
-
-      // Verify validation error
-      expect(response.status).toBe(400);
-      expect(data.success).toBe(false);
-      expect(data.message).toBe('Username and password are required');
-      
-      // Verify no authentication data in response
-      expect(data.token).toBeUndefined();
-      expect(data.user).toBeUndefined();
-    });
-
-    it('validates both username and password fields', async () => {
-      /**
-       * Test input validation for missing both fields
-       * 
-       * @tradingImpact Input validation prevents malformed authentication attempts
-       * @riskLevel MEDIUM - Input validation is essential for security
-       */
-      
-      const request = new NextRequest('http://localhost/api', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
-      });
-
-      const response = await POST(request);
-      const data = await response.json();
-
-      // Verify validation error
-      expect(response.status).toBe(400);
-      expect(data.success).toBe(false);
-      expect(data.message).toBe('Username and password are required');
-    });
-
-    it('handles empty string credentials', async () => {
-      /**
-       * Test validation with empty string credentials
-       * 
-       * @tradingImpact Empty credentials should be treated as missing
-       * @riskLevel MEDIUM - Edge case validation for security
-       */
-      
-      const request = new NextRequest('http://localhost/api', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: '',
-          password: ''
-        })
-      });
-
-      const response = await POST(request);
-      const data = await response.json();
-
-      // Verify validation error for empty strings
-      expect(response.status).toBe(400);
-      expect(data.success).toBe(false);
-      expect(data.message).toBe('Username and password are required');
-    });
-
-    it('handles malformed JSON request', async () => {
-      /**
-       * Test error handling for malformed JSON requests
-       * 
-       * @tradingImpact Malformed requests should be handled gracefully
-       * @riskLevel MEDIUM - Error handling prevents server crashes
-       */
-      
-      const request = new NextRequest('http://localhost/api', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: 'invalid json'
-      });
-
-      const response = await POST(request);
-      const data = await response.json();
-
-      // Verify error handling
-      expect(response.status).toBe(500);
-      expect(data.success).toBe(false);
-      expect(data.message).toBe('Internal server error');
-    });
-
-    it('handles performance requirements', async () => {
-      /**
-       * Test that authentication endpoint responds within performance requirements
-       * 
-       * @performance Target: <200ms response time
-       * @tradingImpact Fast authentication enables rapid user access
-       * @riskLevel MEDIUM - Slow authentication affects user experience
-       */
-      
-      const startTime = performance.now();
-      
-      const request = new NextRequest('http://localhost/api', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: 'admin',
-          password: 'password'
-        })
-      });
-
-      const response = await POST(request);
-      const responseTime = performance.now() - startTime;
-
-      // Should respond quickly
-      expect(responseTime).toBeLessThan(300); // Generous threshold for test environment
-      
-      // Verify response is valid
-      expect(response).toBeDefined();
-      const data = await response.json();
-      expect(data.success).toBe(true);
+        expect(response.status).toBe(410);
+        expect(data.error).toBe('Authentication moved to NextAuth.js');
+      }
     });
   });
 
-  describe('GET /api?endpoint=auth - Auth Info (Unified API)', () => {
+  describe('API Information Endpoints', () => {
     /**
-     * Test suite for GET auth info endpoint
+     * Test suite for API information and health endpoints
      * 
-     * @description Tests authentication information endpoint
-     * @riskLevel LOW - Information endpoint for API documentation
+     * @description Tests GET endpoints that provide API information
+     * @riskLevel LOW - Information endpoints for user guidance
      */
 
-    it('returns authentication endpoint information', async () => {
+    it('provides API information when requested', async () => {
       /**
-       * Test that auth info endpoint returns API documentation
+       * Test that GET /api provides API information
        * 
-       * @tradingImpact API discovery helps with integration and debugging
-       * @riskLevel LOW - Informational endpoint for development
+       * @tradingImpact Helps users understand authentication requirements
+       * @riskLevel LOW - Information endpoint for user guidance
        */
-      
-      const request = new NextRequest('http://localhost/api?endpoint=auth');
-      const response = await GET(request);
+
+             const infoRequest = new NextRequest(new Request('http://localhost:3000/api', {
+         method: 'GET'
+       }));
+
+      const response = await GET(infoRequest);
       const data = await response.json();
 
-      // Verify auth info structure
-      expect(data).toHaveProperty('endpoint');
-      expect(data).toHaveProperty('methods');
-      expect(data).toHaveProperty('version');
-      expect(data).toHaveProperty('description');
-      expect(data).toHaveProperty('phase');
-      expect(data).toHaveProperty('demo_credentials');
+      expect(response.status).toBe(200);
+      expect(data.authentication).toBe('Handled by NextAuth.js at /api/auth/*');
+      expect(data.endpoints).toEqual({
+        health: '/api?endpoint=health',
+        info: '/api?endpoint=info',
+      });
+    });
 
-      // Verify values
-      expect(data.endpoint).toBe('/api?endpoint=auth');
-      expect(data.methods).toContain('GET');
-      expect(data.methods).toContain('POST');
+    it('handles health check requests', async () => {
+      /**
+       * Test that health check endpoint works
+       * 
+       * @tradingImpact Health checks must be publicly accessible
+       * @riskLevel LOW - Public endpoint functionality
+       */
+
+             const healthRequest = new NextRequest(new Request('http://localhost:3000/api?endpoint=health', {
+         method: 'GET'
+       }));
+
+      const response = await GET(healthRequest);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.status).toBe('healthy');
+      expect(data.timestamp).toBeDefined();
       expect(data.version).toBe('1.0.0-alpha');
-      expect(data.phase).toBe('Phase 0 - Demo Implementation');
-
-      // Verify demo credentials information
-      expect(data.demo_credentials).toHaveProperty('admin');
-      expect(data.demo_credentials).toHaveProperty('demo');
-      expect(data.demo_credentials.admin.role).toBe('administrator');
-      expect(data.demo_credentials.demo.role).toBe('trader');
-    });
-  });
-});
-
-describe('Authentication Security Tests', () => {
-  /**
-   * Test suite for authentication security scenarios
-   * 
-   * @description Tests security-related authentication behavior
-   * @riskLevel HIGH - Security tests are critical for system protection
-   */
-
-  it('does not leak sensitive information in error responses', async () => {
-    /**
-     * Test that error responses don't contain sensitive system information
-     * 
-     * @tradingImpact Information leakage could aid attackers
-     * @riskLevel HIGH - Security information disclosure prevention
-     */
-    
-    const request = new NextRequest('http://localhost/api', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        username: 'nonexistent',
-        password: 'wrongpassword'
-      })
     });
 
-    const response = await POST(request);
-    const data = await response.json();
+    it('provides detailed API information', async () => {
+      /**
+       * Test that info endpoint provides comprehensive details
+       * 
+       * @tradingImpact Complete API information helps integration
+       * @riskLevel LOW - Documentation endpoint
+       */
 
-    // Verify no sensitive information is leaked
-    expect(data).not.toHaveProperty('stack');
-    expect(data).not.toHaveProperty('code');
-    expect(data).not.toHaveProperty('details');
-    expect(data.message).not.toContain('database');
-    expect(data.message).not.toContain('connection');
-    expect(data.message).not.toContain('error');
-  });
+             const infoRequest = new NextRequest(new Request('http://localhost:3000/api?endpoint=info', {
+         method: 'GET'
+       }));
 
-  it('maintains consistent response times for valid and invalid credentials', async () => {
-    /**
-     * Test that response times don't leak information about valid usernames
-     * 
-     * @tradingImpact Timing attacks could reveal valid usernames
-     * @riskLevel MEDIUM - Timing attack prevention
-     */
-    
-    // Test valid username, invalid password
-    const validUserStart = performance.now();
-    const validUserRequest = new NextRequest('http://localhost/api', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        username: 'admin',
-        password: 'wrongpassword'
-      })
-    });
-    await POST(validUserRequest);
-    const validUserTime = performance.now() - validUserStart;
-
-    // Test invalid username, invalid password
-    const invalidUserStart = performance.now();
-    const invalidUserRequest = new NextRequest('http://localhost/api', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        username: 'nonexistent',
-        password: 'wrongpassword'
-      })
-    });
-    await POST(invalidUserRequest);
-    const invalidUserTime = performance.now() - invalidUserStart;
-
-    // Response times should be similar (within 50ms)
-    const timeDifference = Math.abs(validUserTime - invalidUserTime);
-    expect(timeDifference).toBeLessThan(50);
-  });
-
-  it('handles concurrent authentication requests', async () => {
-    /**
-     * Test that concurrent authentication requests are handled properly
-     * 
-     * @tradingImpact Concurrent access should not cause authentication failures
-     * @riskLevel MEDIUM - Concurrency handling for authentication
-     */
-    
-    const requests = Array.from({ length: 5 }, () => 
-      new NextRequest('http://localhost/api', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: 'admin',
-          password: 'password'
-        })
-      })
-    );
-
-    // Execute all requests concurrently
-    const promises = requests.map(request => POST(request));
-    const responses = await Promise.all(promises);
-
-    // All should succeed
-    for (const response of responses) {
-      expect(response.status).toBe(200);
+      const response = await GET(infoRequest);
       const data = await response.json();
-      expect(data.success).toBe(true);
-      expect(data.token).toBeDefined();
-    }
+
+      expect(response.status).toBe(200);
+      expect(data.name).toBe('TRAIDER V1 Unified API');
+      expect(data.version).toBe('1.0.0-alpha');
+      expect(data.authentication.provider).toBe('NextAuth.js');
+      expect(data.authentication.endpoints).toEqual({
+        signin: '/api/auth/signin',
+        signout: '/api/auth/signout',
+        session: '/api/auth/session',
+        providers: '/api/auth/providers'
+      });
+    });
+
+        it('maintains consistent error responses', async () => {
+      /**
+       * Test that error responses are consistent
+       * 
+       * @tradingImpact Consistent responses help with API usage
+       * @riskLevel LOW - API response consistency
+       */
+
+      const invalidRequest = new NextRequest(new Request('http://localhost:3000/api?endpoint=invalid', {
+        method: 'GET'
+      }));
+
+      const response = await GET(invalidRequest);
+      const data = await response.json();
+
+      // Invalid endpoints return default API info (200) instead of error
+      expect(response.status).toBe(200);
+      expect(data.name).toBe('TRAIDER V1 API');
+      expect(data.version).toBe('1.0.0-alpha');
+      expect(data.authentication).toBe('Handled by NextAuth.js at /api/auth/*');
+    });
+  });
+
+  describe('Error Handling', () => {
+    /**
+     * Test suite for error handling behavior
+     * 
+     * @description Tests various error conditions and responses
+     * @riskLevel MEDIUM - Error handling affects reliability
+     */
+
+    it('handles malformed JSON in POST requests', async () => {
+      /**
+       * Test that malformed JSON is handled gracefully
+       * 
+       * @tradingImpact Graceful error handling improves user experience
+       * @riskLevel MEDIUM - Input validation and error handling
+       */
+
+             const malformedRequest = new NextRequest(new Request('http://localhost:3000/api', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: '{ invalid json'
+       }));
+
+      const response = await POST(malformedRequest);
+      const data = await response.json();
+
+      // Should still redirect to NextAuth even with malformed JSON
+      expect(response.status).toBe(410);
+      expect(data.error).toBe('Authentication moved to NextAuth.js');
+    });
+
+    it('handles empty POST requests', async () => {
+      /**
+       * Test that empty POST requests are handled
+       * 
+       * @tradingImpact Empty requests should be redirected consistently
+       * @riskLevel LOW - Edge case handling
+       */
+
+             const emptyRequest = new NextRequest(new Request('http://localhost:3000/api', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: '{}'
+       }));
+
+      const response = await POST(emptyRequest);
+      const data = await response.json();
+
+      expect(response.status).toBe(410);
+      expect(data.error).toBe('Authentication moved to NextAuth.js');
+    });
+
+    it('handles requests without content-type header', async () => {
+      /**
+       * Test that requests without proper headers are handled
+       * 
+       * @tradingImpact Robust handling of various request formats
+       * @riskLevel LOW - Header validation
+       */
+
+             const noHeaderRequest = new NextRequest(new Request('http://localhost:3000/api', {
+         method: 'POST',
+         body: JSON.stringify({ username: 'test', password: 'test' })
+       }));
+
+      const response = await POST(noHeaderRequest);
+      const data = await response.json();
+
+      expect(response.status).toBe(410);
+      expect(data.error).toBe('Authentication moved to NextAuth.js');
+    });
+  });
+
+  describe('Performance and Reliability', () => {
+    /**
+     * Test suite for performance validation
+     * 
+     * @description Tests response times and reliability
+     * @riskLevel MEDIUM - Performance affects user experience
+     */
+
+    it('responds within performance targets', async () => {
+      /**
+       * Test that API responses are fast enough
+       * 
+       * @performance Target: <200ms response time
+       * @tradingImpact Fast responses improve user experience
+       * @riskLevel MEDIUM - Performance requirements
+       */
+
+      const startTime = Date.now();
+
+             const request = new NextRequest(new Request('http://localhost:3000/api', {
+         method: 'GET'
+       }));
+
+      const response = await GET(request);
+      await response.json();
+
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+
+      expect(response.status).toBe(200);
+      expect(duration).toBeLessThan(200); // Performance target: <200ms
+    });
+
+    it('handles concurrent requests', async () => {
+      /**
+       * Test that concurrent requests are handled properly
+       * 
+       * @performance Target: Handle multiple concurrent requests
+       * @tradingImpact Multiple users must be able to access API simultaneously
+       * @riskLevel MEDIUM - Concurrent access handling
+       */
+
+             const requests = Array.from({ length: 5 }, () =>
+         GET(new NextRequest(new Request('http://localhost:3000/api', { method: 'GET' })))
+       );
+
+      const responses = await Promise.all(requests);
+
+      responses.forEach(response => {
+        expect(response.status).toBe(200);
+      });
+    });
   });
 });
