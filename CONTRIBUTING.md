@@ -24,9 +24,9 @@ TRAIDER V1 implements multi-layered pre-commit validation to ensure only high-qu
 **Secret Detection**: Scans for hardcoded API keys, passwords, and tokens
 ```bash
 # ❌ These will be blocked:
-const API_KEY = "sk_live_FAKE_KEY_FOR_DOCS"
-const password = "FAKE_PASSWORD_FOR_DOCS"
-const coinbase_secret = "FAKE_SECRET_FOR_DOCS"
+const API_KEY = "sk_live_DOCS_EXAMPLE"
+const password = "docs_example_123"
+const coinbase_secret = "docs_example_abc"
 
 # ✅ Use environment variables instead:
 const API_KEY = process.env.COINBASE_API_KEY

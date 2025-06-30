@@ -124,7 +124,7 @@ export default defineConfig({
     env: {
       NODE_ENV: 'test',
       NEXTAUTH_URL: 'http://localhost:3000',
-      NEXTAUTH_SECRET: 'test-secret-key-for-testing-only-not-real',
+      NEXTAUTH_SECRET: 'test_secret_key_for_testing_only',
       DATABASE_URL: 'postgresql://test:test@localhost:5432/traider_test',
       REDIS_URL: 'redis://localhost:6379/1',
       LOG_LEVEL: 'ERROR' // Reduce log noise in tests

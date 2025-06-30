@@ -7,8 +7,7 @@
   ],
   "out": "docs/api",
   "plugin": [
-    "typedoc-plugin-markdown",
-    "typedoc-plugin-mermaid"
+    "typedoc-plugin-markdown"
   ],
   "includeVersion": true,
   "githubPages": false,
@@ -69,7 +68,8 @@
     "Documentation": "https://your-org.github.io/traider"
   },
   "customCss": "docs/styles/typedoc.css",
-  "markedOptions": {
-    "mangle": false
+  "textContentMappings": {
+    "title.indexPage": "TRAIDER V1 API Documentation",
+    "title.memberPage": "{name}"
   }
 } 
