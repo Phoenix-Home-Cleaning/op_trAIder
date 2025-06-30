@@ -99,7 +99,7 @@ logs/
 # CONFIGURATION & SECRETS
 # =============================================================================
 
-# Environment files (use .env.example instead)
+# Environment files (use env.example instead)
 .env
 .env.local
 .env.development.local
@@ -179,6 +179,7 @@ terraform/
 
 # Scripts (copy selectively)
 scripts/
+!scripts/build-workaround.mjs
 
 # =============================================================================
 # MONITORING & ANALYTICS

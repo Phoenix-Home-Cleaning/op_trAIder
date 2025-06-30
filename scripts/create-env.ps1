@@ -56,7 +56,7 @@ $secrets = @{
 Write-Host "Generated $($secrets.Count) secure secrets" -ForegroundColor Green
 
 # Read the template
-$template = Get-Content ".env.example" -Raw
+$template = Get-Content "env.example" -Raw
 
 # Create the header
 $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss UTC"

@@ -1,325 +1,430 @@
 /**
  * @fileoverview Authentication Testing Guard Rails for TRAIDER V1
  * @module tests/guards/auth-testing-guard.test
- *
+ * 
  * @description
- * Guard rail tests to prevent regression of authentication testing infrastructure.
- * These tests validate that the dependency injection pattern remains functional
- * and that critical testing utilities are available.
- *
+ * Comprehensive guard rails to prevent regression of authentication testing
+ * infrastructure. Validates environment configuration, dependency injection
+ * patterns, and ensures production-mirrored test setup remains functional.
+ * 
  * @performance
- * - Guard execution: <50ms total
- * - Individual checks: <5ms each
- *
+ * - Guard rail execution: <100ms total
+ * - Environment validation: <10ms
+ * - Infrastructure checks: <50ms
+ * 
  * @risk
- * - Failure impact: CRITICAL - Testing infrastructure broken
- * - Recovery strategy: Restore from ADR-007 implementation
- *
+ * - Failure impact: CRITICAL - Prevents broken authentication testing
+ * - Recovery strategy: Immediate alert and rollback of breaking changes
+ * 
  * @compliance
- * - Required for CI/CD pipeline
- * - Must pass before deployment
- *
+ * - Test infrastructure integrity: 100%
+ * - Environment configuration validation: 100%
+ * 
+ * @see ADR-007: Authentication Testing Strategy
+ * @see env.example - Production environment template
  * @since 1.0.0-alpha
  * @author TRAIDER Team
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import {
-  authenticateWithBackend,
-  _setTestHook_forceAuthenticate,
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { 
+  authTestEnv, 
+  createAuthTestUsers, 
+  authTestScenarios,
+  authTestAssertions,
+  TEST_ENVIRONMENT_CONFIG 
+} from '../setup/authTestEnvironment';
+import { 
+  authenticateWithBackend, 
+  _setTestHook_forceAuthenticate 
 } from '../../app/lib/auth/backend-auth';
-import { withAuthMock, createTestUsers } from '../setup/prepareAuthTest';
+// User type imported via authTestEnvironment
 
 describe('🛡️ Authentication Testing Guard Rails', () => {
-  describe('Infrastructure Availability', () => {
-    it('should have dependency injection hooks available', () => {
-      expect(typeof _setTestHook_forceAuthenticate).toBe('function');
-      expect(typeof authenticateWithBackend).toBe('function');
+  describe('Environment Configuration Validation', () => {
+    it('should validate all required environment variables match env.example structure', () => {
+      // Validate that our test environment mirrors production structure
+      const requiredEnvVars = [
+        // Frontend Configuration
+        'NEXT_PUBLIC_API_URL',
+        'NEXTAUTH_URL', 
+        'NEXTAUTH_SECRET',
+        
+        // Backend Configuration
+        'DATABASE_URL',
+        'SECRET_KEY',
+        'ACCESS_TOKEN_EXPIRE_MINUTES',
+        'DASHBOARD_PASSWORD',
+        'GUEST_PASSWORD',
+        
+        // Trading & Market Data
+        'COINBASE_SANDBOX',
+        'MAX_POSITION_SIZE',
+        'DAILY_LOSS_LIMIT',
+        'EMERGENCY_STOP_ENABLED',
+        
+        // Database & Infrastructure
+        'POSTGRES_USER',
+        'POSTGRES_PASSWORD',
+        'POSTGRES_DB',
+        'POSTGRES_HOST',
+        'POSTGRES_PORT',
+        'TIMESCALEDB_ENABLED',
+        'REDIS_URL',
+        
+        // Monitoring & Observability
+        'LOG_LEVEL',
+        'AUDIT_LOG_ENABLED',
+        'PROMETHEUS_PORT',
+        'GRAFANA_PORT',
+        
+        // Testing
+        'TEST_DATABASE_URL',
+        'TEST_SECRET_KEY',
+        
+        // Security
+        'CORS_ORIGINS',
+        'CORS_CREDENTIALS',
+        'RATE_LIMIT_ENABLED',
+        
+        // Docker & Infrastructure
+        'COMPOSE_PROJECT_NAME',
+        'DOCKER_REGISTRY'
+      ];
+
+      // Validate all required variables are defined in test config
+      requiredEnvVars.forEach(varName => {
+        expect(TEST_ENVIRONMENT_CONFIG).toHaveProperty(varName);
+        expect(TEST_ENVIRONMENT_CONFIG[varName as keyof typeof TEST_ENVIRONMENT_CONFIG]).toBeDefined();
+      });
+
+      // Validate test-safe values
+      expect(TEST_ENVIRONMENT_CONFIG.COINBASE_SANDBOX).toBe('true');
+      expect(TEST_ENVIRONMENT_CONFIG.NODE_ENV).toBe('test');
+      expect(TEST_ENVIRONMENT_CONFIG.RATE_LIMIT_ENABLED).toBe('false');
+      expect(TEST_ENVIRONMENT_CONFIG.AUDIT_LOG_ENABLED).toBe('false');
     });
 
-    it('should have test utilities available', () => {
-      expect(typeof withAuthMock).toBe('function');
-      expect(typeof createTestUsers.admin).toBe('function');
-      expect(typeof createTestUsers.demo).toBe('function');
-      expect(typeof createTestUsers.viewer).toBe('function');
-      expect(typeof createTestUsers.custom).toBe('function');
+    it('should validate environment isolation setup/teardown', () => {
+      const originalEnv = process.env.NEXT_PUBLIC_API_URL;
+      
+      // Setup should change environment
+      authTestEnv.setup();
+      expect(process.env.NEXT_PUBLIC_API_URL).toBe(TEST_ENVIRONMENT_CONFIG.NEXT_PUBLIC_API_URL);
+      
+      // Teardown should restore environment
+      authTestEnv.teardown();
+      expect(process.env.NEXT_PUBLIC_API_URL).toBe(originalEnv);
     });
 
-    it('should have proper test user factory structure', () => {
-      const adminUser = createTestUsers.admin();
-
-      expect(adminUser).toHaveProperty('id');
-      expect(adminUser).toHaveProperty('username');
-      expect(adminUser).toHaveProperty('email');
-      expect(adminUser).toHaveProperty('role');
-      expect(adminUser).toHaveProperty('permissions');
-      expect(adminUser.role).toBe('ADMIN');
+    it('should validate test environment security isolation', () => {
+      authTestEnv.setup();
+      
+      // Ensure test secrets are different from production patterns
+      expect(process.env.NEXTAUTH_SECRET).toContain('test-');
+      expect(process.env.SECRET_KEY).toContain('test-');
+      expect(process.env.TEST_SECRET_KEY).toContain('test-');
+      
+      // Ensure database is isolated
+      expect(process.env.DATABASE_URL).toContain('traider_test');
+      expect(process.env.POSTGRES_DB).toBe('traider_test');
+      
+      authTestEnv.teardown();
     });
   });
 
-  describe('Dependency Injection Functionality', () => {
+  describe('Dependency Injection Infrastructure', () => {
     let mockAuth: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
       mockAuth = vi.fn();
+      authTestEnv.setup();
     });
 
     afterEach(() => {
       _setTestHook_forceAuthenticate(undefined);
+      authTestEnv.teardown();
       vi.restoreAllMocks();
     });
 
-    it('should allow setting and clearing test hooks', () => {
-      // Should start with no hook
+    it('should validate test hook installation and cleanup', async () => {
+      // Hook should not be set initially
       expect(mockAuth).not.toHaveBeenCalled();
-
-      // Should accept hook installation
-      expect(() => _setTestHook_forceAuthenticate(mockAuth)).not.toThrow();
-
-      // Should accept hook removal
-      expect(() => _setTestHook_forceAuthenticate(undefined)).not.toThrow();
-    });
-
-    it('should use test hook when installed', async () => {
-      const testUser = createTestUsers.admin();
-
-      _setTestHook_forceAuthenticate(mockAuth);
-      mockAuth.mockResolvedValueOnce(testUser);
-
-      const result = await authenticateWithBackend('test', 'test');
-
-      expect(mockAuth).toHaveBeenCalledWith('test', 'test');
-      expect(result).toEqual(testUser);
-    });
-
-    it('should fall back to production logic when hook cleared', async () => {
-      const testUser = createTestUsers.admin();
-
+      
       // Install hook
       _setTestHook_forceAuthenticate(mockAuth);
-      mockAuth.mockResolvedValueOnce(testUser);
-
-      // Verify hook works
-      let result = await authenticateWithBackend('test', 'test');
-      expect(result).toEqual(testUser);
-
-      // Clear hook
-      _setTestHook_forceAuthenticate(undefined);
-
-      // Should now use production logic (will fail due to no backend)
-      result = await authenticateWithBackend('test', 'test');
-      expect(result).toBeNull(); // Production auth fails without backend
-
-      // Mock should not be called again
-      expect(mockAuth).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe('withAuthMock Utility', () => {
-    it('should provide working mock function', () => {
-      const getMockAuth = withAuthMock();
-
-      expect(typeof getMockAuth).toBe('function');
-
-      // Should return a mock function
-      const mockAuth = getMockAuth();
-      expect(typeof mockAuth.mockResolvedValueOnce).toBe('function');
-      expect(typeof mockAuth.mockRejectedValueOnce).toBe('function');
-    });
-
-    it('should handle setup and teardown automatically', async () => {
-      const getMockAuth = withAuthMock();
-      const mockAuth = getMockAuth();
-
-      // Setup should work
-      mockAuth.mockResolvedValueOnce(createTestUsers.admin());
-
+      mockAuth.mockResolvedValueOnce(createAuthTestUsers.admin());
+      
+      // Hook should be called when authenticating
       const result = await authenticateWithBackend('admin', 'password');
-      expect(result).toEqual(createTestUsers.admin());
       expect(mockAuth).toHaveBeenCalledWith('admin', 'password');
+      expect(result).toEqual(createAuthTestUsers.admin());
+      
+      // Cleanup should remove hook
+      _setTestHook_forceAuthenticate(undefined);
+      mockAuth.mockClear();
+      
+      // Hook should not be called after cleanup
+      // (This would normally call the real backend, but we're in test mode)
+      const _result2 = await authenticateWithBackend('admin', 'password');
+      expect(mockAuth).not.toHaveBeenCalled();
+    });
+
+    it('should validate error handling in test hooks', async () => {
+      // Install hook that throws error
+      const errorHook = vi.fn().mockRejectedValue(new Error('Test error'));
+      _setTestHook_forceAuthenticate(errorHook);
+      
+      // Should handle error gracefully and return null
+      const result = await authenticateWithBackend('admin', 'password');
+      expect(result).toBeNull();
+      expect(errorHook).toHaveBeenCalledWith('admin', 'password');
+    });
+
+    it('should validate production code path isolation', async () => {
+      // Without test hook, should not affect production code
+      const result = await authenticateWithBackend('admin', 'password');
+      
+      // In test environment, this should return null (no real backend)
+      // This validates that test hooks don't interfere with production logic
+      expect(result).toBeNull();
     });
   });
 
   describe('Test User Factory Validation', () => {
-    it('should create valid admin user', () => {
-      const user = createTestUsers.admin();
-
-      expect(user.id).toBe('1');
-      expect(user.username).toBe('admin');
-      expect(user.role).toBe('ADMIN');
-      expect(user.permissions).toContain('system.admin');
-      expect(user.permissions).toContain('trading.execute');
+    it('should validate admin user structure', () => {
+      const admin = createAuthTestUsers.admin();
+      
+      expect(admin.id).toBe('1');
+      expect(admin.username).toBe('admin');
+      expect(admin.role).toBe('ADMIN');
+      expect(admin.permissions).toContain('trading.execute');
+      expect(admin.permissions).toContain('system.admin');
+      expect(admin.email).toBe('admin@traider.local');
     });
 
-    it('should create valid demo trader', () => {
-      const user = createTestUsers.demo();
-
-      expect(user.id).toBe('2');
-      expect(user.username).toBe('demo');
-      expect(user.role).toBe('TRADER');
-      expect(user.permissions).toContain('trading.execute');
-      expect(user.permissions).not.toContain('system.admin');
+    it('should validate demo user structure', () => {
+      const demo = createAuthTestUsers.demo();
+      
+      expect(demo.id).toBe('2');
+      expect(demo.username).toBe('demo');
+      expect(demo.role).toBe('TRADER');
+      expect(demo.permissions).toContain('trading.execute');
+      expect(demo.permissions).not.toContain('system.admin');
     });
 
-    it('should create valid viewer user', () => {
-      const user = createTestUsers.viewer();
-
-      expect(user.id).toBe('3');
-      expect(user.username).toBe('viewer');
-      expect(user.role).toBe('VIEWER');
-      expect(user.permissions).toContain('trading.view');
-      expect(user.permissions).not.toContain('trading.execute');
+    it('should validate viewer user structure', () => {
+      const viewer = createAuthTestUsers.viewer();
+      
+      expect(viewer.id).toBe('3');
+      expect(viewer.username).toBe('viewer');
+      expect(viewer.role).toBe('VIEWER');
+      expect(viewer.permissions).toContain('trading.view');
+      expect(viewer.permissions).not.toContain('trading.execute');
     });
 
-    it('should support custom user creation', () => {
-      const customUser = createTestUsers.custom({
-        username: 'custom-trader',
-        role: 'TRADER',
-        permissions: ['custom.permission'],
+    it('should validate custom user factory', () => {
+      const customUser = createAuthTestUsers.custom({
+        username: 'custom-test',
+        role: 'ADMIN',
+        permissions: ['custom.permission']
       });
+      
+      expect(customUser.username).toBe('custom-test');
+      expect(customUser.role).toBe('ADMIN');
+      expect(customUser.permissions).toEqual(['custom.permission']);
+    });
 
-      expect(customUser.username).toBe('custom-trader');
-      expect(customUser.role).toBe('TRADER');
-      expect(customUser.permissions).toContain('custom.permission');
+    it('should validate invalid user factory for error testing', () => {
+      const invalid = createAuthTestUsers.invalid();
+      
+      expect(invalid.id).toBeUndefined();
+      expect(invalid.username).toBe('');
+      expect(invalid.email).toBe('invalid-email');
+      expect(invalid.role).toBe('UNKNOWN');
+    });
+  });
+
+  describe('Test Scenario Validation', () => {
+    it('should validate admin login scenario structure', () => {
+      const scenario = authTestScenarios.adminLogin;
+      
+      expect(scenario.credentials.username).toBe('admin');
+      expect(scenario.credentials.password).toBe('password');
+      expect(scenario.expectedUser.role).toBe('ADMIN');
+      expect(scenario.expectedRole).toBe('ADMIN');
+      expect(scenario.expectedPermissions).toContain('system.admin');
+    });
+
+    it('should validate demo login scenario structure', () => {
+      const scenario = authTestScenarios.demoLogin;
+      
+      expect(scenario.credentials.username).toBe('demo');
+      expect(scenario.expectedUser.role).toBe('TRADER');
+      expect(scenario.expectedRole).toBe('TRADER');
+      expect(scenario.expectedPermissions).not.toContain('system.admin');
+    });
+
+    it('should validate failure scenarios', () => {
+      expect(authTestScenarios.failedLogin.expectedUser).toBeNull();
+      expect(authTestScenarios.emptyCredentials.expectedUser).toBeNull();
+      expect(authTestScenarios.networkError.expectedUser).toBeNull();
+      expect(authTestScenarios.networkError.mockError).toBeInstanceOf(Error);
+    });
+  });
+
+  describe('Test Assertion Validation', () => {
+    it('should validate user assertion helper', () => {
+      const testUser = createAuthTestUsers.admin();
+      
+      // Should not throw for valid user
+      expect(() => {
+        authTestAssertions.assertValidUser(testUser, testUser);
+      }).not.toThrow();
+      
+      // Should throw for null user
+      expect(() => {
+        authTestAssertions.assertValidUser(null, testUser);
+      }).toThrow();
+    });
+
+    it('should validate auth failure assertion helper', () => {
+      // Should not throw for null user
+      expect(() => {
+        authTestAssertions.assertAuthFailure(null);
+      }).not.toThrow();
+      
+      // Should throw for valid user
+      expect(() => {
+        authTestAssertions.assertAuthFailure(createAuthTestUsers.admin());
+      }).toThrow();
+    });
+
+    it('should validate JWT assertion helper', () => {
+      const testUser = createAuthTestUsers.admin();
+      const testToken = {
+        id: testUser.id,
+        username: testUser.username,
+        role: testUser.role,
+        permissions: testUser.permissions
+      };
+      
+      // Should not throw for valid token
+      expect(() => {
+        authTestAssertions.assertValidJWT(testToken, testUser);
+      }).not.toThrow();
     });
   });
 
   describe('Performance Guard Rails', () => {
-    it('should execute dependency injection within performance budget', async () => {
+    it('should validate environment setup performance', async () => {
       const startTime = performance.now();
-
-      const mockAuth = vi.fn();
-      _setTestHook_forceAuthenticate(mockAuth);
-      mockAuth.mockResolvedValueOnce(createTestUsers.admin());
-
-      await authenticateWithBackend('test', 'test');
-
-      const executionTime = performance.now() - startTime;
-      expect(executionTime).toBeLessThan(50); // <50ms budget
-
-      _setTestHook_forceAuthenticate(undefined);
+      
+      authTestEnv.setup();
+      authTestEnv.validate();
+      authTestEnv.teardown();
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      // Should complete within 20ms
+      expect(executionTime).toBeLessThan(20);
     });
 
-    it('should create test users within performance budget', () => {
+    it('should validate test hook performance', async () => {
+      const mockAuth = vi.fn().mockResolvedValue(createAuthTestUsers.admin());
+      _setTestHook_forceAuthenticate(mockAuth);
+      
       const startTime = performance.now();
-
-      createTestUsers.admin();
-      createTestUsers.demo();
-      createTestUsers.viewer();
-      createTestUsers.custom({ role: 'TRADER' });
-
-      const executionTime = performance.now() - startTime;
-      expect(executionTime).toBeLessThan(10); // <10ms budget
+      
+      await authenticateWithBackend('admin', 'password');
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      // Should complete within 50ms
+      expect(executionTime).toBeLessThan(50);
+      
+      _setTestHook_forceAuthenticate(undefined);
     });
   });
 
-  describe('Security Guard Rails', () => {
-    it('should not expose test hooks in production-like environment', () => {
-      const originalEnv = process.env.NODE_ENV;
-
-      try {
-        // Simulate production environment
-        Object.defineProperty(process.env, 'NODE_ENV', {
-          value: 'production',
-          writable: true,
-          configurable: true,
-        });
-
-        // Test hooks should still be available for testing,
-        // but should not affect production authentication
-        const mockAuth = vi.fn();
-        _setTestHook_forceAuthenticate(mockAuth);
-
-        // In a real production environment, this would use actual authentication
-        // Here we just verify the hook mechanism doesn't break
-        expect(() => _setTestHook_forceAuthenticate(undefined)).not.toThrow();
-      } finally {
-        Object.defineProperty(process.env, 'NODE_ENV', {
-          value: originalEnv,
-          writable: true,
-          configurable: true,
-        });
-      }
+  describe('Integration Validation', () => {
+    it('should validate that working authentication patterns remain functional', async () => {
+      // This validates that our core working pattern from auth-hook-test.test.ts
+      // continues to work and hasn't been broken by changes
+      
+      const mockAuth = vi.fn();
+      _setTestHook_forceAuthenticate(mockAuth);
+      
+      // Test successful authentication
+      mockAuth.mockResolvedValueOnce(createAuthTestUsers.admin());
+      const result1 = await authenticateWithBackend('admin', 'password');
+      expect(result1).toEqual(createAuthTestUsers.admin());
+      expect(mockAuth).toHaveBeenCalledWith('admin', 'password');
+      
+      // Test failed authentication
+      mockAuth.mockResolvedValueOnce(null);
+      const result2 = await authenticateWithBackend('invalid', 'wrong');
+      expect(result2).toBeNull();
+      
+      _setTestHook_forceAuthenticate(undefined);
     });
 
-    it('should not leak sensitive data in test users', () => {
-      const users = [createTestUsers.admin(), createTestUsers.demo(), createTestUsers.viewer()];
-
-      users.forEach((user) => {
-        expect(user).not.toHaveProperty('password');
-        expect(user).not.toHaveProperty('passwordHash');
-        expect(user).not.toHaveProperty('secret');
-        expect(user).not.toHaveProperty('privateKey');
-      });
+    it('should validate that NextAuth route integration points remain stable', async () => {
+      // Validate that the dynamic import pattern still works
+      const { authenticateWithBackend: dynamicImport } = await import('../../app/lib/auth/backend-auth');
+      
+      expect(dynamicImport).toBe(authenticateWithBackend);
+      expect(typeof dynamicImport).toBe('function');
     });
   });
 
   describe('Regression Prevention', () => {
-    it('should maintain backward compatibility with existing tests', async () => {
-      // This test ensures the pattern documented in ADR-007 continues to work
-      const getMockAuth = withAuthMock();
-      const mockAuth = getMockAuth();
-
-      // Line 1: Setup mock (via withAuthMock)
-      // Line 2: Mock response
-      mockAuth.mockResolvedValueOnce(createTestUsers.admin());
-
-      // Line 3: Test
-      const result = await authenticateWithBackend('admin', 'password');
-
-      expect(result).toEqual(createTestUsers.admin());
-      expect(mockAuth).toHaveBeenCalledWith('admin', 'password');
-    });
-
-    it('should prevent common anti-patterns', () => {
-      // Prevent direct module mocking (brittle pattern)
-      expect(() => {
-        // This should not be the primary testing approach
-        vi.mock('../../app/lib/auth/backend-auth', () => ({
-          authenticateWithBackend: vi.fn(),
-        }));
-      }).not.toThrow(); // Allowed but not recommended
-
-      // Ensure dependency injection is preferred
+    it('should prevent removal of test hook infrastructure', () => {
+      // Validate that critical test infrastructure still exists
+      expect(_setTestHook_forceAuthenticate).toBeDefined();
       expect(typeof _setTestHook_forceAuthenticate).toBe('function');
+      
+      // Validate that test environment class exists
+      expect(authTestEnv).toBeDefined();
+      expect(typeof authTestEnv.setup).toBe('function');
+      expect(typeof authTestEnv.teardown).toBe('function');
+      expect(typeof authTestEnv.validate).toBe('function');
     });
-  });
-});
 
-/**
- * Critical Guard Rail: This test must always pass
- *
- * If this test fails, it indicates a breaking change to the authentication
- * testing infrastructure that could affect all authentication tests.
- */
-describe('🚨 CRITICAL: Authentication Testing Infrastructure Health Check', () => {
-  it('should pass the complete authentication testing workflow', async () => {
-    const startTime = performance.now();
+    it('should prevent breaking changes to test user factories', () => {
+      // Validate that all user factories still exist and work
+      expect(createAuthTestUsers.admin).toBeDefined();
+      expect(createAuthTestUsers.demo).toBeDefined();
+      expect(createAuthTestUsers.viewer).toBeDefined();
+      expect(createAuthTestUsers.guest).toBeDefined();
+      expect(createAuthTestUsers.custom).toBeDefined();
+      expect(createAuthTestUsers.invalid).toBeDefined();
+      
+      // Validate they return correct types
+      const admin = createAuthTestUsers.admin();
+      expect(admin).toHaveProperty('id');
+      expect(admin).toHaveProperty('username');
+      expect(admin).toHaveProperty('role');
+      expect(admin).toHaveProperty('permissions');
+    });
 
-    try {
-      // 1. Setup
-      const getMockAuth = withAuthMock();
-      const mockAuth = getMockAuth();
-
-      // 2. Mock response
-      const expectedUser = createTestUsers.admin();
-      mockAuth.mockResolvedValueOnce(expectedUser);
-
-      // 3. Execute
-      const result = await authenticateWithBackend('admin', 'password');
-
-      // 4. Validate
-      expect(result).toEqual(expectedUser);
-      expect(mockAuth).toHaveBeenCalledWith('admin', 'password');
-
-      // 5. Performance check
-      const executionTime = performance.now() - startTime;
-      expect(executionTime).toBeLessThan(100);
-
-      // 6. Cleanup verification (handled by withAuthMock)
-      // No manual cleanup needed
-    } catch (error) {
-      throw new Error(`CRITICAL: Authentication testing infrastructure is broken. ${error}`);
-    }
+    it('should prevent breaking changes to environment configuration', () => {
+      // Validate critical environment variables are still defined
+      const criticalVars = [
+        'NEXT_PUBLIC_API_URL',
+        'NEXTAUTH_SECRET',
+        'DATABASE_URL',
+        'SECRET_KEY',
+        'COINBASE_SANDBOX',
+        'TEST_DATABASE_URL'
+      ];
+      
+      criticalVars.forEach(varName => {
+        expect(TEST_ENVIRONMENT_CONFIG).toHaveProperty(varName);
+        expect(TEST_ENVIRONMENT_CONFIG[varName as keyof typeof TEST_ENVIRONMENT_CONFIG]).toBeTruthy();
+      });
+    });
   });
 });

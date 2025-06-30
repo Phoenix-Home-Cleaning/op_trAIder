@@ -143,7 +143,12 @@ export async function authenticateWithBackend(
 ): Promise<User | null> {
   // Test hook for dependency injection
   if (_testHook_forceAuthenticate) {
-    return _testHook_forceAuthenticate(username, password);
+    try {
+      return await _testHook_forceAuthenticate(username, password);
+    } catch {
+      // Test hook error handling - return null for consistency
+      return null;
+    }
   }
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';

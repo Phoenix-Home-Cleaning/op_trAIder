@@ -436,7 +436,7 @@ jobs:
           fi
           
           # Check for actual environment files (not templates)
-          if find . -name "*.env" -not -name "*.env.example" -not -name "*.env.template" -type f | \
+                      if find . -name "*.env" -not -name "env.example" -not -name "*.env.template" -type f | \
             xargs grep -l -E "^[A-Z_]+=.{16,}" 2>/dev/null; then
             echo "⚠️ Potential secrets in .env files"
             SECRETS_FOUND=1

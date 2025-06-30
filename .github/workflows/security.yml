@@ -169,7 +169,7 @@ jobs:
           # Scan for actual high-risk patterns
           if grep -r -n --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" --include="*.py" \
             -E "(sk-[a-zA-Z0-9]{48}|xoxb-[0-9]+-[0-9]+-[0-9]+-[a-zA-Z0-9]+)" . || \
-            grep -r -n --include="*.env" --exclude="*.env.example" --exclude="*.env.template" \
+            grep -r -n --include="*.env" --exclude="env.example" --exclude="*.env.template" \
             -E "^[A-Z_]+=.{16,}" . 2>/dev/null; then
             echo "❌ Real secrets detected!"
             SECRETS_FOUND=1

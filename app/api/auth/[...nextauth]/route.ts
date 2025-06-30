@@ -27,133 +27,8 @@
 
 import NextAuth, { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import type { User } from 'next-auth';
 
-/**
- * Backend authentication response interface
- * 
- * @description Response structure from FastAPI authentication endpoint
- */
-interface BackendAuthResponse {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-  user: {
-    id: string;
-    username: string;
-    role: string;
-    permissions: string[];
-  };
-}
 
-/**
- * Map backend role to NextAuth role type
- * 
- * @description
- * Converts backend role strings to typed role values for NextAuth.
- * Provides safe fallback to VIEWER for unknown roles.
- * 
- * @param backendRole - Role string from backend
- * @returns Typed role for NextAuth
- * 
- * @performance <1ms role mapping
- * @sideEffects None - Pure function
- * 
- * @tradingImpact Determines user access level to trading functions
- * @riskLevel MEDIUM - Role assignment security
- */
-function mapBackendRole(backendRole: string): "ADMIN" | "TRADER" | "VIEWER" {
-  switch (backendRole.toLowerCase()) {
-    case 'admin':
-    case 'administrator':
-      return 'ADMIN';
-    case 'trader':
-    case 'trading':
-      return 'TRADER';
-    case 'viewer':
-    case 'view':
-    case 'readonly':
-      return 'VIEWER';
-    default:
-      // Log unknown role for debugging (production should use proper logging)
-      return 'VIEWER';
-  }
-}
-
-/**
- * Authenticate user with FastAPI backend
- * 
- * @description
- * Validates credentials against FastAPI /auth/login endpoint.
- * Returns user data and JWT token for session management.
- * 
- * @param username - User's username
- * @param password - User's password
- * @returns User object with authentication data or null if failed
- * 
- * @throws {Error} Network or authentication error
- * 
- * @performance ~100-200ms including network round-trip
- * @sideEffects Makes HTTP request to backend API
- * 
- * @tradingImpact CRITICAL - Gateway to trading platform access
- * @riskLevel CRITICAL - Authentication security boundary
- * 
- * @example
- * ```typescript
- * const user = await authenticateWithBackend('admin', 'password');
- * // Returns: { id: '1', username: 'admin', role: 'ADMIN', ... }
- * ```
- * 
- * @monitoring
- * - Metric: `auth.backend.latency`
- * - Alert threshold: > 500ms
- */
-async function authenticateWithBackend(
-  username: string,
-  password: string
-): Promise<User | null> {
-  try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-    
-    const response = await fetch(`${apiUrl}/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        username,
-        password,
-        remember_me: false,
-      }),
-    });
-
-    if (!response.ok) {
-      const _errorData = await response.json().catch(() => ({}));
-      // Log authentication failure (production should use proper logging)
-      return null;
-    }
-
-    const authData: BackendAuthResponse = await response.json();
-    
-    // Transform backend response to NextAuth user format
-    const user: User = {
-      id: authData.user.id,
-      username: authData.user.username,
-      name: authData.user.username, // NextAuth requires 'name' field
-      email: `${authData.user.username}@traider.local`, // Placeholder email
-      role: mapBackendRole(authData.user.role),
-      permissions: authData.user.permissions,
-      lastLogin: new Date().toISOString(),
-    };
-
-    // Log successful authentication (production should use proper logging)
-    return user;
-  } catch (_error) {
-    // Log authentication error (production should use proper logging)
-    return null;
-  }
-}
 
 /**
  * NextAuth.js configuration options
@@ -198,6 +73,9 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        // Dynamic import to support test dependency injection
+        const { authenticateWithBackend } = await import('../../../lib/auth/backend-auth');
+        
         const user = await authenticateWithBackend(
           credentials.username,
           credentials.password
@@ -328,12 +206,9 @@ export const authOptions: NextAuthOptions = {
      * @tradingImpact Tracks session termination for security
      * @riskLevel LOW - Logging operation
      */
-    async signOut({ token }) {
-      console.log('User signed out:', {
-        userId: token?.id,
-        username: token?.username,
-        timestamp: new Date().toISOString(),
-      });
+    async signOut({ token: _token }) {
+      // Log user sign out event (production should use proper logging)
+      // Event: User signed out - userId: _token?.id, username: _token?.username
     },
   },
   

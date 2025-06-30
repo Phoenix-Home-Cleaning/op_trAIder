@@ -170,8 +170,8 @@ Write-Host "Output Path: $OutputPath" -ForegroundColor Yellow
 Write-Host ""
 
 # Validate environment
-if (-not (Test-Path ".env.example")) {
-    Write-Error ".env.example not found. Run from project root directory."
+if (-not (Test-Path "env.example")) {
+    Write-Error "env.example not found. Run from project root directory."
     exit 1
 }
 
@@ -237,7 +237,7 @@ Write-Host "Generated $(($secrets.Keys).Count) cryptographically secure secrets"
 Write-Host "Creating .env file..." -ForegroundColor Green
 
 # Read template
-$template = Get-Content ".env.example" -Raw
+$template = Get-Content "env.example" -Raw
 
 # Environment-specific configurations
 $envConfigs = @{

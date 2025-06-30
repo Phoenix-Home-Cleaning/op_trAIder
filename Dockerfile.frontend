@@ -50,8 +50,8 @@ FROM base AS deps
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies with security audit
-RUN npm ci --only=production --audit --audit-level=high && \
+# Install dependencies with security audit (skip husky in Docker)
+RUN npm ci --only=production --ignore-scripts --audit --audit-level=high && \
     npm cache clean --force
 
 # =============================================================================
@@ -62,13 +62,13 @@ FROM base AS builder
 
 # Copy package files and install all dependencies (including dev)
 COPY package*.json ./
-RUN npm ci --include=dev
+RUN npm ci --include=dev --ignore-scripts
 
 # Copy source code
 COPY . .
 
 # Copy environment file for build
-COPY .env.example .env.local
+COPY env.example .env.local
 
 # Build the application using our workaround
 RUN npm run build
@@ -88,9 +88,11 @@ COPY --from=deps /app/node_modules ./node_modules
 
 # Copy built application
 COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/next.config.js ./next.config.js
+
+# Create public directory (Next.js expects it to exist)
+RUN mkdir -p ./public
 
 # Copy necessary files for runtime
 COPY --from=builder /app/middleware.ts ./middleware.ts

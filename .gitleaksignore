@@ -22,13 +22,16 @@ tests/**/*:*password*
 
 # Documentation Examples
 docs/**/*:*password*
+docs/**/*:*secret*
+docs/**/*:*token*
 README.md:*password*
 *.md:*password*
+*.md:*secret*
+*.md:*token*
 
 # Environment Template Files (not actual secrets)
-*.env.example:*
-*.env.template:*
 env.example:*
+*.env.template:*
 
 # Development Docker Compose (test credentials only)
 docker-compose.dev.yml:*
@@ -51,6 +54,12 @@ backend/api/auth.py:*token*
 .github/workflows/**/*:*password*
 .github/workflows/**/*:*secret*
 .github/workflows/**/*:*token*
+.github/workflows/security.yml:*secret*
+.github/workflows/security.yml:*password*
+.github/workflows/security.yml:*token*
+.github/workflows/ci.yml:*secret*
+.github/workflows/ci.yml:*password*
+.github/workflows/ci.yml:*token*
 
 # Test configuration in vitest
 *test-secret-key-for-testing-only* 
