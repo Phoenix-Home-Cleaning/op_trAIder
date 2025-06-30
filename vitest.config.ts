@@ -31,14 +31,14 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 // To use path aliases from tsconfig.json
-import tsconfigPaths from 'vite-tsconfig-paths';
+// import tsconfigPaths from 'vite-tsconfig-paths';
 
 // ES Module compatibility
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default defineConfig({
-  plugins: [react(), tsconfigPaths()],
+  plugins: [react()],
 
   test: {
     // Test environment configuration
@@ -124,7 +124,7 @@ export default defineConfig({
     env: {
       NODE_ENV: 'test',
       NEXTAUTH_URL: 'http://localhost:3000',
-      NEXTAUTH_SECRET: 'test_secret_key_for_testing_only',
+      NEXTAUTH_SECRET: 'VITEST_TEST_SECRET_NOT_FOR_PRODUCTION',
       DATABASE_URL: 'postgresql://test:test@localhost:5432/traider_test',
       REDIS_URL: 'redis://localhost:6379/1',
       LOG_LEVEL: 'ERROR' // Reduce log noise in tests

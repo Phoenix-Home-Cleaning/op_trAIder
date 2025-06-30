@@ -1,10 +1,9 @@
 {
   "entryPoints": [
-    "app/lib",
-    "app/hooks",
-    "app/components",
-    "app/types"
+    "app/lib/**/*.ts",
+    "app/lib/**/*.tsx"
   ],
+  "entryPointStrategy": "expand",
   "out": "docs/api",
   "plugin": [
     "typedoc-plugin-markdown"
