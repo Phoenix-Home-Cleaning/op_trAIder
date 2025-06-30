@@ -32,12 +32,10 @@ jobs:
           cache: 'npm'
       
       - name: 📥 Install dependencies
-        run: |
-          npm ci --prefer-offline --no-audit
-          npm install -g tsx typedoc
+        run: npm ci --prefer-offline --no-audit
       
       - name: 🔍 Validate documentation
-        run: tsx scripts/validate-docs.ts
+        run: npx tsx scripts/validate-docs.ts
       
       - name: 📊 Upload validation results
         if: always()
@@ -72,11 +70,10 @@ jobs:
       - name: 📥 Install dependencies
         run: |
           npm ci --prefer-offline --no-audit
-          npm install -g tsx typedoc
           npm install typedoc-plugin-markdown typedoc-plugin-mermaid
       
       - name: 🏗️ Generate documentation
-        run: tsx scripts/generate-docs.ts
+        run: npx tsx scripts/generate-docs.ts
         env:
           NODE_ENV: production
       
@@ -195,7 +192,7 @@ jobs:
       
       - name: 📊 Generate coverage report
         run: |
-          tsx scripts/validate-docs.ts --coverage-only > coverage-report.txt
+          npx tsx scripts/validate-docs.ts --coverage-only > coverage-report.txt
           echo "## 📊 Documentation Coverage Report" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           cat coverage-report.txt >> $GITHUB_STEP_SUMMARY

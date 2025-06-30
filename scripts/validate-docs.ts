@@ -679,12 +679,15 @@ class DocumentationValidator {
  * - Alert threshold: > 60s execution time
  */
 async function main() {
+  // Check for --coverage-only flag
+  const coverageOnly = process.argv.includes('--coverage-only');
+  
   const config: ValidationConfig = {
     requireJSDoc: true,
-    requireAPIDocumentation: true,
-    requireModuleREADMEs: true,
-    validateExamples: true,
-    checkBrokenLinks: true,
+    requireAPIDocumentation: !coverageOnly,
+    requireModuleREADMEs: !coverageOnly,
+    validateExamples: !coverageOnly,
+    checkBrokenLinks: !coverageOnly,
     excludePatterns: [
       '**/*.d.ts',
       '**/generated/**',
