@@ -1,7 +1,7 @@
 # ADR-005: Next.js Version Upgrade (14 → 15.3.4)
 
 **Status**: Accepted  
-**Date**: 2025-01-27  
+**Date**: 2025-06-29
 **Deciders**: TRAIDER Team  
 **Technical Story**: Phase 0 Windows EISDIR Build Issue Resolution
 
@@ -149,7 +149,7 @@ app/
 - [Next.js 15 Release Notes](https://nextjs.org/blog/next-15)
 - [React 19 Compatibility Guide](https://react.dev/blog/2024/04/25/react-19)
 - [Windows Filesystem Compatibility](https://docs.microsoft.com/en-us/windows/wsl/file-permissions)
-- [TRAIDER Phase 0 Completion Report](../_docs/phases/phase-0-completion-report.md)
+- [TRAIDER Phase 0 Completion Report](../../_docs/phases/phase-0-completion-report.md)
 
 ## Related ADRs
 

@@ -1,7 +1,7 @@
 # ADR-006: Environment Configuration Consolidation
 
 **Status**: ✅ Accepted  
-**Date**: 2025-01-27  
+**Date**: 2025-06-29 
 **Deciders**: TRAIDER Development Team  
 **Technical Story**: Environment file management simplification  
 

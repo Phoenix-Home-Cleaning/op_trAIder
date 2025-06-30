@@ -9,7 +9,7 @@
 **New to TRAIDER?** Start here:
 
 1. **[System Overview](diagrams/system-overview.mmd)** - High-level architecture
-2. **[Getting Started Guide](../README.md#getting-started)** - Setup and installation
+2. **[Getting Started Guide](../README.md#-development-phases)** - Setup and installation
 3. **[API Documentation](api/)** - Complete TypeScript API reference
 4. **[Architecture Decisions](adr/)** - Technical decisions and rationale
 

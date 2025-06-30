@@ -94,7 +94,7 @@ jobs:
       - name: 🔍 Run ESLint with zero warnings policy
         run: |
           echo "::group::ESLint Analysis"
-          npx next lint --max-warnings 0 --format compact
+          npx next lint --max-warnings 0
           echo "::endgroup::"
           
       - name: 🔧 Run TypeScript compiler check

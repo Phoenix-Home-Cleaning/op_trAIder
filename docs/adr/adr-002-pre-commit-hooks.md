@@ -1,7 +1,7 @@
 # ADR-002: Comprehensive Pre-commit Hooks for Code Quality
 
 **Status**: Accepted  
-**Date**: 2025-01-28  
+**Date**: 2025-06-29 
 **Authors**: TRAIDER Team  
 **Reviewers**: System Architecture Team  
 

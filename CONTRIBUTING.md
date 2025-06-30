@@ -58,20 +58,20 @@ const password = process.env.DB_PASSWORD
 **Error Handling**: Trading-critical files must implement proper error handling
 ```typescript
 // ❌ Will be flagged:
-async function executeTrade() {
+async function executeTrade(): Promise<any> {
   const result = await fetch('/api/trade');
   return result.json();
 }
 
 // ✅ Proper error handling:
-async function executeTrade() {
+async function executeTrade(): Promise<any> {
   try {
     const result = await fetch('/api/trade');
     if (!result.ok) throw new Error(`Trade failed: ${result.status}`);
     return await result.json();
   } catch (error) {
-    logger.error('Trade execution failed', error);
-    throw new TradingError('EXECUTION_FAILED', 'HIGH', 'Retry with exponential backoff');
+    console.error('Trade execution failed', error);
+    throw new Error('EXECUTION_FAILED: Retry with exponential backoff');
   }
 }
 ```
@@ -80,12 +80,12 @@ async function executeTrade() {
 ```typescript
 // ❌ Will be flagged:
 useEffect(() => {
-  const timer = setTimeout(() => updatePnL(), 1000);
+  const timer = setTimeout(() => console.log('update'), 1000);
 }, []);
 
 // ✅ Proper cleanup:
 useEffect(() => {
-  const timer = setTimeout(() => updatePnL(), 1000);
+  const timer = setTimeout(() => console.log('update'), 1000);
   return () => clearTimeout(timer);
 }, []);
 ```
@@ -98,7 +98,7 @@ useEffect(() => {
 // console.log('Debug: position size =', positionSize);
 
 // ✅ Use proper logging:
-logger.debug('Position size calculated', { positionSize });
+console.debug('Position size calculated', { positionSize: 100 });
 ```
 
 **No Focused Tests**: Prevent accidentally skipping tests

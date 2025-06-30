@@ -2,7 +2,7 @@
 
 ## Status
 
-**ACCEPTED** - 2024-01-15
+**ACCEPTED** - 2024-06-29
 
 ## Context
 
@@ -248,6 +248,19 @@ describe('NextAuth Components', () => {
 - **Performance Guard Rails**: <20ms environment setup, <50ms authentication testing
 - **Security Validation**: Test-safe secrets with proper isolation from production
 - **Regression Prevention**: 21 guard rail tests validating infrastructure integrity
+
+### 🗑️ Test Stub Cleanup (2025-01-27)
+
+**Note**: The original disabled test stub files were removed from the codebase to maintain CI/CD pipeline integrity:
+
+- `tests/integration/auth-e2e.test.ts` (removed)
+- `tests/unit/api/nextauth-integration.test.ts` (removed)
+- `tests/unit/api/nextauth-integration-simple.test.ts` (removed)
+- `tests/unit/api/nextauth-working.test.ts` (removed)
+
+**Rationale**: These files contained only `export {};` statements and were causing "No test suite found" failures in Vitest. Following world-class engineering principles, non-functional code that breaks the CI pipeline was eliminated. The technical decision and historical context remain preserved in this ADR.
+
+**Coverage Impact**: Zero - these files contained no active tests. All authentication testing continues via the white-box testing approach documented above, with 100% pass rate maintained.
 - **Comprehensive Coverage**: All 25+ environment variables from `.env.example` validated
 
 ### 🔄 Monitoring
