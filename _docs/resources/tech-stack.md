@@ -38,16 +38,19 @@ app/
 
 ### **Configuration**
 ```typescript
-// next.config.js
+// next.config.mjs
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: true,
   experimental: {
-    typedRoutes: true, // Type-safe routing
+    typedRoutes: true,
   },
-  env: {
-    CUSTOM_KEY: process.env.CUSTOM_KEY,
+  eslint: {
+    // We run ESLint separately in CI
+    ignoreDuringBuilds: true,
   },
-}
+};
+export default nextConfig;
 ```
 
 ---
@@ -63,7 +66,8 @@ const nextConfig = {
 ### **TRAIDER-Specific Setup**
 ```javascript
 // tailwind.config.js
-module.exports = {
+/** @type {import('tailwindcss').Config} */
+export default {
   content: ['./app/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
@@ -78,7 +82,7 @@ module.exports = {
         warning: '#f59e0b', // Yellow for warnings
       },
       fontFamily: {
-        mono: ['JetBrains Mono', 'monospace'], // For trading data
+        mono: ['"JetBrains Mono"', 'monospace'], // For trading data
       },
     },
   },
@@ -98,7 +102,9 @@ module.exports = {
 ### **Trading Dashboard Patterns**
 ```typescript
 // Reusable trading card component
-const TradingCard = ({ children, variant = 'default' }) => {
+import { type ReactNode } from 'react';
+
+const TradingCard = ({ children, variant = 'default' }: { children: ReactNode, variant?: 'default' | 'success' | 'danger' }) => {
   const baseClasses = 'rounded-lg border p-4 shadow-sm'
   const variants = {
     default: 'bg-white border-gray-200',
@@ -216,9 +222,9 @@ const PnLChart = ({ data }) => {
 import { io, Socket } from 'socket.io-client'
 
 class TradingSocketManager {
-  private socket: Socket | null = null
-  private reconnectAttempts = 0
-  private maxReconnectAttempts = 5
+  private socket: Socket | null = null;
+  private reconnectAttempts = 0;
+  private readonly maxReconnectAttempts = 5;
 
   connect(token: string) {
     this.socket = io(process.env.NEXT_PUBLIC_WS_URL!, {
@@ -227,45 +233,44 @@ class TradingSocketManager {
     })
 
     this.socket.on('connect', () => {
-      console.log('Connected to trading feed')
-      this.reconnectAttempts = 0
+      console.log('Connected to trading feed');
+      this.reconnectAttempts = 0;
     })
 
-    this.socket.on('disconnect', () => {
-      console.log('Disconnected from trading feed')
+    this.socket.on('disconnect', (reason) => {
+      console.log(`Disconnected from trading feed: ${reason}`);
     })
 
     this.socket.on('connect_error', (error) => {
-      console.error('Connection error:', error)
-      this.handleReconnect()
+      console.error('Connection error:', error.message);
+      this.handleReconnect();
     })
 
     // Trading-specific events
     this.socket.on('pnl_update', (data) => {
       // Update P&L in real-time
-    })
+    });
 
     this.socket.on('trade_executed', (data) => {
       // Show trade notification
-    })
-
-    this.socket.on('risk_alert', (data) => {
-      // Show risk alert
-    })
+    });
   }
 
   private handleReconnect() {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
-      this.reconnectAttempts++
+      this.reconnectAttempts++;
+      const delay = Math.pow(2, this.reconnectAttempts) * 1000;
+      console.log(`Attempting to reconnect in ${delay / 1000}s...`);
       setTimeout(() => {
-        this.socket?.connect()
-      }, Math.pow(2, this.reconnectAttempts) * 1000) // Exponential backoff
+        this.socket?.connect();
+      }, delay);
+    } else {
+      console.error('Max reconnection attempts reached.');
     }
   }
 
   disconnect() {
-    this.socket?.disconnect()
-    this.socket = null
+    this.socket?.disconnect();
   }
 }
 ```

@@ -140,7 +140,7 @@ export default function LoginPage() {
 
       // TODO: Replace with actual authentication API call
       // This is a placeholder for Phase 0
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch('/api', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

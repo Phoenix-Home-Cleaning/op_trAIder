@@ -2,6 +2,24 @@
 
 ## [Unreleased]
 
+### Infrastructure
+- **🚀 Local Kubernetes Setup (K3s) - COMPLETE** - Implemented comprehensive K8s development environment
+  - **Complete K8s Manifests**: 7 production-ready manifests for all TRAIDER services
+  - **PostgreSQL with TimescaleDB**: Deployment with init scripts and persistence
+  - **Redis Caching Layer**: Deployment with persistence and LRU eviction
+  - **Backend FastAPI Service**: Deployment with health checks and init containers
+  - **Frontend Next.js Service**: Deployment with proper configuration and health checks
+  - **Prometheus + Grafana Stack**: Pre-configured monitoring with data sources
+  - **Ingress Configuration**: NodePort access (30000-30002) and .local domains
+  - **GitHub Actions Workflow**: K8s validation with kubeval + kube-score + Trivy
+  - **PowerShell Integration**: Setup script with -WithK3s flag for automated deployment
+  - **README.md Updates**: Complete K3s quick-start section with service access
+  - **Comprehensive Testing**: Unit tests (20 tests) + integration tests (10 tests)
+  - **Institutional Documentation**: Troubleshooting guides and Helm migration plans
+- **Environment Configuration Consolidation**: Moved `.env` and `.env.example` from `/backend` to root directory for unified configuration management
+- **Documentation Updates**: Updated 15+ files across scripts, documentation, and infrastructure to reflect new environment file locations
+- **ADR-006**: Created Architecture Decision Record documenting environment consolidation rationale and implementation
+
 ### Security
 - **CRITICAL**: Removed hardcoded passwords from backend/api/auth.py
 - Added mandatory environment variable validation for SECRET_KEY and DASHBOARD_PASSWORD

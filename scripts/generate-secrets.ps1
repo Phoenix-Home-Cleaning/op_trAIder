@@ -12,11 +12,11 @@
     Target environment: development, staging, production
 
 .PARAMETER OutputPath
-    Path to output the .env file (default: backend/.env)
+    Path to output the .env file (default: .env)
 
 .EXAMPLE
     .\scripts\generate-secrets.ps1 -Environment development
-    .\scripts\generate-secrets.ps1 -Environment production -OutputPath backend/.env.prod
+    .\scripts\generate-secrets.ps1 -Environment production -OutputPath .env.prod
 
 .NOTES
     Author: TRAIDER Team
@@ -30,7 +30,7 @@ param(
     [string]$Environment = "development",
     
     [Parameter(Mandatory = $false)]
-    [string]$OutputPath = "backend/.env"
+    [string]$OutputPath = ".env"
 )
 
 # =============================================================================
@@ -170,8 +170,8 @@ Write-Host "Output Path: $OutputPath" -ForegroundColor Yellow
 Write-Host ""
 
 # Validate environment
-if (-not (Test-Path "backend/env.example")) {
-    Write-Error "backend/env.example not found. Run from project root directory."
+if (-not (Test-Path ".env.example")) {
+    Write-Error ".env.example not found. Run from project root directory."
     exit 1
 }
 
@@ -237,7 +237,7 @@ Write-Host "Generated $(($secrets.Keys).Count) cryptographically secure secrets"
 Write-Host "Creating .env file..." -ForegroundColor Green
 
 # Read template
-$template = Get-Content "backend/env.example" -Raw
+$template = Get-Content ".env.example" -Raw
 
 # Environment-specific configurations
 $envConfigs = @{

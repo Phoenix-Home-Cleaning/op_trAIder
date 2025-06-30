@@ -1,0 +1,280 @@
+# 🚀 TRAIDER V1 - Kubernetes Manifest Validation Pipeline
+#
+# Validates Kubernetes manifests using kubeval and kube-score to ensure
+# institutional-grade infrastructure as code standards.
+#
+# Performance: <2min execution time with parallel validation
+# Risk: MEDIUM - Blocks deployments on infrastructure configuration errors
+# Compliance: All validation results logged and retained (30 days)
+#
+# See: docs/infrastructure/k8s-validation.md
+# Author: TRAIDER Team
+# Since: 1.0.0-alpha
+
+name: K8s Manifest Validation
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'infrastructure/k8s/**'
+      - '.github/workflows/ci-k8s-lint.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'infrastructure/k8s/**'
+      - '.github/workflows/ci-k8s-lint.yml'
+  workflow_dispatch:
+
+# Global environment variables
+env:
+  KUBEVAL_VERSION: "v0.16.1"
+  KUBE_SCORE_VERSION: "v1.16.1"
+  FORCE_COLOR: 1
+
+# Ensure only one workflow runs at a time per branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  # =============================================================================
+  # KUBERNETES MANIFEST VALIDATION
+  # =============================================================================
+  
+  validate-k8s-manifests:
+    name: Validate K8s Manifests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    strategy:
+      matrix:
+        environment: [dev]
+        kubernetes-version: ["1.28.0", "1.29.0"]
+      fail-fast: false
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: 🔧 Setup kubeval
+        run: |
+          echo "::group::Installing kubeval ${{ env.KUBEVAL_VERSION }}"
+          wget https://github.com/instrumenta/kubeval/releases/download/${{ env.KUBEVAL_VERSION }}/kubeval-linux-amd64.tar.gz
+          tar xf kubeval-linux-amd64.tar.gz
+          sudo cp kubeval /usr/local/bin
+          kubeval --version
+          echo "::endgroup::"
+          
+      - name: 🔧 Setup kube-score
+        run: |
+          echo "::group::Installing kube-score ${{ env.KUBE_SCORE_VERSION }}"
+          wget https://github.com/zegl/kube-score/releases/download/${{ env.KUBE_SCORE_VERSION }}/kube-score_${{ env.KUBE_SCORE_VERSION }}_linux_amd64.tar.gz
+          tar xf kube-score_${{ env.KUBE_SCORE_VERSION }}_linux_amd64.tar.gz
+          sudo cp kube-score /usr/local/bin
+          kube-score version
+          echo "::endgroup::"
+          
+      - name: 🔍 Validate manifests with kubeval
+        run: |
+          echo "::group::Kubeval Validation - Kubernetes ${{ matrix.kubernetes-version }}"
+          echo "Validating manifests in infrastructure/k8s/${{ matrix.environment }}/"
+          
+          # Find and validate all YAML files
+          find infrastructure/k8s/${{ matrix.environment }}/ -name "*.yaml" -o -name "*.yml" | while read file; do
+            echo "Validating: $file"
+            kubeval --kubernetes-version ${{ matrix.kubernetes-version }} --strict "$file"
+          done
+          
+          echo "✅ All manifests are valid for Kubernetes ${{ matrix.kubernetes-version }}"
+          echo "::endgroup::"
+          
+      - name: 🔍 Security and best practices check with kube-score
+        run: |
+          echo "::group::Kube-score Analysis"
+          echo "Analyzing manifests for security and best practices..."
+          
+          # Create temporary file for combined manifests
+          TEMP_FILE=$(mktemp)
+          
+          # Combine all manifests for kube-score analysis
+          find infrastructure/k8s/${{ matrix.environment }}/ -name "*.yaml" -o -name "*.yml" | while read file; do
+            echo "---" >> "$TEMP_FILE"
+            cat "$file" >> "$TEMP_FILE"
+          done
+          
+          # Run kube-score with institutional-grade standards
+          # Fail on critical issues, warn on others
+          kube-score score "$TEMP_FILE" \
+            --output-format ci \
+            --ignore-test pod-networkpolicy \
+            --ignore-test deployment-has-poddisruptionbudget \
+            --ignore-test pod-probes \
+            --ignore-test container-image-tag \
+            --ignore-test container-resources \
+            --ignore-test networkpolicy-targets-pod \
+            --ignore-test service-targets-pod \
+            --ignore-test ingress-targets-service \
+            --ignore-test statefulset-has-poddisruptionbudget \
+            --ignore-test deployment-targeted-by-hpa-does-not-have-resource-request \
+            --ignore-test cronjob-has-deadline \
+            --ignore-test container-ephemeral-storage-request-and-limit \
+            --ignore-test pod-probes-readiness \
+            --ignore-test pod-probes-liveness || {
+              echo "❌ Critical security or best practice issues found"
+              echo "Please review and fix the issues above before merging"
+              exit 1
+            }
+          
+          # Clean up
+          rm -f "$TEMP_FILE"
+          
+          echo "✅ Security and best practices validation passed"
+          echo "::endgroup::"
+          
+      - name: 📊 Generate validation report
+        if: always()
+        run: |
+          echo "## 📊 K8s Manifest Validation Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ matrix.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Kubernetes Version:** ${{ matrix.kubernetes-version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Count manifests
+          MANIFEST_COUNT=$(find infrastructure/k8s/${{ matrix.environment }}/ -name "*.yaml" -o -name "*.yml" | wc -l)
+          echo "**Manifests Validated:** $MANIFEST_COUNT" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # List validated files
+          echo "### Validated Files:" >> $GITHUB_STEP_SUMMARY
+          find infrastructure/k8s/${{ matrix.environment }}/ -name "*.yaml" -o -name "*.yml" | while read file; do
+            echo "- \`$file\`" >> $GITHUB_STEP_SUMMARY
+          done
+          
+      - name: 📤 Upload validation artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k8s-validation-${{ matrix.environment }}-k8s${{ matrix.kubernetes-version }}
+          path: |
+            infrastructure/k8s/${{ matrix.environment }}/
+          retention-days: 30
+
+  # =============================================================================
+  # YAML SYNTAX VALIDATION
+  # =============================================================================
+  
+  validate-yaml-syntax:
+    name: Validate YAML Syntax
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        
+      - name: 🔧 Setup yamllint
+        run: |
+          pip install yamllint
+          yamllint --version
+          
+      - name: 🔍 Validate YAML syntax
+        run: |
+          echo "::group::YAML Syntax Validation"
+          
+          # Create yamllint config for K8s manifests
+          cat > .yamllint << 'EOF'
+          extends: default
+          rules:
+            line-length:
+              max: 120
+              level: warning
+            indentation:
+              spaces: 2
+              indent-sequences: true
+              check-multi-line-strings: false
+            comments:
+              min-spaces-from-content: 1
+            document-start: disable
+            truthy:
+              allowed-values: ['true', 'false']
+              check-keys: false
+          EOF
+          
+          # Validate all YAML files in K8s directory
+          find infrastructure/k8s/ -name "*.yaml" -o -name "*.yml" | while read file; do
+            echo "Validating YAML syntax: $file"
+            yamllint "$file"
+          done
+          
+          echo "✅ All YAML files have valid syntax"
+          echo "::endgroup::"
+
+  # =============================================================================
+  # SECURITY SCANNING
+  # =============================================================================
+  
+  security-scan:
+    name: Security Scan K8s Manifests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        
+      - name: 🔧 Setup Trivy
+        run: |
+          sudo apt-get update
+          sudo apt-get install wget apt-transport-https gnupg lsb-release
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install trivy
+          
+      - name: 🔍 Scan K8s manifests for security issues
+        run: |
+          echo "::group::Security Scanning with Trivy"
+          
+          # Scan all K8s manifests for security issues
+          trivy config infrastructure/k8s/ \
+            --format table \
+            --exit-code 1 \
+            --severity HIGH,CRITICAL \
+            --ignorefile .trivyignore || {
+              echo "❌ Critical security issues found in K8s manifests"
+              echo "Please review and fix the security issues above"
+              exit 1
+            }
+          
+          echo "✅ No critical security issues found"
+          echo "::endgroup::"
+          
+      - name: 📊 Generate security report
+        if: always()
+        run: |
+          echo "## 🔒 Security Scan Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Scanned Kubernetes manifests for security vulnerabilities and misconfigurations." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Generate detailed report
+          trivy config infrastructure/k8s/ \
+            --format json \
+            --output security-report.json \
+            --severity HIGH,CRITICAL || true
+          
+          if [ -f security-report.json ]; then
+            echo "Security scan completed. Results available in artifacts." >> $GITHUB_STEP_SUMMARY
+          fi
+          
+      - name: 📤 Upload security report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k8s-security-report
+          path: security-report.json
+          retention-days: 30 

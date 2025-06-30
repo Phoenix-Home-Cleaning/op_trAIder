@@ -29,6 +29,7 @@ import { FlatCompat } from '@eslint/eslintrc';
 import js from '@eslint/js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import tseslint from 'typescript-eslint';
 
 // Get current directory for flat config compatibility
 const __filename = fileURLToPath(import.meta.url);
@@ -42,31 +43,23 @@ const compat = new FlatCompat({
 });
 
 /** @type {import('eslint').Linter.Config[]} */
-export default [
-  // Base JavaScript recommended rules
+export default tseslint.config(
   js.configs.recommended,
-  
-  // Next.js and React configuration using compatibility layer
-  ...compat.extends('next/core-web-vitals', 'next/typescript'),
-  
-  // Global configuration
+  ...compat.extends('next/core-web-vitals'),
+  ...tseslint.configs.recommended,
   {
+    // Global configuration
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
       globals: {
-        // Node.js globals
         process: 'readonly',
         Buffer: 'readonly',
         __dirname: 'readonly',
         __filename: 'readonly',
-        
-        // Browser globals
         window: 'readonly',
         document: 'readonly',
         console: 'readonly',
-        
-        // Testing globals
         describe: 'readonly',
         it: 'readonly',
         expect: 'readonly',
@@ -80,32 +73,30 @@ export default [
     },
     
     rules: {
-      // Trading-specific rules for institutional grade code
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'no-debugger': 'error',
       'no-alert': 'error',
-      
-      // Security rules for financial applications
       'no-eval': 'error',
       'no-implied-eval': 'error',
       'no-new-func': 'error',
       'no-script-url': 'error',
-      
-      // Performance rules
       'prefer-const': 'error',
       'no-var': 'error',
       'object-shorthand': 'error',
-      
-      // Code quality rules
       'eqeqeq': ['error', 'always'],
       'curly': ['error', 'all'],
-      'no-unused-vars': ['error', { 
-        argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_',
-        ignoreRestSiblings: true 
-      }],
-      
-      // TypeScript specific overrides
+      'no-unused-vars': 'off', // Use @typescript-eslint/no-unused-vars instead
+      'react/prop-types': 'off',
+      'react/react-in-jsx-scope': 'off',
+      'react-hooks/exhaustive-deps': 'warn',
+      '@next/next/no-img-element': 'error',
+      '@next/next/no-html-link-for-pages': 'error',
+    },
+  },
+  {
+    // TypeScript specific overrides
+    files: ['**/*.ts', '**/*.tsx'],
+    rules: {
       '@typescript-eslint/no-unused-vars': ['error', { 
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
@@ -114,52 +105,25 @@ export default [
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',
-      
-      // React specific rules for trading UI
-      'react/prop-types': 'off', // Using TypeScript instead
-      'react/react-in-jsx-scope': 'off', // Not needed in Next.js
-      'react-hooks/exhaustive-deps': 'warn',
-      
-      // Next.js specific rules
-      '@next/next/no-img-element': 'error',
-      '@next/next/no-html-link-for-pages': 'error',
-    },
+    }
   },
-  
-  // File-specific configurations
   {
-    files: ['**/*.ts', '**/*.tsx'],
-    languageOptions: {
-      parser: '@typescript-eslint/parser',
-      parserOptions: {
-        ecmaFeatures: {
-          jsx: true,
-        },
-        ecmaVersion: 'latest',
-        sourceType: 'module',
-      },
-    },
-  },
-  
-  // Test files configuration
-  {
+    // Test files configuration
     files: ['**/*.test.ts', '**/*.test.tsx', '**/*.spec.ts', '**/*.spec.tsx'],
     rules: {
       'no-console': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },
-  
-  // Configuration files
   {
+    // Configuration files
     files: ['*.config.js', '*.config.mjs', '*.config.ts'],
     rules: {
       'no-console': 'off',
     },
   },
-  
-  // Ignore patterns
   {
+    // Ignore patterns
     ignores: [
       'node_modules/**',
       '.next/**',
@@ -173,5 +137,5 @@ export default [
       '*.min.js',
       'test-results/**',
     ],
-  },
-]; 
+  }
+); 

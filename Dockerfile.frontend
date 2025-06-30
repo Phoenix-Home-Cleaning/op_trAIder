@@ -1,0 +1,134 @@
+# 🚀 TRAIDER V1 - Frontend Dockerfile
+# Multi-stage build for Next.js application with institutional-grade security
+# 
+# Build stages:
+# 1. Base: Common dependencies and security setup
+# 2. Dependencies: Install and cache dependencies
+# 3. Builder: Build the application
+# 4. Runner: Production runtime environment
+#
+# Security features:
+# - Non-root user execution
+# - Minimal attack surface
+# - Dependency vulnerability scanning
+# - Resource limits
+# - Health checks
+
+# =============================================================================
+# STAGE 1: BASE IMAGE WITH SECURITY HARDENING
+# =============================================================================
+
+FROM node:20-alpine AS base
+
+# Set working directory
+WORKDIR /app
+
+# Install security updates and essential packages
+RUN apk update && \
+    apk upgrade && \
+    apk add --no-cache \
+        dumb-init \
+        curl \
+        tini && \
+    rm -rf /var/cache/apk/*
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nextjs -u 1001 -G nodejs
+
+# Set environment variables
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
+    PORT=3000
+
+# =============================================================================
+# STAGE 2: DEPENDENCIES INSTALLATION
+# =============================================================================
+
+FROM base AS deps
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies with security audit
+RUN npm ci --only=production --audit --audit-level=high && \
+    npm cache clean --force
+
+# =============================================================================
+# STAGE 3: BUILD STAGE
+# =============================================================================
+
+FROM base AS builder
+
+# Copy package files and install all dependencies (including dev)
+COPY package*.json ./
+RUN npm ci --include=dev
+
+# Copy source code
+COPY . .
+
+# Copy environment file for build
+COPY .env.example .env.local
+
+# Build the application using our workaround
+RUN npm run build
+
+# =============================================================================
+# STAGE 4: PRODUCTION RUNTIME
+# =============================================================================
+
+FROM base AS runner
+
+# Set production environment
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1
+
+# Copy runtime dependencies
+COPY --from=deps /app/node_modules ./node_modules
+
+# Copy built application
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/next.config.js ./next.config.js
+
+# Copy necessary files for runtime
+COPY --from=builder /app/middleware.ts ./middleware.ts
+COPY --from=builder /app/tailwind.config.js ./tailwind.config.js
+COPY --from=builder /app/postcss.config.js ./postcss.config.js
+
+# Create necessary directories and set permissions
+RUN mkdir -p /app/.next/cache && \
+    chown -R nextjs:nodejs /app
+
+# Switch to non-root user
+USER nextjs
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:3000/api || exit 1
+
+# Use tini as init system for proper signal handling
+ENTRYPOINT ["tini", "--"]
+
+# Start the application
+CMD ["npm", "start"]
+
+# =============================================================================
+# METADATA AND LABELS
+# =============================================================================
+
+LABEL maintainer="TRAIDER Team" \
+      version="1.0.0-alpha" \
+      description="TRAIDER V1 Frontend - Institutional Trading Platform" \
+      org.opencontainers.image.title="TRAIDER Frontend" \
+      org.opencontainers.image.description="Next.js frontend for autonomous cryptocurrency trading" \
+      org.opencontainers.image.version="1.0.0-alpha" \
+      org.opencontainers.image.created="2025-01-27" \
+      org.opencontainers.image.source="https://github.com/traider/traider-v1" \
+      org.opencontainers.image.licenses="Proprietary" \
+      security.scan="required" \
+      performance.tier="high" 

@@ -100,12 +100,12 @@ describe('Providers Component', () => {
     expect(screen.getByTestId('child-2')).toBeInTheDocument();
     expect(screen.getByTestId('child-3')).toBeInTheDocument();
     
-    // Verify SessionProvider was called
+    // Verify SessionProvider was called with children
     expect(SessionProvider).toHaveBeenCalledWith(
-      expect.objectContaining({
-        children: expect.anything(),
-      }),
-      expect.anything()
+      {
+        children: expect.any(Array),
+      },
+      undefined
     );
   });
 

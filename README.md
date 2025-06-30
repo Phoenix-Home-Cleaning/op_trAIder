@@ -197,6 +197,12 @@ function calculatePositionSize(
 - **Error Tracking**: Sentry with real-time alerts
 - **Performance**: Custom trading metrics and SLA monitoring
 
+### Disaster Recovery & Backup
+- **Recovery Objectives**: ≤5 min RTO, zero data loss RPO
+- **Backup Strategy**: Multi-layered with 90-day retention
+- **Automation**: PowerShell scripts with health validation
+- **Testing**: Running a [backup & restore test](docs/infrastructure/dr-strategy.md#test-schedule)
+
 ---
 
 ## 🧪 Testing Strategy
@@ -221,10 +227,13 @@ function calculatePositionSize(
 ### Prerequisites
 - Node.js 18+ and npm
 - Python 3.11+ with pip
-- PostgreSQL 15+
-- Docker and Docker Compose
+- PostgreSQL 15+ (or use Docker/K3s)
+- Docker and Docker Compose (optional)
+- K3s for Kubernetes development (optional)
 
-### Quick Start
+### Quick Start Options
+
+#### Option 1: Local Development (Recommended)
 ```bash
 # Clone the repository
 git clone https://github.com/your-org/traider.git
@@ -247,6 +256,51 @@ npm run dev:api    # Backend on :8000
 # Run tests
 npm run test       # Frontend tests
 npm run test:e2e   # End-to-end tests
+```
+
+#### Option 2: Docker Development Environment
+```bash
+# Start all services with Docker Compose
+docker-compose -f docker-compose.dev.yml up -d
+
+# Access services
+# Frontend: http://localhost:3000
+# Backend: http://localhost:8000
+# Database Admin: http://localhost:8080
+# Grafana: http://localhost:3001
+```
+
+#### Option 3: K3s Kubernetes Development
+```bash
+# Install K3s (Linux/macOS/WSL2)
+curl -sfL https://get.k3s.io | sh -
+
+# Configure kubectl
+sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+sudo chown $(id -u):$(id -g) ~/.kube/config
+
+# Deploy TRAIDER to K3s
+kubectl apply -f infrastructure/k8s/dev/
+
+# Access services via NodePort
+# Frontend: http://localhost:30000
+# Backend API: http://localhost:30001
+# Grafana: http://localhost:30002 (admin/admin)
+
+# Or use automated setup script
+.\scripts\setup-phase0.ps1 -WithK3s
+```
+
+#### K3s Service Access
+After K3s deployment, services are available at:
+- **Frontend**: http://localhost:30000 - Trading dashboard
+- **Backend API**: http://localhost:30001 - REST API endpoints
+- **Grafana**: http://localhost:30002 - Monitoring dashboards (admin/admin)
+- **Prometheus**: `kubectl port-forward svc/prometheus-dev 9090:9090 -n traider-dev`
+
+For ingress access, add to `/etc/hosts`:
+```
+127.0.0.1 traider.local api.traider.local grafana.traider.local prometheus.traider.local
 ```
 
 ### Environment Configuration

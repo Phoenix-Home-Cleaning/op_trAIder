@@ -124,6 +124,13 @@ const nextConfig = {
       
       // Disable file system caching on Windows to avoid symlink issues
       config.cache = false;
+      
+      // Additional Windows filesystem fixes
+      config.snapshot = {
+        ...config.snapshot,
+        managedPaths: [],
+        immutablePaths: [],
+      };
     }
 
     // Add bundle analyzer in development
@@ -138,9 +145,9 @@ const nextConfig = {
             statsFilename: 'bundle-stats.json',
           })
         );
-      } catch (error) {
-        console.warn('Bundle analyzer not available:', error.message);
-      }
+              } catch {
+          // Bundle analyzer not available in this environment
+        }
     }
 
     return config;
@@ -148,7 +155,7 @@ const nextConfig = {
 
   // Compiler options for better performance
   compiler: {
-    // Remove console.log in production
+            // Remove console statements in production
     removeConsole: process.env.NODE_ENV === 'production',
   },
 

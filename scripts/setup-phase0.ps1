@@ -17,6 +17,7 @@ param(
     [switch]$SkipDocker,
     [switch]$SkipDatabase,
     [switch]$SkipDependencies,
+    [switch]$WithK3s,
     [switch]$Verbose
 )
 
@@ -140,6 +141,26 @@ if (-not (Test-Command "py")) {
 
 $pythonVersion = py --version
 Write-Verbose "Python version: $pythonVersion"
+
+# Check K3s and kubectl (optional)
+if ($WithK3s) {
+    if (-not (Test-Command "kubectl")) {
+        Write-Error "kubectl is not installed. Please install kubectl for K3s management."
+        Write-Host "Install guide: https://kubernetes.io/docs/tasks/tools/install-kubectl-windows/" -ForegroundColor Yellow
+        exit 1
+    }
+    
+    # Check if K3s is running
+    try {
+        kubectl cluster-info | Out-Null
+        Write-Verbose "K3s cluster is accessible"
+    }
+    catch {
+        Write-Error "K3s cluster is not accessible. Please ensure K3s is installed and running."
+        Write-Host "Install K3s: curl -sfL https://get.k3s.io | sh -" -ForegroundColor Yellow
+        exit 1
+    }
+}
 
 Write-Success "Prerequisites check completed"
 
@@ -324,6 +345,46 @@ catch {
 }
 
 # =============================================================================
+# K3S DEPLOYMENT (OPTIONAL)
+# =============================================================================
+
+if ($WithK3s) {
+    Write-Step "Deploying to K3s cluster..."
+    
+    try {
+        # Apply K8s manifests
+        Write-Step "Applying Kubernetes manifests..."
+        kubectl apply -f infrastructure/k8s/dev/
+        Write-Success "K8s manifests applied successfully"
+        
+        # Wait for deployments to be ready
+        Write-Step "Waiting for deployments to be ready..."
+        kubectl wait --for=condition=available --timeout=300s deployment/postgres-dev -n traider-dev
+        kubectl wait --for=condition=available --timeout=300s deployment/redis-dev -n traider-dev
+        kubectl wait --for=condition=available --timeout=300s deployment/prometheus-dev -n traider-dev
+        kubectl wait --for=condition=available --timeout=300s deployment/grafana-dev -n traider-dev
+        
+        Write-Success "All K8s deployments are ready"
+        
+        # Display access information
+        Write-Step "K8s services are accessible at:"
+        Write-Host "  Frontend:   http://localhost:30000" -ForegroundColor Green
+        Write-Host "  Backend:    http://localhost:30001" -ForegroundColor Green  
+        Write-Host "  Grafana:    http://localhost:30002 (admin/admin)" -ForegroundColor Green
+        Write-Host "  Prometheus: kubectl port-forward svc/prometheus-dev 9090:9090 -n traider-dev" -ForegroundColor Green
+        
+        # Check pod status
+        Write-Step "Pod status:"
+        kubectl get pods -n traider-dev
+        
+    }
+    catch {
+        Write-Error "K3s deployment failed: $_"
+        Write-Warning "You can manually apply manifests with: kubectl apply -f infrastructure/k8s/dev/"
+    }
+}
+
+# =============================================================================
 # COMPLETION SUMMARY
 # =============================================================================
 
@@ -343,17 +404,27 @@ if (-not $SkipDocker) {
 }
 
 Write-Host "`n🚀 Next Steps:" -ForegroundColor Cyan
-Write-Host "1. Review and update backend/.env with your configuration"
-Write-Host "2. Start the development servers:"
-Write-Host "   Frontend: npm run dev"
-Write-Host "   Backend:  cd backend && py -m uvicorn main:app --reload"
+Write-Host "1. Review and update .env with your configuration"
 
-if (-not $SkipDocker) {
-    Write-Host "3. Access development tools:"
-    Write-Host "   Database Admin: http://localhost:8080 (Adminer)"
-    Write-Host "   Redis Admin:    http://localhost:8081 (Redis Commander)"
-    Write-Host "   Metrics:        http://localhost:9090 (Prometheus)"
-    Write-Host "   Dashboards:     http://localhost:3001 (Grafana)"
+if ($WithK3s) {
+    Write-Host "2. K3s services are running! Access them at:"
+    Write-Host "   Frontend:   http://localhost:30000"
+    Write-Host "   Backend:    http://localhost:30001"
+    Write-Host "   Grafana:    http://localhost:30002 (admin/admin)"
+    Write-Host "3. Monitor with: kubectl get pods -n traider-dev"
+    Write-Host "4. Logs with: kubectl logs -f deployment/[service-name] -n traider-dev"
+} else {
+    Write-Host "2. Start the development servers:"
+    Write-Host "   Frontend: npm run dev"
+    Write-Host "   Backend:  cd backend && py -m uvicorn main:app --reload"
+
+    if (-not $SkipDocker) {
+        Write-Host "3. Access development tools:"
+        Write-Host "   Database Admin: http://localhost:8080 (Adminer)"
+        Write-Host "   Redis Admin:    http://localhost:8081 (Redis Commander)"
+        Write-Host "   Metrics:        http://localhost:9090 (Prometheus)"
+        Write-Host "   Dashboards:     http://localhost:3001 (Grafana)"
+    }
 }
 
 Write-Host "`n📚 Documentation:" -ForegroundColor Cyan

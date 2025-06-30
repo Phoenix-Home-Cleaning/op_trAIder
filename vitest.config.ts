@@ -28,8 +28,11 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
+// To use path aliases from tsconfig.json
+import tsconfigPaths from 'vite-tsconfig-paths';
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tsconfigPaths()],
 
   test: {
     // Test environment configuration
@@ -72,12 +75,10 @@ export default defineConfig({
 
       // Coverage thresholds for institutional standards
       thresholds: {
-        global: {
-          branches: 85,
-          functions: 90,
-          lines: 90,
-          statements: 90
-        }
+        branches: 85,
+        functions: 90,
+        lines: 90,
+        statements: 90,
       },
 
       // Include/exclude patterns
@@ -98,10 +99,7 @@ export default defineConfig({
 
     // Reporter configuration
     reporters: ['verbose'],
-    outputFile: {
-      json: './test-results/results.json',
-      html: './test-results/index.html'
-    },
+    outputFile: './test-results/results.json',
 
     // Watch mode configuration
     watch: false, // Disabled by default for CI/CD

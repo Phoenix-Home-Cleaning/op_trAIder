@@ -1,0 +1,126 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-dev
+  namespace: traider-dev
+  labels:
+    app: postgres-dev
+    component: database
+    environment: development
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: traider-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-dev
+  template:
+    metadata:
+      labels:
+        app: postgres-dev
+        component: database
+    spec:
+      containers:
+        - name: postgres
+          image: timescale/timescaledb:latest-pg15
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_DB
+              value: "traider"
+            - name: POSTGRES_USER
+              value: "traider"
+            - name: POSTGRES_PASSWORD
+              value: "REPLACE_WITH_POSTGRES_PASSWORD"
+            - name: POSTGRES_INITDB_ARGS
+              value: "--encoding=UTF8 --locale=en_US.UTF-8"
+            - name: PGDATA
+              value: "/var/lib/postgresql/data/pgdata"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+            - name: postgres-init
+              mountPath: /docker-entrypoint-initdb.d
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - traider
+                - -d
+                - traider
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - traider
+                - -d
+                - traider
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+      volumes:
+        - name: postgres-storage
+          emptyDir: {}
+        - name: postgres-init
+          configMap:
+            name: postgres-init-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-dev
+  namespace: traider-dev
+  labels:
+    app: postgres-dev
+    component: database
+spec:
+  selector:
+    app: postgres-dev
+  ports:
+    - port: 5432
+      targetPort: 5432
+      name: postgres
+  type: ClusterIP
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init-config
+  namespace: traider-dev
+data:
+  01-init-timescaledb.sql: |
+    -- TRAIDER V1 - TimescaleDB Initialization Script
+    -- Initialize TimescaleDB extension and create hypertables for trading data
+    
+    -- Create TimescaleDB extension
+    CREATE EXTENSION IF NOT EXISTS timescaledb;
+    
+    -- Set timezone to UTC for all trading operations
+    SET timezone = 'UTC';
+    
+    -- Create trading-specific database settings
+    ALTER DATABASE traider SET timezone = 'UTC';
+    ALTER DATABASE traider SET log_statement = 'all';
+    
+    -- Grant necessary permissions
+    GRANT ALL PRIVILEGES ON DATABASE traider TO traider;
+    
+    -- Log initialization completion
+    SELECT 'TimescaleDB initialized successfully for TRAIDER V1' as status; 

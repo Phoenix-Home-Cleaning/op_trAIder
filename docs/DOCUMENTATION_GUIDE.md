@@ -57,30 +57,35 @@ npm run adr:list
 **Example JSDoc Comment**:
 ```typescript
 /**
- * Calculates position size based on volatility targeting
- * 
- * @param signal - Trading signal strength (-1 to 1)
- * @param volatility - Historical volatility (annualized)
- * @param riskBudget - Available risk budget in USD
- * @returns Position size in USD, clamped to risk limits
- * 
+ * @fileoverview Calculates position size based on volatility.
+ * @module shared/utils/position-sizing
+ *
+ * @description
+ * This function determines the appropriate position size for a trade
+ * based on a volatility-targeting model, ensuring that the risk taken
+ * is proportional to the signal strength and market conditions.
+ *
+ * @param {object} params - The parameters for the calculation.
+ * @param {number} params.signal - Trading signal strength (-1 to 1).
+ * @param {number} params.volatility - Annualized historical volatility.
+ * @param {number} params.riskBudget - Available risk budget in USD.
+ * @returns {number} Position size in USD, clamped to risk limits.
+ *
  * @example
- * ```typescript
- * const size = calculatePositionSize(0.5, 0.2, 10000);
- * console.log(size); // 2500
- * ```
+ * const size = calculatePositionSize({ signal: 0.5, volatility: 0.2, riskBudget: 10000 });
+ * console.log(size); // 25000
  */
-function calculatePositionSize(
-  signal: number,
-  volatility: number,
-  riskBudget: number
-): number {
+function calculatePositionSize(params: {
+  signal: number;
+  volatility: number;
+  riskBudget: number;
+}): number {
   // Implementation
 }
 ```
 
 ### 2. Architecture Diagrams
-**Generated from**: Code structure analysis  
+**Generated from**: Code structure analysis and manual Mermaid definitions.
 **Output**: `docs/diagrams/`  
 **Format**: Mermaid diagrams
 
@@ -105,11 +110,33 @@ function calculatePositionSize(
  */
 
 /**
- * GET /api/positions - Retrieve trading positions
- * 
- * @param symbol - Optional symbol filter (e.g., BTC-USD)
- * @param timeRange - Time range for position history
- * @returns Array of position objects with P&L data
+ * @api {get} /api/positions Retrieve trading positions
+ * @apiName GetPositions
+ * @apiGroup Trading
+ * @apiVersion 1.0.0
+ *
+ * @apiParam {String} [symbol] Optional symbol filter (e.g., BTC-USD).
+ * @apiParam {String} [timeRange] Time range for position history (e.g., '1D', '7D').
+ *
+ * @apiSuccess {Object[]} positions List of position objects.
+ * @apiSuccess {String} positions.symbol The asset symbol.
+ * @apiSuccess {Number} positions.size The size of the position.
+ * @apiSuccess {Number} positions.entryPrice The average entry price.
+ * @apiSuccess {Number} positions.pnl The unrealized profit and loss.
+ *
+ * @apiSuccessExample {json} Success-Response:
+ *     HTTP/1.1 200 OK
+ *     [
+ *       {
+ *         "symbol": "BTC-USD",
+ *         "size": 1.5,
+ *         "entryPrice": 60000,
+ *         "pnl": 7500
+ *       }
+ *     ]
+ *
+ * @apiError (401 Unauthorized) {String} error The user is not authenticated.
+ * @apiError (500 InternalServerError) {String} error An issue occurred on the server.
  */
 export async function GET(request: Request) {
   // Implementation
@@ -124,7 +151,7 @@ export async function GET(request: Request) {
 **Usage**:
 ```bash
 # Create new ADR
-npm run adr:new "Migrate to GraphQL API"
+npx tsx scripts/create-adr.ts "Migrate to GraphQL API"
 
 # This creates: docs/adr/adr-002-migrate-to-graphql-api.md
 # Opens in VS Code for editing
@@ -226,63 +253,57 @@ The documentation system runs automatically on:
  * @example
  * ```typescript
  * const result = myFunction('input', 42);
- * console.log(result); // Expected output
+ * // Expected output: { value: 'processed:input' }
  * ```
  * 
  * @see {@link RelatedFunction} for related functionality
  * @since 1.0.0
  */
-function myFunction(paramName: string, optionalParam?: number): ReturnType {
+function myFunction(paramName: string, optionalParam?: number): { value: string } {
   // Implementation
+  return { value: `processed:${paramName}` };
 }
 ```
 
 ### ADR Writing Guidelines
 
-1. **Context**: Clearly explain the problem or decision needed
-2. **Decision**: Document the chosen solution and alternatives considered
-3. **Consequences**: List both positive and negative outcomes
-4. **Implementation**: Provide actionable steps and success criteria
-5. **Monitoring**: Define metrics and review schedule
+1. **Context**: Clearly explain the problem or decision needed.
+2. **Decision**: Document the chosen solution and provide justification. List alternatives considered and why they were not chosen.
+3. **Consequences**: List both positive and negative outcomes of the decision.
+4. **Implementation Plan**: Provide actionable steps, success criteria, and a timeline.
+5. **Monitoring & Review**: Define metrics to track success and a schedule for reviewing the decision.
 
 ### API Documentation Guidelines
 
+Use a combination of file-level documentation and OpenAPI-style annotations within your route handlers to ensure that API documentation is thorough and auto-generatable.
+
 ```typescript
 /**
- * @fileoverview API endpoint description
- * 
- * Detailed explanation of the endpoint's purpose, authentication
- * requirements, rate limits, and usage patterns.
+ * @fileoverview Endpoint for managing user trade settings.
+ * @module app/api/settings/trading/route
  */
 
+import { NextResponse } from 'next/server';
+
 /**
- * HTTP_METHOD /api/endpoint - Brief endpoint description
- * 
- * Detailed description of what the endpoint does, including:
- * - Authentication requirements
- * - Request/response formats
- * - Error conditions
- * - Rate limiting
- * 
- * @param param1 - Request parameter description
- * @param param2 - Optional parameter description
- * @returns Response object description
- * 
- * @throws {400} Bad Request - Invalid parameters
- * @throws {401} Unauthorized - Missing or invalid authentication
- * @throws {429} Too Many Requests - Rate limit exceeded
- * 
- * @example
- * ```typescript
- * const response = await fetch('/api/endpoint', {
- *   method: 'POST',
- *   headers: { 'Content-Type': 'application/json' },
- *   body: JSON.stringify({ param1: 'value' })
- * });
- * ```
+ * @api {post} /api/settings/trading Update user trading settings
+ * @apiName UpdateTradeSettings
+ * @apiGroup Settings
+ * @apiVersion 1.0.0
+ *
+ * @apiBody {Object} settings The new trading settings.
+ * @apiBody {String} settings.defaultOrderType The default order type ('MARKET' or 'LIMIT').
+ * @apiBody {Number} settings.maxSlippageBps The maximum slippage in basis points.
+ *
+ * @apiSuccess (200) {Object} data Confirmation message.
+ * @apiSuccess (200) {String} data.message Success message.
+ *
+ * @apiError (400) {String} error Invalid settings provided.
  */
 export async function POST(request: Request) {
-  // Implementation
+  const settings = await request.json();
+  // ... validation and update logic
+  return NextResponse.json({ message: 'Settings updated successfully' });
 }
 ```
 
@@ -414,5 +435,35 @@ npm install -g tsx
 - ✅ Documentation system scales with codebase growth
 
 ---
+
+## 📋 Environment Configuration
+
+### Unified Environment Management
+
+As of ADR-006 (2025-01-27), all environment variables are managed through a single root-level configuration:
+
+- **`.env`**: All environment variables (frontend + backend, gitignored)
+- **`.env.example`**: Complete template with all required variables
+- **Location**: Project root directory (not in `/backend`)
+
+### Setup Process
+```bash
+# Copy template to create environment file
+cp .env.example .env
+
+# Edit with your configuration
+nano .env
+
+# Generate secure secrets (optional)
+.\scripts\generate-secrets.ps1
+```
+
+### Security Requirements
+- All sensitive variables must be set via environment (never hardcoded)
+- Use cryptographically secure secrets (256-bit minimum)
+- Proper file permissions: `chmod 600 .env`
+- Never commit actual secrets to version control
+
+## 📝 Documentation Standards
 
 > **Note**: This documentation automation system is designed to grow with TRAIDER V1 from MVP through institutional-grade deployment. The system automatically adapts to codebase changes while maintaining professional documentation standards required for institutional cryptocurrency trading platforms. 

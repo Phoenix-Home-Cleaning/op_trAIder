@@ -24,9 +24,9 @@ TRAIDER V1 implements multi-layered pre-commit validation to ensure only high-qu
 **Secret Detection**: Scans for hardcoded API keys, passwords, and tokens
 ```bash
 # ❌ These will be blocked:
-const API_KEY = "sk_live_1234567890abcdef"
-const password = "mypassword123"
-const coinbase_secret = "abcd1234"
+const API_KEY = "sk_live_FAKE_KEY_FOR_DOCS"
+const password = "FAKE_PASSWORD_FOR_DOCS"
+const coinbase_secret = "FAKE_SECRET_FOR_DOCS"
 
 # ✅ Use environment variables instead:
 const API_KEY = process.env.COINBASE_API_KEY
@@ -95,7 +95,7 @@ useEffect(() => {
 **No Console Statements**: Remove debug logs from production code
 ```typescript
 // ❌ Blocked in production files:
-console.log('Debug: position size =', positionSize);
+// console.log('Debug: position size =', positionSize);
 
 // ✅ Use proper logging:
 logger.debug('Position size calculated', { positionSize });
@@ -214,7 +214,7 @@ After custom checks pass, lint-staged runs:
 🔍 Running lint-staged checks...
 ✔ eslint --fix --max-warnings 0
 ✔ prettier --write
-✔ npm run test:unit -- --run --reporter=verbose
+✔ vitest run --changed --reporter=dot
 ```
 
 ### 3. TypeScript Compilation
@@ -226,8 +226,7 @@ After custom checks pass, lint-staged runs:
 ### 4. Documentation Validation
 ```bash
 📚 Validating documentation...
-📖 Checking JSDoc coverage...
-✔ Documentation up to date
+✔ tsx scripts/validate-docs.ts
 ```
 
 ### 5. Commit Message Validation
@@ -426,4 +425,27 @@ describe('MarketDataService', () => {
 
 **Remember**: These quality gates exist to protect our trading system and capital. Every check serves a purpose in maintaining institutional-grade reliability and security.
 
-🎯 **Happy Trading & Contributing!** 
+🎯 **Happy Trading & Contributing!**
+
+## 📋 **Updating the CHANGELOG**
+
+After a successful commit, if your changes are noteworthy (new features, bug fixes, performance improvements), you **must** update the `CHANGELOG.md`.
+
+### Format
+Use the following format at the top of the `CHANGELOG.md`:
+
+```markdown
+## [Version] - YYYY-MM-DD HH:MM:SS
+
+### Trading Logic Changes
+- Modified signal generation: [description]
+- Risk limit adjustments: [old] → [new]
+
+### Performance Improvements
+- Reduced latency: [component] [Xms] → [Yms]
+
+### Infrastructure
+- [Changes that affect deployment/monitoring]
+```
+
+This ensures all changes are documented for audit and release purposes. 

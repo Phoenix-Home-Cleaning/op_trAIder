@@ -56,7 +56,7 @@ $secrets = @{
 Write-Host "Generated $($secrets.Count) secure secrets" -ForegroundColor Green
 
 # Read the template
-$template = Get-Content "backend/env.example" -Raw
+$template = Get-Content ".env.example" -Raw
 
 # Create the header
 $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss UTC"
@@ -95,9 +95,9 @@ $envContent = $envContent -replace "LOG_LEVEL=.*", "LOG_LEVEL=DEBUG"
 $finalContent = $header + $envContent
 
 # Write to file
-$finalContent | Out-File -FilePath "backend/.env" -Encoding UTF8
+$finalContent | Out-File -FilePath ".env" -Encoding UTF8
 
-Write-Host "Environment file created: backend/.env" -ForegroundColor Green
+Write-Host "Environment file created: .env" -ForegroundColor Green
 Write-Host ""
 Write-Host "SECURITY SUMMARY:" -ForegroundColor Yellow
 Write-Host "- JWT Secrets: 256-bit cryptographic strength" -ForegroundColor White

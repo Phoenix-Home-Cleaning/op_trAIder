@@ -158,7 +158,7 @@ class SecurityValidator:
             warnings.append("⚠️  DEBUG mode is enabled - may expose sensitive information")
             
         # Check file permissions (Unix-like systems)
-        env_file = Path('backend/.env')
+        env_file = Path('.env')
         if env_file.exists() and hasattr(os, 'stat'):
             try:
                 stat_info = env_file.stat()
@@ -245,7 +245,7 @@ class CoinbaseAppAPITester:
         @performance <100ms file read
         @riskLevel MEDIUM - File system access
         """
-        env_path = Path(__file__).parent.parent / "backend" / ".env"
+        env_path = Path(__file__).parent.parent / ".env"
         
         if not env_path.exists():
             logger.error(f"Environment file not found: {env_path}")

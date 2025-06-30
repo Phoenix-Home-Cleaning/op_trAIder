@@ -91,11 +91,23 @@ kubectl get secrets -n traider-dev
 
 ```bash
 # Deploy development services
-kubectl apply -f infrastructure/k8s/dev/ -n traider-dev
+kubectl apply -f infrastructure/k8s/dev/
 
 # Check deployment status
 kubectl get pods -n traider-dev
 kubectl get services -n traider-dev
+
+# Access services via NodePort (for development)
+# Frontend: http://localhost:30000
+# Backend API: http://localhost:30001
+# Grafana: http://localhost:30002
+
+# Or via ingress (add to /etc/hosts):
+# 127.0.0.1 traider.local api.traider.local grafana.traider.local prometheus.traider.local
+# Frontend: http://traider.local
+# Backend API: http://api.traider.local
+# Grafana: http://grafana.traider.local
+# Prometheus: http://prometheus.traider.local
 ```
 
 ---

@@ -21,13 +21,13 @@ TRAIDER is designed as an **AI-first codebase**, meaning every architectural dec
 ```
 traider/
 ├── app/                    # Next.js App Router (frontend)
-├── backend/               # Python trading system
-├── docs/                  # Project documentation
-├── infrastructure/        # Terraform, Docker, deployment configs
-├── tests/                 # Cross-system integration tests
-├── scripts/              # Utility scripts and tools
-├── .github/              # CI/CD workflows
-└── shared/               # Shared types and utilities
+├── backend/                # FastAPI services (Python)
+├── docs/                   # Project documentation (ADRs, guides)
+├── infrastructure/         # Terraform, Docker, K8s configs
+├── tests/                  # Unit, integration, and E2E tests
+├── scripts/                # Automation and utility scripts
+├── .github/                # CI/CD workflows and issue templates
+└── shared/                 # Shared types, constants, and utilities
 ```
 
 ### 2.2 · Frontend Structure (`app/`)
@@ -57,46 +57,41 @@ app/
 │   ├── trading/
 │   ├── notifications/
 │   └── layout.tsx
-├── api/                  # API routes
+├── api/                  # API routes (Next.js backend)
 │   ├── auth/
-│   ├── positions/
-│   ├── pnl/
-│   └── health/
+│   ├── health/
+│   └── README.md
 ├── components/           # Shared UI components
-│   ├── ui/              # Base UI components (buttons, cards, etc.)
-│   ├── charts/          # Chart components
-│   ├── trading/         # Trading-specific components
-│   └── layout/          # Layout components
-├── hooks/               # Custom React hooks
-├── lib/                 # Utilities and configurations
-├── types/               # TypeScript type definitions
-└── globals.css          # Global styles
+│   ├── ui/               # Atomic components (Button, Card)
+│   ├── charts/           # Charting components
+│   ├── trading/          # Domain-specific components
+│   └── layout/           # Layout structure components
+├── hooks/                # Custom React hooks (useSomething)
+├── lib/                  # Utility functions and configurations
+├── types/                # TypeScript type definitions
+└── globals.css           # Global styles
 ```
 
 ### 2.3 · Backend Structure (`backend/`)
 ```
 backend/
-├── services/            # Microservices
-│   ├── market_data/     # Market data ingestion
-│   ├── signal_gen/      # Signal generation
-│   ├── risk_engine/     # Risk management
-│   ├── executor/        # Order execution
-│   └── portfolio/       # Portfolio management
-├── shared/              # Shared Python modules
-│   ├── models/          # Data models and schemas
-│   ├── utils/           # Utility functions
-│   ├── config/          # Configuration management
-│   └── types/           # Type definitions
-├── ml/                  # Machine learning components
-│   ├── features/        # Feature engineering
-│   ├── models/          # ML model definitions
-│   ├── training/        # Training pipelines
-│   └── inference/       # Inference services
-├── data/                # Data management
-│   ├── ingestion/       # Data ingestion pipelines
-│   ├── storage/         # Database schemas and migrations
-│   └── validation/      # Data validation rules
-└── tests/               # Backend-specific tests
+├── api/                  # FastAPI endpoints
+│   ├── __init__.py
+│   ├── auth.py
+│   └── health.py
+├── models/               # Pydantic and SQLAlchemy models
+│   ├── __init__.py
+│   └── user.py
+├── services/             # Core business logic
+│   ├── __init__.py
+│   └── trading_service.py
+├── utils/                # Shared utilities
+│   ├── __init__.py
+│   └── logging.py
+├── migrations/           # Alembic database migrations
+├── tests/                # Backend-specific tests
+├── sql/                  # Raw SQL scripts
+└── main.py               # FastAPI application entrypoint
 ```
 
 ---
@@ -171,50 +166,79 @@ shared/
 ## 4 · 📄 File Structure & Documentation Standards
 
 ### 4.1 · File Header Requirements
-Every file must begin with a clear header explaining its purpose:
+Every file must begin with a clear, structured header:
 
 ```typescript
 /**
- * @fileoverview Real-time P&L chart component for trading dashboard
+ * @fileoverview Real-time P&L chart component for trading dashboard.
+ * @module app/dashboard/components/PnLChart
  * 
+ * @description
  * This component displays live profit/loss data using Chart.js with
- * real-time updates via Socket.IO. Handles both daily and historical
- * P&L visualization with proper error boundaries.
+ * real-time updates via Socket.IO. It handles both daily and historical
+ * P&L visualization and includes proper error boundaries and loading states
+ * to ensure a resilient user experience.
+ *
+ * @performance
+ * - Renders in <50ms with 1,000 data points.
+ * - Updates in real-time with <10ms latency on new data.
+ *
+ * @risk
+ * - Failure impact: MEDIUM - Degrades user experience on the main dashboard.
+ * - Recovery strategy: Displays a static "data unavailable" message.
  * 
  * @author TRAIDER Team
- * @since 2025-06-28
+ * @since 1.0.0-alpha
  */
 ```
 
 ```python
 """
-Market Data WebSocket Client
+@fileoverview Market Data WebSocket Client.
+@module backend.services.market_data.websocket_client
 
+@description
 Manages real-time connection to Coinbase Advanced Trade API for Level-2
 order book data and trade feeds. Implements automatic reconnection with
-exponential backoff and data validation.
+exponential backoff and data validation to ensure data integrity.
 
-Author: TRAIDER Team
-Since: 2025-06-28
+@performance
+- Handles up to 1000 messages/sec.
+- Reconnects in <5s on network failure.
+
+@risk
+- Failure impact: CRITICAL - Halts all trading signal generation.
+- Recovery strategy: Falls back to REST API polling with reduced frequency.
+
+@author TRAIDER Team
+@since 1.0.0-alpha
 """
 ```
 
 ### 4.2 · Function Documentation Standards
-All functions must have comprehensive documentation:
+All functions must have comprehensive JSDoc or docstrings:
 
 ```typescript
 /**
- * Calculates position size based on volatility targeting
+ * Calculates position size based on a volatility-targeting model.
  * 
- * @param signal - Trading signal strength (-1 to 1)
- * @param volatility - Historical volatility (annualized)
- * @param riskBudget - Available risk budget in USD
- * @param maxPosition - Maximum position size limit
- * @returns Position size in USD, clamped to risk limits
+ * @param {number} signal - Trading signal strength, from -1 (max short) to 1 (max long).
+ * @param {number} volatility - Annualized historical volatility of the asset.
+ * @param {number} riskBudget - The maximum capital to risk on this trade in USD.
+ * @param {number} maxPosition - The maximum allowable position size in USD.
+ * @returns {number} The calculated position size in USD, clamped to risk limits.
+ * 
+ * @performance O(1) complexity, executes in <1ms.
+ * @riskLevel HIGH - Incorrect calculation can lead to significant losses.
  * 
  * @example
- * const size = calculatePositionSize(0.5, 0.25, 1000, 2000);
- * // Returns: 800 (for 0.5 signal strength)
+ * const size = calculatePositionSize({
+ *   signal: 0.5,
+ *   volatility: 0.8,
+ *   riskBudget: 1000,
+ *   maxPosition: 20000,
+ * });
+ * // Returns: 625
  */
 function calculatePositionSize(
   signal: number,
@@ -227,33 +251,36 @@ function calculatePositionSize(
 ```
 
 ```python
+from typing import List
+from .models import Position
+
 def calculate_var(
     positions: List[Position],
     confidence_level: float = 0.95,
-    time_horizon: int = 1
+    time_horizon_days: int = 1
 ) -> float:
-    """
-    Calculate Value at Risk for current portfolio positions.
+    """Calculates Value at Risk (VaR) for the current portfolio.
     
-    Uses historical simulation method with 252-day lookback period.
-    Incorporates correlation matrix for multi-asset portfolios.
+    This function uses a historical simulation method with a 252-day lookback
+    period. It incorporates a correlation matrix for multi-asset portfolios
+    to provide a more accurate risk assessment.
     
     Args:
-        positions: List of current trading positions
-        confidence_level: VaR confidence level (default: 0.95)
-        time_horizon: Time horizon in days (default: 1)
+        positions: A list of current trading Position objects.
+        confidence_level: The VaR confidence level (e.g., 0.95 for 95%).
+        time_horizon_days: The time horizon in days.
         
     Returns:
-        VaR estimate in USD (positive value represents potential loss)
+        The VaR estimate in USD. A positive value represents a potential loss.
         
     Raises:
-        ValueError: If positions list is empty or confidence_level invalid
+        ValueError: If `positions` is empty or `confidence_level` is invalid.
         
-    Example:
-        >>> positions = [Position("BTC", 1000), Position("ETH", 500)]
-        >>> var = calculate_var(positions, 0.99, 1)
-        >>> print(f"1-day VaR (99%): ${var:.2f}")
+    @performance O(n^2) due to correlation matrix, ~50ms for 10 assets.
+    @riskLevel CRITICAL - Core input for pre-trade risk checks.
     """
+    # ... implementation
+    return 0.0
 ```
 
 ### 4.3 · File Size Limits

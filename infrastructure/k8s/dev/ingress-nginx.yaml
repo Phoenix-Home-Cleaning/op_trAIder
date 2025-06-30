@@ -1,0 +1,123 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: traider-dev-ingress
+  namespace: traider-dev
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    # CORS headers for development
+    nginx.ingress.kubernetes.io/cors-allow-origin: "http://localhost:3000"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+  labels:
+    app: traider-dev-ingress
+    environment: development
+spec:
+  ingressClassName: nginx
+  rules:
+    # Frontend routing
+    - host: traider.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-dev
+                port:
+                  number: 3000
+    
+    # Backend API routing
+    - host: api.traider.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-dev
+                port:
+                  number: 8000
+    
+    # Monitoring routing
+    - host: prometheus.traider.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: prometheus-dev
+                port:
+                  number: 9090
+    
+    - host: grafana.traider.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: grafana-dev
+                port:
+                  number: 3000
+---
+# NodePort service for easy localhost access during development
+apiVersion: v1
+kind: Service
+metadata:
+  name: traider-dev-nodeport
+  namespace: traider-dev
+  labels:
+    app: traider-dev-nodeport
+    environment: development
+spec:
+  type: NodePort
+  selector:
+    app: frontend-dev
+  ports:
+    - port: 3000
+      targetPort: 3000
+      nodePort: 30000
+      name: frontend
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: traider-dev-api-nodeport
+  namespace: traider-dev
+  labels:
+    app: traider-dev-api-nodeport
+    environment: development
+spec:
+  type: NodePort
+  selector:
+    app: backend-dev
+  ports:
+    - port: 8000
+      targetPort: 8000
+      nodePort: 30001
+      name: backend
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: traider-dev-monitoring-nodeport
+  namespace: traider-dev
+  labels:
+    app: traider-dev-monitoring-nodeport
+    environment: development
+spec:
+  type: NodePort
+  selector:
+    app: grafana-dev
+  ports:
+    - port: 3000
+      targetPort: 3000
+      nodePort: 30002
+      name: grafana 

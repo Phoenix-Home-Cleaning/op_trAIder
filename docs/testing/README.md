@@ -91,34 +91,31 @@ tests/
 - `tests/setup.ts` - Global test setup and utilities
 - `package.json` - Test scripts and dependencies
 
+### `vitest.config.ts` Example
+```typescript
+// vitest.config.ts
+import { defineConfig } from 'vitest/config'
+
+export default defineConfig({
+  test: {
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      thresholds: {
+        lines: 95,
+        functions: 95,
+        branches: 90,
+        statements: 95,
+      },
+    },
+  },
+})
+```
+
 ## 📊 Coverage Requirements
 
 ### Institutional Standards
-```typescript
-// Global minimum coverage
-global: {
-  branches: 90%,
-  functions: 95%,
-  lines: 95%,
-  statements: 95%
-}
-
-// Critical trading components (higher requirements)
-backend/api/: {
-  branches: 95%,
-  functions: 98%,
-  lines: 98%,
-  statements: 98%
-}
-
-// Frontend dashboard
-app/dashboard/: {
-  branches: 92%,
-  functions: 95%,
-  lines: 95%,
-  statements: 95%
-}
-```
+The coverage thresholds are enforced directly in `vitest.config.ts`.
 
 ## ⚡ Performance Standards
 
@@ -141,6 +138,8 @@ app/dashboard/: {
 - JWT token security testing
 - Encryption key management
 - Secure random number generation
+- API input sanitization
+- Trading parameter validation
 
 ### Authentication & Authorization
 - Role-based access control (RBAC)
@@ -153,6 +152,11 @@ app/dashboard/: {
 - XSS protection
 - API input sanitization
 - Trading parameter validation
+
+```bash
+# Run all security-related tests
+vitest run --dir tests/security
+```
 
 ## 📈 Test Categories
 
@@ -169,8 +173,8 @@ app/dashboard/: {
 # Run unit tests
 npm run test:unit
 
-# Run specific component
-npx vitest run tests/unit/backend/test_auth.py
+# Run a specific test file
+vitest run tests/unit/frontend/dashboard.test.tsx
 ```
 
 ### 2. Integration Tests (`tests/integration/`)
@@ -371,7 +375,7 @@ beforeEach(() => {
 #### Environment Variables
 ```bash
 # Ensure .env file exists
-ls backend/.env
+ls .env
 
 # Regenerate if needed
 .\scripts\create-env.ps1

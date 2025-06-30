@@ -43,7 +43,7 @@ There are **two distinct Coinbase API systems**:
 
 ### 2. Environment Configuration
 
-Your current configuration in `backend/.env` is **PERFECT**:
+Your current configuration in `.env` is **PERFECT**:
 
 ```bash
 # Coinbase App API (Modern System)
