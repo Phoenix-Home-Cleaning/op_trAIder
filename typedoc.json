@@ -1,4 +1,5 @@
 {
+  "name": "TRAIDER V1 API Documentation",
   "entryPoints": [
     "app/lib/**/*.ts",
     "app/lib/**/*.tsx"
@@ -7,6 +8,25 @@
   "out": "docs/api",
   "plugin": [
     "typedoc-plugin-markdown"
+  ],
+  "blockTags": [
+    "@fileoverview",
+    "@description", 
+    "@performance",
+    "@risk",
+    "@compliance",
+    "@sideEffects",
+    "@tradingImpact",
+    "@riskLevel",
+    "@monitoring",
+    "@module",
+    "@see",
+    "@since",
+    "@author",
+    "@param",
+    "@returns",
+    "@throws",
+    "@example"
   ],
   "includeVersion": true,
   "githubPages": false,
@@ -66,7 +86,7 @@
     "GitHub": "https://github.com/your-org/traider",
     "Documentation": "https://your-org.github.io/traider"
   },
-  "customCss": "docs/styles/typedoc.css",
+  "customCss": "./docs/styles/typedoc.css",
   "textContentMappings": {
     "title.indexPage": "TRAIDER V1 API Documentation",
     "title.memberPage": "{name}"

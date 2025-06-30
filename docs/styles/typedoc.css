@@ -1,0 +1,99 @@
+/**
+ * TRAIDER V1 TypeDoc Custom Styles
+ * Institutional-grade documentation styling
+ */
+
+/* Trading-specific color scheme */
+:root {
+  --traider-primary: #1a365d;
+  --traider-secondary: #2d3748;
+  --traider-accent: #3182ce;
+  --traider-success: #38a169;
+  --traider-warning: #d69e2e;
+  --traider-danger: #e53e3e;
+  --traider-text: #2d3748;
+  --traider-bg: #f7fafc;
+}
+
+/* Header styling */
+.tsd-page-title {
+  color: var(--traider-primary);
+  border-bottom: 2px solid var(--traider-accent);
+  padding-bottom: 1rem;
+  margin-bottom: 2rem;
+}
+
+/* Navigation styling */
+.tsd-navigation {
+  background-color: var(--traider-bg);
+  border-right: 1px solid #e2e8f0;
+}
+
+.tsd-navigation a {
+  color: var(--traider-text);
+  text-decoration: none;
+}
+
+.tsd-navigation a:hover {
+  color: var(--traider-accent);
+  background-color: #edf2f7;
+}
+
+/* Code blocks */
+.tsd-signature {
+  background-color: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  padding: 1rem;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+/* Trading-specific badges */
+.trading-critical {
+  background-color: var(--traider-danger);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+.trading-performance {
+  background-color: var(--traider-success);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+}
+
+.trading-risk {
+  background-color: var(--traider-warning);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .tsd-page-title {
+    font-size: 1.5rem;
+  }
+  
+  .tsd-signature {
+    padding: 0.75rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  .tsd-navigation {
+    display: none;
+  }
+  
+  .tsd-page-title {
+    color: black;
+    border-bottom: 2px solid black;
+  }
+} 
