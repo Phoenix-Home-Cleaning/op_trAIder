@@ -73,18 +73,39 @@ jobs:
     force_orphan: true  # Clean gh-pages branch
 ```
 
-### Issue 3: Documentation Not Updating
+### Issue 3: tsx Command Not Found
+
+**Symptom**:
+```
+/usr/bin/tsx: command not found
+Error: Process completed with exit code 127
+```
+
+**Root Cause**: Missing `npx` prefix for tsx commands in CI environment
+
+**Solution Applied** ✅:
+```yaml
+# Before (fails in CI)
+- run: tsx scripts/validate-docs.ts
+
+# After (works in CI)
+- run: npx tsx scripts/validate-docs.ts
+```
+
+### Issue 4: Documentation Not Updating
 
 **Possible Causes**:
 - Workflow only runs on `main` branch pushes
 - Documentation generation failed
 - Caching issues
+- Permission issues (see Issue 1)
 
 **Troubleshooting Steps**:
 1. Check **Actions** tab for workflow status
 2. Verify push was to `main` branch
 3. Check workflow logs for errors
 4. Clear browser cache for documentation site
+5. Verify repository permissions (see Issue 1)
 
 ## 📊 Workflow Configuration
 
