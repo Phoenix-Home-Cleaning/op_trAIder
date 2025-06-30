@@ -69,16 +69,7 @@ describe('Unified API Authentication Tests', () => {
        * @riskLevel HIGH - Authentication routing is critical
        */
 
-             const loginRequest = new NextRequest(new Request('http://localhost:3000/api', {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify({
-           username: 'admin',
-           password: 'password'
-         })
-       }));
-
-      const response = await POST(loginRequest);
+      const response = await POST();
       const data = await response.json();
 
       // Verify redirection response - updated to expect 410 Gone
@@ -94,16 +85,7 @@ describe('Unified API Authentication Tests', () => {
        * @riskLevel MEDIUM - User guidance for authentication
        */
 
-             const loginRequest = new NextRequest(new Request('http://localhost:3000/api', {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify({
-           username: 'demo',
-           password: 'demo123'
-         })
-       }));
-
-      const response = await POST(loginRequest);
+      const response = await POST();
       const data = await response.json();
 
       expect(response.status).toBe(410);
@@ -129,14 +111,8 @@ describe('Unified API Authentication Tests', () => {
         { user: 'invalid', pass: 'wrong' }
       ];
 
-      for (const credentials of requests) {
-                 const loginRequest = new NextRequest(new Request('http://localhost:3000/api', {
-           method: 'POST',
-           headers: { 'Content-Type': 'application/json' },
-           body: JSON.stringify(credentials)
-         }));
-
-        const response = await POST(loginRequest);
+      for (const _credentials of requests) {
+        const response = await POST();
         const data = await response.json();
 
         expect(response.status).toBe(410);
@@ -161,9 +137,9 @@ describe('Unified API Authentication Tests', () => {
        * @riskLevel LOW - Information endpoint for user guidance
        */
 
-             const infoRequest = new NextRequest(new Request('http://localhost:3000/api', {
-         method: 'GET'
-       }));
+      const infoRequest = new NextRequest(new Request('http://localhost:3000/api', {
+        method: 'GET'
+      }));
 
       const response = await GET(infoRequest);
       const data = await response.json();
@@ -184,9 +160,9 @@ describe('Unified API Authentication Tests', () => {
        * @riskLevel LOW - Public endpoint functionality
        */
 
-             const healthRequest = new NextRequest(new Request('http://localhost:3000/api?endpoint=health', {
-         method: 'GET'
-       }));
+      const healthRequest = new NextRequest(new Request('http://localhost:3000/api?endpoint=health', {
+        method: 'GET'
+      }));
 
       const response = await GET(healthRequest);
       const data = await response.json();
@@ -205,9 +181,9 @@ describe('Unified API Authentication Tests', () => {
        * @riskLevel LOW - Documentation endpoint
        */
 
-             const infoRequest = new NextRequest(new Request('http://localhost:3000/api?endpoint=info', {
-         method: 'GET'
-       }));
+      const infoRequest = new NextRequest(new Request('http://localhost:3000/api?endpoint=info', {
+        method: 'GET'
+      }));
 
       const response = await GET(infoRequest);
       const data = await response.json();
@@ -224,7 +200,7 @@ describe('Unified API Authentication Tests', () => {
       });
     });
 
-        it('maintains consistent error responses', async () => {
+    it('maintains consistent error responses', async () => {
       /**
        * Test that error responses are consistent
        * 
@@ -263,13 +239,8 @@ describe('Unified API Authentication Tests', () => {
        * @riskLevel MEDIUM - Input validation and error handling
        */
 
-             const malformedRequest = new NextRequest(new Request('http://localhost:3000/api', {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         body: '{ invalid json'
-       }));
-
-      const response = await POST(malformedRequest);
+             // POST function doesn't take parameters - testing malformed JSON handling
+      const response = await POST();
       const data = await response.json();
 
       // Should still redirect to NextAuth even with malformed JSON
@@ -285,13 +256,8 @@ describe('Unified API Authentication Tests', () => {
        * @riskLevel LOW - Edge case handling
        */
 
-             const emptyRequest = new NextRequest(new Request('http://localhost:3000/api', {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         body: '{}'
-       }));
-
-      const response = await POST(emptyRequest);
+      // POST doesn't take parameters - empty request handling test
+      const response = await POST();
       const data = await response.json();
 
       expect(response.status).toBe(410);
@@ -306,12 +272,8 @@ describe('Unified API Authentication Tests', () => {
        * @riskLevel LOW - Header validation
        */
 
-             const noHeaderRequest = new NextRequest(new Request('http://localhost:3000/api', {
-         method: 'POST',
-         body: JSON.stringify({ username: 'test', password: 'test' })
-       }));
-
-      const response = await POST(noHeaderRequest);
+      // POST doesn't take parameters - no header test
+      const response = await POST();
       const data = await response.json();
 
       expect(response.status).toBe(410);
@@ -338,9 +300,9 @@ describe('Unified API Authentication Tests', () => {
 
       const startTime = Date.now();
 
-             const request = new NextRequest(new Request('http://localhost:3000/api', {
-         method: 'GET'
-       }));
+      const request = new NextRequest(new Request('http://localhost:3000/api', {
+        method: 'GET'
+      }));
 
       const response = await GET(request);
       await response.json();
@@ -361,9 +323,9 @@ describe('Unified API Authentication Tests', () => {
        * @riskLevel MEDIUM - Concurrent access handling
        */
 
-             const requests = Array.from({ length: 5 }, () =>
-         GET(new NextRequest(new Request('http://localhost:3000/api', { method: 'GET' })))
-       );
+      const requests = Array.from({ length: 5 }, () =>
+        GET(new NextRequest(new Request('http://localhost:3000/api', { method: 'GET' })))
+      );
 
       const responses = await Promise.all(requests);
 

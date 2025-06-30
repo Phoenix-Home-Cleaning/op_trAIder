@@ -43,10 +43,12 @@ vi.mock('next/navigation', () => ({
 // Mock session data
 const mockSession = {
   user: {
+    id: '123',
+    username: 'test-trader',
     email: 'trader@traider.com',
     name: 'Test Trader',
     role: 'TRADER' as const,
-    id: '123'
+    permissions: ['trading.execute', 'trading.view', 'portfolio.view']
   },
   expires: '2024-12-31'
 };

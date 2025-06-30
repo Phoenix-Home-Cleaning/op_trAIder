@@ -166,7 +166,8 @@ describe('🛡️ Authentication Testing Guard Rails', () => {
       
       // Hook should not be called after cleanup
       // (This would normally call the real backend, but we're in test mode)
-      const _result2 = await authenticateWithBackend('admin', 'password');
+      const result2 = await authenticateWithBackend('admin', 'password');
+      expect(result2).toBeNull(); // Should be null in test environment
       expect(mockAuth).not.toHaveBeenCalled();
     });
 
