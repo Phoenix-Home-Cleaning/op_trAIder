@@ -64,4 +64,10 @@ backend/api/auth.py:*token*
 .github/workflows/ci.yml:*token*
 
 # Test configuration in vitest
-*test-secret-key-for-testing-only* 
+*test-secret-key-for-testing-only*
+
+# Node.js Type Definitions (false positives from @types/node)
+# These are example code snippets in TypeScript definitions, not actual secrets
+node_modules/@types/node/crypto.d.ts:*password*
+node_modules/@types/node/**/*.d.ts:*password*
+node_modules/**/*.d.ts:*Password used to generate key* 

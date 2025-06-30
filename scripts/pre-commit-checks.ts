@@ -154,6 +154,15 @@ function validateSecrets(files: string[]): ValidationResult {
     warnings: [],
   };
 
+  // Test patterns to exclude (known safe test values)
+  const TEST_EXCLUSIONS = [
+    /test-secret-key-for-testing-only/gi,
+    /test-jwt-token/gi,
+    /test-api-key/gi,
+    /password.*=.*['"]password['"]/gi,
+    /Password used to generate key/gi,
+  ];
+
   for (const file of files) {
     try {
       const content = readFileSync(file, 'utf8');
@@ -163,9 +172,19 @@ function validateSecrets(files: string[]): ValidationResult {
         let match;
 
         while ((match = pattern.exec(content)) !== null) {
-          const lineNum = content.substring(0, match.index).split('\n').length;
-          result.errors.push(`${file}:${lineNum}: Potential secret detected`);
-          result.success = false;
+          const matchedText = match[0];
+          
+          // Check if this match should be excluded (test patterns)
+          const isTestPattern = TEST_EXCLUSIONS.some((exclusion) => {
+            exclusion.lastIndex = 0;
+            return exclusion.test(matchedText);
+          });
+
+          if (!isTestPattern) {
+            const lineNum = content.substring(0, match.index).split('\n').length;
+            result.errors.push(`${file}:${lineNum}: Potential secret detected`);
+            result.success = false;
+          }
         }
       }
     } catch (error) {
