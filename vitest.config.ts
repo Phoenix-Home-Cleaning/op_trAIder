@@ -124,7 +124,7 @@ export default defineConfig({
     env: {
       NODE_ENV: 'test',
       NEXTAUTH_URL: 'http://localhost:3000',
-      NEXTAUTH_SECRET: 'VITEST_TEST_SECRET_NOT_FOR_PRODUCTION',
+      NEXTAUTH_SECRET: 'MOCK_VALUE_FOR_VITEST_TESTING_ONLY',
       DATABASE_URL: 'postgresql://test:test@localhost:5432/traider_test',
       REDIS_URL: 'redis://localhost:6379/1',
       LOG_LEVEL: 'ERROR' // Reduce log noise in tests
