@@ -2,6 +2,16 @@
 
 ## [Unreleased] - 2025-07-01 21:30:00
 
+### Fixed
+
+- **🔧 CI/CD Pipeline Fix** - Resolved kube-score download failure in Kubernetes validation workflow
+  - **Issue**: GitHub Actions workflow failing with 404 error when downloading kube-score v1.16.1
+  - **Root Cause**: kube-score v1.16.1 does not exist in the zegl/kube-score repository releases
+  - **Solution**: Updated `KUBE_SCORE_VERSION` from `v1.16.1` to `v1.20.0` (latest stable release)
+  - **Impact**: K8s manifest validation workflow now executes successfully with enhanced security checks
+  - **Verification**: Latest kube-score includes improved Kubernetes security analysis and best practices
+  - **Compliance**: Maintains institutional-grade infrastructure validation standards
+
 ### Added
 
 - **🔐 Security Tokens & Authentication Infrastructure**: WORLD-CLASS security implementation for institutional-grade token management
