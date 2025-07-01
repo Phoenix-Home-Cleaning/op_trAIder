@@ -54,11 +54,13 @@ spec:
       containers:
         - name: frontend
           image: traider/frontend:dev
+          imagePullPolicy: Always
           securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
+            runAsUser: 1001
+            runAsGroup: 1001
             runAsNonRoot: true
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
@@ -93,9 +95,16 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 3
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
       initContainers:
         - name: wait-for-backend
           image: curlimages/curl:latest
+          imagePullPolicy: Always
           command: ['sh', '-c']
           args:
             - |
@@ -104,6 +113,14 @@ spec:
                 sleep 5
               done
               echo "Backend is ready!"
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsUser: 1001
+            runAsGroup: 1001
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
 ---
 apiVersion: v1
 kind: Service

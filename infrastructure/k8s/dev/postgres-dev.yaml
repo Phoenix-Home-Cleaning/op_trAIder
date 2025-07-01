@@ -27,11 +27,13 @@ spec:
       containers:
         - name: postgres
           image: timescale/timescaledb:latest-pg15
+          imagePullPolicy: Always
           securityContext:
             runAsUser: 999
             runAsGroup: 999
             runAsNonRoot: true
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL

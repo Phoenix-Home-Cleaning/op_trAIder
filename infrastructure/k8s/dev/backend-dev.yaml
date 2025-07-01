@@ -102,11 +102,13 @@ spec:
       containers:
         - name: backend
           image: traider/backend:dev
+          imagePullPolicy: Always
           securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
+            runAsUser: 1001
+            runAsGroup: 1001
             runAsNonRoot: true
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
@@ -144,14 +146,15 @@ spec:
             timeoutSeconds: 3
             failureThreshold: 3
           volumeMounts:
-            - name: app-logs
-              mountPath: /app/logs
+            - name: tmp
+              mountPath: /tmp
       volumes:
-        - name: app-logs
+        - name: tmp
           emptyDir: {}
       initContainers:
         - name: wait-for-postgres
           image: postgres:15-alpine
+          imagePullPolicy: Always
           command: ['sh', '-c']
           args:
             - |
@@ -160,8 +163,17 @@ spec:
                 sleep 2
               done
               echo "PostgreSQL is ready!"
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsUser: 1001
+            runAsGroup: 1001
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
         - name: wait-for-redis
           image: redis:7-alpine
+          imagePullPolicy: Always
           command: ['sh', '-c']
           args:
             - |
@@ -170,6 +182,14 @@ spec:
                 sleep 2
               done
               echo "Redis is ready!"
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsUser: 1001
+            runAsGroup: 1001
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
 ---
 apiVersion: v1
 kind: Service

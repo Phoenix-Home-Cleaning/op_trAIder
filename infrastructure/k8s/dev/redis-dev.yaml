@@ -27,11 +27,13 @@ spec:
       containers:
         - name: redis
           image: redis:7-alpine
+          imagePullPolicy: Always
           securityContext:
             runAsUser: 999
             runAsGroup: 999
             runAsNonRoot: true
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL

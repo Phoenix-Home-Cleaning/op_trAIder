@@ -61,9 +61,10 @@ spec:
       containers:
         - name: prometheus
           image: prom/prometheus:v2.45.0
+          imagePullPolicy: Always
           securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
+            runAsUser: 1001
+            runAsGroup: 1001
             runAsNonRoot: true
             allowPrivilegeEscalation: false
             capabilities:
@@ -91,6 +92,8 @@ spec:
               mountPath: /etc/prometheus
             - name: prometheus-storage
               mountPath: /prometheus
+            - name: tmp
+              mountPath: /tmp
           livenessProbe:
             httpGet:
               path: /-/healthy
@@ -108,6 +111,8 @@ spec:
           configMap:
             name: prometheus-config
         - name: prometheus-storage
+          emptyDir: {}
+        - name: tmp
           emptyDir: {}
 ---
 apiVersion: v1
@@ -205,11 +210,13 @@ spec:
       containers:
         - name: grafana
           image: grafana/grafana:10.0.0
+          imagePullPolicy: Always
           securityContext:
             runAsUser: 472
             runAsGroup: 472
             runAsNonRoot: true
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
@@ -239,6 +246,8 @@ spec:
               mountPath: /etc/grafana/provisioning/dashboards
             - name: grafana-storage
               mountPath: /var/lib/grafana
+            - name: tmp
+              mountPath: /tmp
           livenessProbe:
             httpGet:
               path: /api/health
@@ -266,11 +275,13 @@ spec:
                 path: datasources.yml
         - name: grafana-provisioning-dashboards
           configMap:
-            name: grafana-config
+            name: grafana-dashboards-config
             items:
               - key: dashboards.yml
                 path: dashboards.yml
         - name: grafana-storage
+          emptyDir: {}
+        - name: tmp
           emptyDir: {}
 ---
 apiVersion: v1
