@@ -37,7 +37,7 @@ passlib[bcrypt]==1.7.4
 bcrypt==4.2.1
 
 # Password hashing
-argon2-cffi==24.0.0
+argon2-cffi==25.1.0
 
 # =============================================================================
 # DATA PROCESSING & ANALYSIS
