@@ -29,7 +29,7 @@ on:
 # Global environment variables
 env:
   KUBEVAL_VERSION: "v0.16.1"
-  KUBE_SCORE_VERSION: "v1.16.1"
+  KUBE_SCORE_VERSION: "v1.20.0"
   FORCE_COLOR: 1
 
 # Ensure only one workflow runs at a time per branch
