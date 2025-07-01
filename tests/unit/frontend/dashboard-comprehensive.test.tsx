@@ -84,9 +84,15 @@ describe('DashboardPage', () => {
       mockUseSession.mockReturnValue({
         data: {
           user: {
+            id: 'user_001',
+            username: 'johntrader',
             name: 'John Trader',
             email: 'john@traider.com',
+            role: 'TRADER' as const,
+            permissions: ['trading', 'portfolio_view'],
+            lastLogin: new Date().toISOString(),
           },
+          expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         },
         status: 'authenticated',
       });
