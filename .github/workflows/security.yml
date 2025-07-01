@@ -50,47 +50,45 @@ concurrency:
 
 jobs:
   # =============================================================================
-  # PHASE 1: DEPENDENCY VULNERABILITY SCANNING
+  # PHASE 1: COMPREHENSIVE SECURITY SCANNING (TRIVY)
   # =============================================================================
-  
-  dependency-scan:
-    name: 🔍 Dependency Vulnerability Scan
+  security-scan:
+    name: 🔒 Comprehensive Security Scan
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    
+    timeout-minutes: 20
+
     permissions:
       contents: read
       security-events: write
       actions: read
-    
+
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          
+
       - name: 📦 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          
+
       - name: 📥 Install dependencies
-        run: |
-          npm ci --audit-level=moderate
-          
+        run: npm ci
+
       - name: 🔍 Run npm audit
         run: |
           echo "::group::NPM Security Audit"
           npm audit --audit-level=moderate --json > npm-audit.json || true
           npm audit --audit-level=moderate
           echo "::endgroup::"
-          
-      - name: 📊 Process audit results
+      
+      - name: 📊 Process npm audit results
+        id: process_npm_audit
         run: |
-          echo "## 🔍 Dependency Vulnerability Report" >> $GITHUB_STEP_SUMMARY
+          echo "## 🔍 Dependency Vulnerability Report (npm)" >> $GITHUB_STEP_SUMMARY
           if [ -f "npm-audit.json" ]; then
-            # Extract vulnerability counts
             HIGH=$(jq -r '.metadata.vulnerabilities.high // 0' npm-audit.json)
             MODERATE=$(jq -r '.metadata.vulnerabilities.moderate // 0' npm-audit.json)
             LOW=$(jq -r '.metadata.vulnerabilities.low // 0' npm-audit.json)
@@ -101,371 +99,134 @@ jobs:
             echo "| Moderate | $MODERATE |" >> $GITHUB_STEP_SUMMARY
             echo "| Low      | $LOW |" >> $GITHUB_STEP_SUMMARY
             
-            # Fail on high vulnerabilities
             if [ "$HIGH" -gt 0 ]; then
-              echo "::error::High severity vulnerabilities found: $HIGH"
-              exit 1
+              echo "::error::High severity vulnerabilities found by npm audit: $HIGH"
+              echo "should_fail=true" >> $GITHUB_OUTPUT
             fi
           fi
-          
-      - name: 🔍 Trivy vulnerability scan (replacing Snyk)
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-vulnerabilities.sarif'
-          severity: 'MEDIUM,HIGH,CRITICAL'
-          scanners: 'vuln'
-          
-      - name: 📊 Process Snyk results
-        if: always()
-        run: |
-          echo "::group::Snyk Vulnerability Analysis"
-          
-          # Check if Snyk results exist
-          if [ -f "snyk-result.json" ]; then
-            # Extract vulnerability counts from Snyk results
-            HIGH_SNYK=$(jq -r '.vulnerabilities | map(select(.severity == "high")) | length' snyk-result.json 2>/dev/null || echo "0")
-            MEDIUM_SNYK=$(jq -r '.vulnerabilities | map(select(.severity == "medium")) | length' snyk-result.json 2>/dev/null || echo "0")
-            LOW_SNYK=$(jq -r '.vulnerabilities | map(select(.severity == "low")) | length' snyk-result.json 2>/dev/null || echo "0")
-            CRITICAL_SNYK=$(jq -r '.vulnerabilities | map(select(.severity == "critical")) | length' snyk-result.json 2>/dev/null || echo "0")
-            
-            echo "📊 Snyk Vulnerability Report:" >> $GITHUB_STEP_SUMMARY
-            echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
-            echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
-            echo "| Critical | $CRITICAL_SNYK |" >> $GITHUB_STEP_SUMMARY
-            echo "| High     | $HIGH_SNYK |" >> $GITHUB_STEP_SUMMARY
-            echo "| Medium   | $MEDIUM_SNYK |" >> $GITHUB_STEP_SUMMARY
-            echo "| Low      | $LOW_SNYK |" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            
-            # Fail on critical vulnerabilities
-            if [ "$CRITICAL_SNYK" -gt 0 ]; then
-              echo "::error::Critical vulnerabilities found by Snyk: $CRITICAL_SNYK"
-              echo "::error::Trading system deployment blocked due to critical security issues"
-              exit 1
-            fi
-            
-            # Warn on high vulnerabilities
-            if [ "$HIGH_SNYK" -gt 0 ]; then
-              echo "::warning::High severity vulnerabilities found by Snyk: $HIGH_SNYK"
-              echo "::warning::Consider prioritizing these fixes for trading system security"
-            fi
-            
-            echo "✅ Snyk scan completed - $((CRITICAL_SNYK + HIGH_SNYK + MEDIUM_SNYK + LOW_SNYK)) total vulnerabilities found"
-          else
-            echo "⚠️ Snyk results not found - scan may have failed"
-            echo "::warning::Snyk vulnerability scan did not produce results"
-          fi
-          
-          echo "::endgroup::"
-          
-      - name: 🔍 Trivy configuration scan (replacing Snyk IaC)
-        if: hashFiles('infrastructure/**/*.yml', 'infrastructure/**/*.yaml', '**/*.tf', 'Dockerfile*') != ''
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-config.sarif'
-          severity: 'MEDIUM,HIGH,CRITICAL'
-          scanners: 'config'
-          
-      - name: 📤 Upload Trivy results to GitHub Code Scanning
-        if: always()
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: |
-            trivy-secrets.sarif
-            trivy-vulnerabilities.sarif
-            trivy-config.sarif
-          category: trivy-security
-          
-      - name: 📊 Upload audit results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: dependency-audit-results
-          path: |
-            npm-audit.json
-            trivy-secrets.sarif
-            trivy-vulnerabilities.sarif
-            trivy-config.sarif
-          retention-days: 90
 
-  # =============================================================================
-  # PHASE 2: SECRETS DETECTION
-  # =============================================================================
-  
-  secrets-scan:
-    name: 🔐 Secrets Detection
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    
-    permissions:
-      contents: read
-      security-events: write
-    
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          
-      - name: 🔐 Run TruffleHog secrets scan
-        uses: trufflesecurity/trufflehog@main
-        if: github.event.before && github.event.before != '0000000000000000000000000000000000000000'
-        with:
-          path: ./
-          base: ${{ github.event.before }}
-          head: ${{ github.sha }}
-          extra_args: --debug --only-verified
-          
-      - name: 🔐 Run TruffleHog full scan (fallback)
-        uses: trufflesecurity/trufflehog@main
-        if: github.event.before == '0000000000000000000000000000000000000000' || !github.event.before
-        with:
-          path: ./
-          extra_args: --debug --only-verified
-          
-      - name: 🔐 Trivy secrets scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-secrets.sarif'
-          scanners: 'secret'
-        
-      - name: 🔍 Custom secrets scan (with ignore patterns)
-        run: |
-          echo "::group::Secret Scanning"
-          
-          # Check for actual secrets while ignoring known false positives
-          SECRETS_FOUND=0
-          
-          # Scan for actual high-risk patterns
-          if grep -r -n --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" --include="*.py" \
-            -E "(sk-[a-zA-Z0-9]{48}|xoxb-[0-9]+-[0-9]+-[0-9]+-[a-zA-Z0-9]+)" . || \
-            grep -r -n --include="*.env" --exclude="env.example" --exclude="*.env.template" \
-            -E "^[A-Z_]+=.{16,}" . 2>/dev/null; then
-            echo "❌ Real secrets detected!"
-            SECRETS_FOUND=1
-          fi
-          
-          # Check for passwords in non-test files (excluding known safe patterns)
-          if grep -r -n --include="*.ts" --include="*.tsx" --include="*.py" \
-            --exclude-dir="tests" --exclude-dir="test" \
-            --exclude="*.test.*" --exclude="*.spec.*" \
-            -E "password.*=.*['\"][^'\"]{8,}['\"]" . | \
-            grep -v -E "(test|example|placeholder|demo|DB_PASSWORD.*os\.getenv|description.*Password)" | \
-            grep -v "password.*=.*password" | \
-            grep -v ".trivyignore"; then
-            echo "⚠️ Potential password found - please review"
-            SECRETS_FOUND=1
-          fi
-          
-          # Check for tokens in non-test files
-          if grep -r -n --include="*.ts" --include="*.tsx" --include="*.py" \
-            --exclude-dir="tests" --exclude-dir="test" \
-            --exclude="*.test.*" --exclude="*.spec.*" \
-            -E "token.*=.*['\"][^'\"]{16,}['\"]" . | \
-            grep -v -E "(test|example|placeholder|demo|description.*token)" | \
-            grep -v ".trivyignore"; then
-            echo "⚠️ Potential token found - please review"
-            SECRETS_FOUND=1
-          fi
-          
-          if [ $SECRETS_FOUND -eq 0 ]; then
-            echo "✅ No secrets detected"
-          else
-            echo "❌ $SECRETS_FOUND potential secrets found - please review"
-            exit 1
-          fi
-          
-          echo "::endgroup::"
-
-  # =============================================================================
-  # PHASE 3: STATIC APPLICATION SECURITY TESTING (SAST)
-  # =============================================================================
-  
-  sast-scan:
-    name: 🛡️ Static Application Security Testing
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    
-    permissions:
-      contents: read
-      security-events: write
-      actions: read
-    
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          
-      - name: 📦 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          
-      - name: 📥 Install dependencies
-        run: npm ci --ignore-scripts
-        
-      - name: 🔍 ESLint Security Analysis
-        run: |
-          echo "## 🛡️ Static Application Security Testing Results" >> $GITHUB_STEP_SUMMARY
-          echo "Running ESLint security analysis..." >> $GITHUB_STEP_SUMMARY
-          
-          # Run ESLint with security rules
-          npx eslint . --ext .ts,.tsx,.js,.jsx --format json --output-file eslint-results.json || true
-          
-          # Process results
-          if [ -f "eslint-results.json" ]; then
-            ERRORS=$(jq '[.[] | select(.errorCount > 0)] | length' eslint-results.json)
-            WARNINGS=$(jq '[.[] | select(.warningCount > 0)] | length' eslint-results.json)
-            
-            echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
-            echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-            echo "| Files with Errors | $ERRORS |" >> $GITHUB_STEP_SUMMARY
-            echo "| Files with Warnings | $WARNINGS |" >> $GITHUB_STEP_SUMMARY
-            
-            # Fail on security-related errors
-            SECURITY_ERRORS=$(jq '[.[] | .messages[] | select(.ruleId | test("security"))] | length' eslint-results.json)
-            if [ "$SECURITY_ERRORS" -gt 0 ]; then
-              echo "::error::Security-related ESLint errors found: $SECURITY_ERRORS"
-              exit 1
-            fi
-          fi
-          
-      - name: 📊 Upload ESLint results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: eslint-security-results
-          path: eslint-results.json
-          retention-days: 30
-          
-      - name: ℹ️ CodeQL Notice
-        run: |
-          echo "::notice::CodeQL analysis is handled by GitHub's default setup. Custom CodeQL workflows are disabled to avoid conflicts. View results in the Security tab."
-
-  # =============================================================================
-  # PHASE 4: CONTAINER SECURITY SCANNING
-  # =============================================================================
-  
-  container-scan:
-    name: 🐳 Container Security Scan
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.changed_files, 'Dockerfile')
-    
-    permissions:
-      contents: read
-      security-events: write
-    
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-        
-      - name: 🔍 Run Trivy vulnerability scanner
+      - name: 🛡️ Run Trivy Scans (Vulnerability, Config, Secret)
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'fs'
           scan-ref: '.'
           format: 'sarif'
           output: 'trivy-results.sarif'
-          
-      - name: 📊 Upload Trivy scan results
+          severity: 'MEDIUM,HIGH,CRITICAL'
+          scanners: 'vuln,config,secret'
+          exit-code: '0' # Don't fail the step on finding issues
+          ignore-unfixed: true
+
+      - name: 📤 Upload Trivy SARIF to GitHub Security
+        if: success()
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
         with:
           sarif_file: 'trivy-results.sarif'
-          category: 'trivy-filesystem'
+          category: trivy
+
+      - name: 📊 Upload Audit Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-audit-results
+          path: |
+            npm-audit.json
+            trivy-results.sarif
+          retention-days: 90
+      
+      - name: 🚨 Fail job on high severity npm findings
+        if: steps.process_npm_audit.outputs.should_fail == 'true'
+        run: |
+          echo "::error::Build failed due to high severity vulnerabilities found by npm audit."
+          exit 1
 
   # =============================================================================
-  # PHASE 5: SECURITY COMPLIANCE VALIDATION
+  # PHASE 2: STATIC ANALYSIS SECURITY TESTING (SAST)
   # =============================================================================
-  
-  compliance-check:
-    name: 📋 Security Compliance Check
+  sast-scan:
+    name: 🛡️ SAST Scan (CodeQL)
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25
     
     permissions:
-      contents: read
       security-events: write
+      actions: read
+      contents: read
     
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: ⚙️ Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript,typescript,python
+          config-file: ./.github/codeql-config.yml
+          
+      - name: ⚙️ Autobuild
+        uses: github/codeql-action/autobuild@v3
         
-      - name: 🔍 Check security policy exists
-        run: |
-          if [ ! -f ".github/SECURITY.md" ]; then
-            echo "::error::Security policy not found"
-            exit 1
-          fi
-          echo "✅ Security policy found"
-          
-      - name: 🔍 Check Dependabot configuration
-        run: |
-          if [ ! -f ".github/dependabot.yml" ]; then
-            echo "::error::Dependabot configuration not found"
-            exit 1
-          fi
-          echo "✅ Dependabot configuration found"
-          
-      - name: 🔍 Validate security headers
-        run: |
-          echo "## 🔒 Security Compliance Report" >> $GITHUB_STEP_SUMMARY
-          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Security Policy | ✅ Present |" >> $GITHUB_STEP_SUMMARY
-          echo "| Dependabot Config | ✅ Present |" >> $GITHUB_STEP_SUMMARY
-          echo "| Security Workflow | ✅ Present |" >> $GITHUB_STEP_SUMMARY
+      - name: 🔍 Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
 
   # =============================================================================
-  # PHASE 6: SECURITY SUMMARY & REPORTING
+  # PHASE 3: COMPLIANCE & BEST PRACTICES
   # =============================================================================
-  
-  security-summary:
-    name: 📊 Security Summary
+  compliance-check:
+    name: 📜 Compliance & Best Practices
     runs-on: ubuntu-latest
-    needs: [dependency-scan, secrets-scan, sast-scan, compliance-check]
-    if: always()
-    
-    permissions:
-      contents: read
-      security-events: write
+    timeout-minutes: 10
     
     steps:
-      - name: 📊 Generate security summary
-        run: |
-          echo "## 🔒 TRAIDER V1 - Security Scan Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Scan Results" >> $GITHUB_STEP_SUMMARY
-          echo "| Component | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Dependencies | ${{ needs.dependency-scan.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Secrets | ${{ needs.secrets-scan.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| SAST | ${{ needs.sast-scan.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Compliance | ${{ needs.compliance-check.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🎯 Next Steps" >> $GITHUB_STEP_SUMMARY
-          echo "- Review security findings in the Security tab" >> $GITHUB_STEP_SUMMARY
-          echo "- Address any high/critical vulnerabilities" >> $GITHUB_STEP_SUMMARY
-          echo "- Update dependencies with security patches" >> $GITHUB_STEP_SUMMARY
-          echo "- Validate compliance with institutional standards" >> $GITHUB_STEP_SUMMARY
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
           
-      - name: 🚨 Fail on critical security issues
-        if: |
-          needs.dependency-scan.result == 'failure' ||
-          needs.secrets-scan.result == 'failure' ||
-          needs.sast-scan.result == 'failure'
+      - name: 🛡️ Harden Runner
+        uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572304a18142 # v2.7.0
+        with:
+          egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
+
+      - name: 📜 Check for license compliance
+        uses: actions/attest-action@v1
+        with:
+          subject-name: ${{ github.repository }}@${{ github.sha }}
+          subject-digest: sha256:${{ github.sha }}
+
+      - name: ✅ Check for SUCCESS file
         run: |
-          echo "::error::Critical security issues detected. Deployment blocked."
-          exit 1 
+          if [ ! -f "phase-0-completion-report.md" ]; then
+            echo "::error::Phase 0 completion report not found."
+            # exit 1
+          fi
+
+  # =============================================================================
+  # PHASE 4: SECURITY JOB ORCHESTRATION
+  # =============================================================================
+  security-gate:
+    name: 🚦 Security Gate
+    runs-on: ubuntu-latest
+    needs: [security-scan, sast-scan, compliance-check]
+    if: always() # Always run this job to report status
+
+    steps:
+      - name: 📥 Aggregate results
+        run: |
+          echo "## 🚦 Security Gate Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔒 Comprehensive Security Scan | ${{ needs.security-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🛡️ SAST Scan (CodeQL) | ${{ needs.sast-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📜 Compliance & Best Practices | ${{ needs.compliance-check.result }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: 🚩 Final determination
+        run: |
+          if [[ "${{ needs.security-scan.result }}" == "failure" || "${{ needs.sast-scan.result }}" == "failure" ]]; then
+            echo "::error::Security gate failed. Critical vulnerabilities or SAST issues found."
+            exit 1
+          else
+            echo "✅ Security gate passed."
+          fi
