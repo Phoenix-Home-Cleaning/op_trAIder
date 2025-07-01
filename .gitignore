@@ -161,3 +161,6 @@ docs/runbooks/
 # Test results and coverage
 test-results/
 *.lcov
+
+# Kubernetes generated manifests (too large for GitHub)
+infrastructure/k8s/dev/combined-manifests.yaml
