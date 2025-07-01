@@ -35,7 +35,7 @@ TRAIDER V1 implements a comprehensive, multi-layered security scanning pipeline 
 **Tools Used**:
 
 - **TruffleHog** - Comprehensive secrets scanner
-- **GitLeaks** - Git repository secrets detection
+- **Trivy** - Unified vulnerability and secrets detection
 - Custom rules for trading-specific secrets
 
 **Detected Secret Types**:
@@ -47,7 +47,7 @@ TRAIDER V1 implements a comprehensive, multi-layered security scanning pipeline 
 - Webhook secrets
 - Cloud provider credentials
 
-**Configuration**: `.gitleaks.toml`
+**Configuration**: `.trivyignore`
 
 ### 3. Static Application Security Testing (SAST)
 
@@ -198,7 +198,7 @@ updates:
         update-types: ['patch', 'minor', 'major']
 ```
 
-### `.gitleaks.toml`
+### `.trivyignore`
 
 Secrets detection configuration:
 

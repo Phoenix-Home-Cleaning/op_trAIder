@@ -1,7 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "description": "🔄 TRAIDER V1 - Renovate Configuration for Institutional-Grade Dependency Management",
-  
+
   "extends": [
     "config:base",
     "security:openssf-scorecard",
@@ -15,21 +15,21 @@
 
   "timezone": "Etc/UTC",
   "schedule": ["before 6am on monday"],
-  
+
   "labels": ["dependencies", "automated", "renovate"],
   "reviewers": ["@traider-devops-team"],
   "assignees": ["@traider-security-lead"],
-  
+
   "prConcurrentLimit": 5,
   "prHourlyLimit": 2,
   "branchConcurrentLimit": 10,
-  
+
   "semanticCommits": "enabled",
   "commitMessagePrefix": "deps:",
   "commitMessageAction": "update",
   "commitMessageTopic": "{{depName}}",
   "commitMessageExtra": "to {{newVersion}}",
-  
+
   "dependencyDashboard": true,
   "dependencyDashboardTitle": "🔄 TRAIDER Dependency Dashboard",
   "dependencyDashboardHeader": "This dashboard tracks all dependency updates for the TRAIDER autonomous trading platform. All updates undergo institutional-grade security and stability validation.",
@@ -48,12 +48,19 @@
         "assignees": ["@traider-ciso"]
       }
     },
-    
+
     {
       "description": "🚀 Trading Core Dependencies - High Stability Required",
       "matchPackagePatterns": [
-        "next", "react", "typescript", "fastapi", "sqlalchemy", 
-        "timescaledb", "redis", "kafka", "prometheus"
+        "next",
+        "react",
+        "typescript",
+        "fastapi",
+        "sqlalchemy",
+        "timescaledb",
+        "redis",
+        "kafka",
+        "prometheus"
       ],
       "schedule": ["before 6am on monday"],
       "minimumReleaseAge": "7 days",
@@ -66,7 +73,7 @@
       "stabilityDays": 7,
       "respectLatest": true
     },
-    
+
     {
       "description": "🧪 Development Dependencies - Moderate Risk",
       "matchDepTypes": ["devDependencies"],
@@ -80,12 +87,18 @@
       "platformAutomerge": true,
       "matchUpdateTypes": ["patch", "minor"]
     },
-    
+
     {
       "description": "🔧 Build Tools & Linters - Low Risk",
       "matchPackagePatterns": [
-        "eslint", "prettier", "vitest", "playwright", "typedoc",
-        "husky", "lint-staged", "commitlint"
+        "eslint",
+        "prettier",
+        "vitest",
+        "playwright",
+        "typedoc",
+        "husky",
+        "lint-staged",
+        "commitlint"
       ],
       "schedule": ["before 6am on monday"],
       "minimumReleaseAge": "1 day",
@@ -96,7 +109,7 @@
       "automergeType": "pr",
       "platformAutomerge": true
     },
-    
+
     {
       "description": "🐍 Python Backend Dependencies",
       "matchManagers": ["pip_requirements", "poetry"],
@@ -109,13 +122,10 @@
       "automerge": false,
       "stabilityDays": 5
     },
-    
+
     {
       "description": "🔐 Security Tools - Immediate Updates",
-      "matchPackagePatterns": [
-        "gitleaks", "trivy", "semgrep", "bandit", "safety",
-        "npm-audit", "pip-audit", "snyk"
-      ],
+      "matchPackagePatterns": ["trivy", "semgrep", "bandit", "safety", "npm-audit", "pip-audit"],
       "schedule": ["at any time"],
       "prPriority": 9,
       "labels": ["security-tools", "immediate"],
@@ -124,12 +134,16 @@
       "automergeType": "pr",
       "platformAutomerge": true
     },
-    
+
     {
       "description": "📊 Monitoring & Observability",
       "matchPackagePatterns": [
-        "prometheus", "grafana", "opentelemetry", "sentry",
-        "datadog", "newrelic"
+        "prometheus",
+        "grafana",
+        "opentelemetry",
+        "sentry",
+        "datadog",
+        "newrelic"
       ],
       "schedule": ["before 6am on monday"],
       "minimumReleaseAge": "5 days",
@@ -138,12 +152,17 @@
       "groupName": "Monitoring & Observability",
       "automerge": false
     },
-    
+
     {
       "description": "🏗️ Infrastructure Tools",
       "matchPackagePatterns": [
-        "docker", "kubernetes", "helm", "terraform",
-        "ansible", "nginx", "traefik"
+        "docker",
+        "kubernetes",
+        "helm",
+        "terraform",
+        "ansible",
+        "nginx",
+        "traefik"
       ],
       "schedule": ["before 6am on monday"],
       "minimumReleaseAge": "10 days",
@@ -153,7 +172,7 @@
       "automerge": false,
       "stabilityDays": 10
     },
-    
+
     {
       "description": "🎯 Major Version Updates - Manual Review Required",
       "matchUpdateTypes": ["major"],
@@ -167,13 +186,10 @@
       "stabilityDays": 14,
       "prBodyTemplate": "⚠️ **MAJOR VERSION UPDATE**\n\nThis PR updates {{depName}} from {{currentVersion}} to {{newVersion}}.\n\n**⚠️ Breaking Changes Expected** - Manual review and testing required.\n\n**Pre-merge Checklist:**\n- [ ] Review changelog for breaking changes\n- [ ] Update code for API changes\n- [ ] Run full test suite\n- [ ] Validate trading logic still works\n- [ ] Check performance impact\n- [ ] Update documentation\n\n**Risk Assessment:** HIGH - Major version updates may introduce breaking changes that could affect trading operations.\n\n**Recommendation:** Deploy to staging environment first and run comprehensive backtesting before production deployment."
     },
-    
+
     {
       "description": "🚫 Blocked Dependencies - Security or Stability Concerns",
-      "matchPackageNames": [
-        "lodash",
-        "moment"
-      ],
+      "matchPackageNames": ["lodash", "moment"],
       "enabled": false,
       "prBodyTemplate": "❌ **BLOCKED DEPENDENCY**\n\nThis dependency has been blocked due to security or stability concerns.\n\nPlease use approved alternatives:\n- lodash → native ES6+ methods or ramda\n- moment → date-fns or dayjs"
     }
@@ -195,7 +211,7 @@
   ],
 
   "gitAuthor": "renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>",
-  
+
   "lockFileMaintenance": {
     "enabled": true,
     "schedule": ["before 6am on monday"],
@@ -209,7 +225,7 @@
   },
 
   "osvVulnerabilityAlerts": true,
-  
+
   "vulnerabilityAlerts": {
     "enabled": true,
     "schedule": ["at any time"],
@@ -230,16 +246,16 @@
 
   "rebaseWhen": "behind-base-branch",
   "rebaseLabel": "rebase",
-  
+
   "stopUpdatingLabel": "renovate-stop",
-  
+
   "configWarningReuseIssue": false,
-  
+
   "onboarding": false,
   "requireConfig": "optional",
-  
+
   "forkProcessing": "enabled",
-  
+
   "ignorePaths": [
     "**/node_modules/**",
     "**/bower_components/**",
@@ -250,18 +266,14 @@
     "**/build/**"
   ],
 
-  "ignoreDeps": [
-    "node",
-    "npm",
-    "yarn"
-  ],
+  "ignoreDeps": ["node", "npm", "yarn"],
 
   "rangeStrategy": "bump",
-  
+
   "bumpVersion": "patch",
-  
+
   "commitBody": "Signed-off-by: TRAIDER Renovate Bot <renovate@traider.com>",
-  
+
   "prFooter": "🤖 This PR was generated automatically by Renovate Bot\n📚 [Configuration Documentation](https://docs.traider.com/infrastructure/renovate)\n🔒 [Security Policy](https://docs.traider.com/security/dependency-management)",
 
   "customManagers": [
@@ -269,13 +281,11 @@
       "customType": "regex",
       "description": "Update Docker image versions in Kubernetes manifests",
       "fileMatch": ["^infrastructure/k8s/.+\\.ya?ml$"],
-      "matchStrings": [
-        "image:\\s*(?<depName>[^:]+):(?<currentValue>[^\\s]+)"
-      ],
+      "matchStrings": ["image:\\s*(?<depName>[^:]+):(?<currentValue>[^\\s]+)"],
       "datasourceTemplate": "docker"
     },
     {
-      "customType": "regex", 
+      "customType": "regex",
       "description": "Update tool versions in shell scripts",
       "fileMatch": ["^scripts/.+\\.sh$"],
       "matchStrings": [
@@ -283,4 +293,4 @@
       ]
     }
   ]
-} 
+}

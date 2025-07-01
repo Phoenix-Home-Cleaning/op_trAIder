@@ -1,0 +1,60 @@
+# TRAIDER V1 - Trivy Ignore Rules
+#
+# This file contains patterns for Trivy to ignore during security scans.
+# Use this file to suppress false positives and known acceptable risks.
+#
+# Format: One pattern per line
+# Comments start with #
+# Patterns support glob-style wildcards
+#
+# Examples:
+# - Ignore specific CVE: CVE-2023-12345
+# - Ignore file: path/to/file.js
+# - Ignore directory: test/**
+# - Ignore secret type: generic-api-key
+#
+# See: https://aquasecurity.github.io/trivy/latest/docs/configuration/filtering/
+# Author: TRAIDER Team
+# Since: 1.0.0-alpha
+
+# =============================================================================
+# DEVELOPMENT & TEST FILES
+# =============================================================================
+
+# Test files and fixtures
+test/**
+tests/**
+**/*.test.*
+**/*.spec.*
+**/fixtures/**
+**/mocks/**
+
+# Development tools
+.git/**
+node_modules/**
+.next/**
+coverage/**
+dist/**
+build/**
+
+# =============================================================================
+# KNOWN FALSE POSITIVES
+# =============================================================================
+
+# Add specific CVEs or secrets that are confirmed false positives
+# Example: CVE-2023-12345
+
+# =============================================================================
+# ACCEPTABLE RISKS
+# =============================================================================
+
+# Add patterns for acceptable risks that have been reviewed and approved
+# Include justification comments for audit trail
+
+# =============================================================================
+# TEMPORARY SUPPRESSIONS
+# =============================================================================
+
+# Add temporary suppressions with expiration dates and justification
+# Format: # EXPIRES: YYYY-MM-DD - Reason for suppression
+# Example: # EXPIRES: 2024-12-31 - Waiting for upstream fix 

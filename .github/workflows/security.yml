@@ -108,13 +108,15 @@ jobs:
             fi
           fi
           
-      - name: 🔍 Snyk Open Source Vulnerability Scan
-        uses: snyk/actions/node@master
-        continue-on-error: true
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      - name: 🔍 Trivy vulnerability scan (replacing Snyk)
+        uses: aquasecurity/trivy-action@master
         with:
-          args: --severity-threshold=medium --json --file=package.json
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-vulnerabilities.sarif'
+          severity: 'MEDIUM,HIGH,CRITICAL'
+          scanners: 'vuln'
           
       - name: 📊 Process Snyk results
         if: always()
@@ -159,31 +161,26 @@ jobs:
           
           echo "::endgroup::"
           
-      - name: 🔍 Snyk Container Scan (if Dockerfile exists)
-        if: hashFiles('Dockerfile*') != ''
-        uses: snyk/actions/docker@master
-        continue-on-error: true
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      - name: 🔍 Trivy configuration scan (replacing Snyk IaC)
+        if: hashFiles('infrastructure/**/*.yml', 'infrastructure/**/*.yaml', '**/*.tf', 'Dockerfile*') != ''
+        uses: aquasecurity/trivy-action@master
         with:
-          image: traider-frontend:latest
-          args: --severity-threshold=high --json
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-config.sarif'
+          severity: 'MEDIUM,HIGH,CRITICAL'
+          scanners: 'config'
           
-      - name: 🔍 Snyk Infrastructure as Code Scan
-        if: hashFiles('infrastructure/**/*.yml', 'infrastructure/**/*.yaml', '**/*.tf') != ''
-        uses: snyk/actions/iac@master
-        continue-on-error: true
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --severity-threshold=medium --json
-          
-      - name: 📤 Upload Snyk results to GitHub Code Scanning
-        if: always() && hashFiles('snyk-result.json') != ''
+      - name: 📤 Upload Trivy results to GitHub Code Scanning
+        if: always()
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: snyk-result.sarif
-          category: snyk-open-source
+          sarif_file: |
+            trivy-secrets.sarif
+            trivy-vulnerabilities.sarif
+            trivy-config.sarif
+          category: trivy-security
           
       - name: 📊 Upload audit results
         uses: actions/upload-artifact@v4
@@ -192,8 +189,9 @@ jobs:
           name: dependency-audit-results
           path: |
             npm-audit.json
-            snyk-result.json
-            snyk-result.sarif
+            trivy-secrets.sarif
+            trivy-vulnerabilities.sarif
+            trivy-config.sarif
           retention-days: 90
 
   # =============================================================================
@@ -231,12 +229,14 @@ jobs:
           path: ./
           extra_args: --debug --only-verified
           
-      - name: 🔍 GitLeaks secrets scan
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
-        # Note: Organization-level GitLeaks requires license key
+      - name: 🔐 Trivy secrets scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-secrets.sarif'
+          scanners: 'secret'
         
       - name: 🔍 Custom secrets scan (with ignore patterns)
         run: |
@@ -261,7 +261,7 @@ jobs:
             -E "password.*=.*['\"][^'\"]{8,}['\"]" . | \
             grep -v -E "(test|example|placeholder|demo|DB_PASSWORD.*os\.getenv|description.*Password)" | \
             grep -v "password.*=.*password" | \
-            grep -v ".gitleaksignore"; then
+            grep -v ".trivyignore"; then
             echo "⚠️ Potential password found - please review"
             SECRETS_FOUND=1
           fi
@@ -272,7 +272,7 @@ jobs:
             --exclude="*.test.*" --exclude="*.spec.*" \
             -E "token.*=.*['\"][^'\"]{16,}['\"]" . | \
             grep -v -E "(test|example|placeholder|demo|description.*token)" | \
-            grep -v ".gitleaksignore"; then
+            grep -v ".trivyignore"; then
             echo "⚠️ Potential token found - please review"
             SECRETS_FOUND=1
           fi

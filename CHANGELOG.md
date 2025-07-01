@@ -1,6 +1,21 @@
 # 📋 TRAIDER Development Changelog
 
-## [Unreleased] - 2025-07-01 21:30:00
+## [Unreleased]
+
+### Security
+
+- **BREAKING**: Migrated from Snyk + GitLeaks to Trivy for unified security scanning
+- **CLEANUP**: Removed all GitLeaks configuration files (.gitleaks.toml, .gitleaksignore) and documentation
+- Added comprehensive Trivy security workflow covering vulnerabilities, secrets, misconfigurations, and licenses
+- Implemented Trivy pre-commit hooks for secrets detection
+- Created `.trivyignore` file for managing false positives
+- Added comprehensive Trivy integration documentation
+- Removed dependency on Snyk API tokens and GitLeaks licenses
+- Deleted GitLeaks setup documentation and configuration files
+- Updated all workflow references from .gitleaksignore to .trivyignore
+- Enhanced security scanning with 100% open-source toolchain
+
+## [1.0.0-alpha] - 2025-07-01 21:30:00
 
 ### Fixed
 

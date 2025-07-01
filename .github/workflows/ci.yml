@@ -452,7 +452,7 @@ jobs:
             grep -v -E "(test|example|placeholder|demo|DB_PASSWORD.*os\.getenv|description.*Password)" | \
             grep -v -E "password.*=.*['\"]password['\"]" | \
             grep -v -E "Password used to generate key" | \
-            grep -v ".gitleaksignore" | \
+            grep -v ".trivyignore" | \
             grep -v "test-secret-key" 2>/dev/null; then
             echo "⚠️ Potential hardcoded password found - please review"
             SECRETS_FOUND=1
@@ -461,7 +461,7 @@ jobs:
           if [ $SECRETS_FOUND -eq 0 ]; then
             echo "✅ No hardcoded secrets detected"
           else
-            echo "❌ Potential secrets found - please review and update .gitleaksignore if these are false positives"
+            echo "❌ Potential secrets found - please review and update .trivyignore if these are false positives"
             exit 1
           fi
           

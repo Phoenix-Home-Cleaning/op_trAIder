@@ -4,7 +4,51 @@
 echo "🚀 TRAIDER V1 Pre-commit Quality Gates"
 echo "======================================"
 
+# Run Trivy secrets scan on staged files
+echo "🔐 Running Trivy secrets scan..."
+if command -v trivy >/dev/null 2>&1; then
+  # Get staged files
+  STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
+  
+  if [ -n "$STAGED_FILES" ]; then
+    # Create temporary directory for staged files
+    TEMP_DIR=$(mktemp -d)
+    
+    # Copy staged files to temp directory
+    for file in $STAGED_FILES; do
+      if [ -f "$file" ]; then
+        mkdir -p "$TEMP_DIR/$(dirname "$file")"
+        cp "$file" "$TEMP_DIR/$file"
+      fi
+    done
+    
+    # Run Trivy secrets scan on staged files
+    trivy fs --scanners secret --format table --quiet "$TEMP_DIR"
+    TRIVY_EXIT_CODE=$?
+    
+    # Clean up temp directory
+    rm -rf "$TEMP_DIR"
+    
+    if [ $TRIVY_EXIT_CODE -ne 0 ]; then
+      echo "❌ Secrets detected in staged files - commit blocked!"
+      echo "🔧 Review the findings above and:"
+      echo "   1. Remove any hardcoded secrets"
+      echo "   2. Use environment variables or secure vaults"
+      echo "   3. Add false positives to .trivyignore if needed"
+      exit 1
+    else
+      echo "✅ No secrets detected in staged files"
+    fi
+  else
+    echo "ℹ️ No staged files to scan"
+  fi
+else
+  echo "⚠️ Trivy not installed - skipping secrets scan"
+  echo "💡 Install Trivy: https://aquasecurity.github.io/trivy/latest/getting-started/installation/"
+fi
+
 # Run comprehensive custom pre-commit checks
+echo ""
 echo "🔍 Running comprehensive quality checks..."
 npx tsx scripts/pre-commit-checks.ts
 

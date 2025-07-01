@@ -206,7 +206,7 @@ Renovate creates and maintains a "Dependency Dashboard" issue that provides:
 
 ```json
 {
-  "matchPackagePatterns": ["gitleaks", "trivy", "semgrep", "bandit", "safety", "snyk"],
+  "matchPackagePatterns": ["trivy", "semgrep", "bandit", "safety"],
   "schedule": ["at any time"],
   "automerge": true
 }

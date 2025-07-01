@@ -157,7 +157,7 @@ function validateSecrets(files: string[]): ValidationResult {
   // Files to exclude from secret detection
   const EXCLUDED_FILES = [
     '.github/workflows/',
-    '.gitleaksignore',
+    '.trivyignore',
     'env.example',
     '.env.template',
     'test/',

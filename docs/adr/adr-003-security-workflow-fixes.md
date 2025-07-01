@@ -1,8 +1,10 @@
-# ADR-003: Security Workflow GitLeaks and CodeQL Fixes
+# ADR-003: Security Workflow Migration to Trivy (Superseded)
 
 ## Status
 
-Accepted
+**SUPERSEDED** - 2024-12-XX by Trivy migration
+
+This ADR has been superseded by the migration to Trivy as the unified security scanner.
 
 ## Context
 
@@ -23,6 +25,7 @@ These issues were blocking the CI/CD pipeline and preventing proper security val
 We will implement the following fixes to resolve the security workflow issues:
 
 ### GitLeaks License Resolution
+
 - **Restore** the `GITLEAKS_LICENSE` environment variable for organization-level scanning
 - **Configure** GitHub Secrets to store the license key securely
 - **Add** .env.example file with placeholder for local development
@@ -35,16 +38,19 @@ We will implement the following fixes to resolve the security workflow issues:
 - **Add** unique categories for different scan types (Trivy filesystem scans)
 
 ### TruffleHog Configuration Fix
+
 - **Add conditional logic** to handle cases where BASE and HEAD commits are the same
 - **Implement fallback scanning** for initial commits using full repository scan
 - **Use proper commit references** with validation for null/zero commits
 
 ### CodeQL Configuration Replacement
+
 - **Replace CodeQL workflow** with ESLint security analysis to avoid default setup conflicts
 - **Leverage GitHub's default CodeQL setup** for SARIF uploads and security scanning
 - **Implement ESLint-based SAST** with security-focused rules and reporting
 
 ### Workflow Optimization
+
 - **Simplify** the SAST scanning to focus on JavaScript/TypeScript as our primary languages
 - **Ensure** each security tool has a unique category for SARIF uploads
 - **Maintain** comprehensive security coverage while eliminating conflicts
@@ -72,6 +78,7 @@ We will implement the following fixes to resolve the security workflow issues:
 ## Implementation Details
 
 ### GitLeaks Configuration
+
 ```yaml
 - name: 🔍 GitLeaks secrets scan
   uses: gitleaks/gitleaks-action@v2
@@ -82,6 +89,7 @@ We will implement the following fixes to resolve the security workflow issues:
 ```
 
 ### TruffleHog Configuration
+
 ```yaml
 - name: 🔐 Run TruffleHog secrets scan
   uses: trufflesecurity/trufflehog@main
@@ -101,12 +109,13 @@ We will implement the following fixes to resolve the security workflow issues:
 ```
 
 ### ESLint Security Analysis Configuration
+
 ```yaml
 - name: 🔍 ESLint Security Analysis
   run: |
     # Run ESLint with security rules
     npx eslint . --ext .ts,.tsx,.js,.jsx --format json --output-file eslint-results.json || true
-    
+
     # Process and validate security-related errors
     SECURITY_ERRORS=$(jq '[.[] | .messages[] | select(.ruleId | test("security"))] | length' eslint-results.json)
     if [ "$SECURITY_ERRORS" -gt 0 ]; then
@@ -120,6 +129,7 @@ We will implement the following fixes to resolve the security workflow issues:
 ```
 
 ### Security Analysis Tools
+
 - **CodeQL**: Handled by GitHub's default setup (automatic SARIF upload)
 - **ESLint**: Custom security analysis with artifact upload
 - **Trivy**: `trivy-filesystem` SARIF category
