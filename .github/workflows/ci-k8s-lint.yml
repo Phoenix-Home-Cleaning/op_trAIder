@@ -106,8 +106,9 @@ jobs:
           
           # Combine all manifests for kube-score analysis
           find infrastructure/k8s/${{ matrix.environment }}/ -name "*.yaml" -o -name "*.yml" | while read file; do
-            echo "---" >> "$TEMP_FILE"
             cat "$file" >> "$TEMP_FILE"
+            echo "" >> "$TEMP_FILE" # Ensure a trailing newline
+            echo "---" >> "$TEMP_FILE"
           done
           
           # Run kube-score with institutional-grade standards
