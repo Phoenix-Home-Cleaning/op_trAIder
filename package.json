@@ -98,7 +98,6 @@
     "autoprefixer": "^10.4.16",
     "eslint": "^9.30.0",
     "eslint-config-next": "^15.3.4",
-    "eslint-config-security": "^1.4.0",
     "eslint-plugin-security": "^3.0.1",
     "git-cz": "^4.9.0",
     "glob": "^10.4.5",
