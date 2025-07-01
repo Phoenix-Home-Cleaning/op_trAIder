@@ -17,6 +17,9 @@ metadata:
   labels:
     app: traider-dev-ingress
     environment: development
+    app.kubernetes.io/name: ingress-router
+    app.kubernetes.io/component: networking
+    app.kubernetes.io/part-of: traider-platform
 spec:
   ingressClassName: nginx
   rules:
@@ -76,6 +79,9 @@ metadata:
   labels:
     app: traider-dev-nodeport
     environment: development
+    app.kubernetes.io/name: frontend-nodeport
+    app.kubernetes.io/component: networking
+    app.kubernetes.io/part-of: traider-platform
 spec:
   type: NodePort
   selector:
@@ -94,6 +100,9 @@ metadata:
   labels:
     app: traider-dev-api-nodeport
     environment: development
+    app.kubernetes.io/name: backend-nodeport
+    app.kubernetes.io/component: networking
+    app.kubernetes.io/part-of: traider-platform
 spec:
   type: NodePort
   selector:
@@ -112,6 +121,9 @@ metadata:
   labels:
     app: traider-dev-monitoring-nodeport
     environment: development
+    app.kubernetes.io/name: monitoring-nodeport
+    app.kubernetes.io/component: networking
+    app.kubernetes.io/part-of: traider-platform
 spec:
   type: NodePort
   selector:

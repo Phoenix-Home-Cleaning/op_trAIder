@@ -308,7 +308,9 @@ export default function DashboardPage() {
           <div className="mt-4 pt-4 border-t">
             <div className="flex justify-between items-center text-sm">
               <span className="text-muted-foreground">Last Updated</span>
-              <span className="font-mono">{new Date().toLocaleTimeString()}</span>
+              <span className="font-mono">
+                {new Date().toLocaleTimeString('en-US', { timeZone: 'UTC' })}
+              </span>
             </div>
           </div>
         </div>

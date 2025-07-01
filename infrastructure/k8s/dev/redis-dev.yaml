@@ -22,9 +22,19 @@ spec:
         app: redis-dev
         component: cache
     spec:
+      securityContext:
+        fsGroup: 999
       containers:
         - name: redis
           image: redis:7-alpine
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           ports:
             - containerPort: 6379
               name: redis
@@ -82,6 +92,10 @@ metadata:
   labels:
     app: redis-dev
     component: cache
+    environment: development
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/component: cache
+    app.kubernetes.io/part-of: traider-platform
 spec:
   selector:
     app: redis-dev

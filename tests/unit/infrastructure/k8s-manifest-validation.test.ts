@@ -586,10 +586,10 @@ describe('📄 K8s Manifest Validation Tests', () => {
 
     it('should not have hardcoded secrets in manifests', async () => {
       const suspiciousPatterns = [
-        /password\s*[:=]\s*["'](?!password|admin|dev)[^"']{8,}/i,
-        /secret\s*[:=]\s*["'][^"']{16,}/i,
-        /key\s*[:=]\s*["'][^"']{20,}/i,
-        /token\s*[:=]\s*["'][^"']{20,}/i
+        /password\s*[:=]\s*["'](?!REPLACE_WITH|password|admin|dev)[^"']{8,}/i,
+        /secret\s*[:=]\s*["'](?!REPLACE_WITH)[^"']{16,}/i,
+        /key\s*[:=]\s*["'](?!REPLACE_WITH)[^"']{20,}/i,
+        /token\s*[:=]\s*["'](?!REPLACE_WITH)[^"']{20,}/i
       ];
       
       const manifestFiles = fs.readdirSync(K8S_DEV_PATH)

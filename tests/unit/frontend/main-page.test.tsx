@@ -188,7 +188,7 @@ describe('Main Dashboard Page - Integration Tests', () => {
       
       // Verify last updated timestamp
       expect(screen.getByText('Last Updated')).toBeInTheDocument();
-      expect(screen.getByText('4:00:00 AM')).toBeInTheDocument(); // Mocked time
+      expect(screen.getByText('12:00:00 PM')).toBeInTheDocument(); // Mocked time
     });
 
     it('renders Phase 0 notice', () => {
@@ -501,7 +501,7 @@ describe('Main Dashboard Page - Integration Tests', () => {
       render(<DashboardPage />);
 
       // Verify timestamp is displayed (using mocked time)
-      expect(screen.getByText('4:00:00 AM')).toBeInTheDocument();
+      expect(screen.getByText('12:00:00 PM')).toBeInTheDocument();
     });
 
     it('handles timestamp formatting consistently', () => {
@@ -518,7 +518,7 @@ describe('Main Dashboard Page - Integration Tests', () => {
       expect(screen.getByText('2 hours ago')).toBeInTheDocument();
       expect(screen.getByText('4 hours ago')).toBeInTheDocument();
       expect(screen.getByText('1 day ago')).toBeInTheDocument();
-      expect(screen.getByText('4:00:00 AM')).toBeInTheDocument();
+      expect(screen.getByText('12:00:00 PM')).toBeInTheDocument();
     });
   });
 });

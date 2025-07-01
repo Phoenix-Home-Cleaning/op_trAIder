@@ -102,6 +102,14 @@ spec:
       containers:
         - name: backend
           image: traider/backend:dev
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           ports:
             - containerPort: 8000
               name: http
@@ -171,6 +179,10 @@ metadata:
   labels:
     app: backend-dev
     component: api
+    environment: development
+    app.kubernetes.io/name: backend
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: traider-platform
 spec:
   selector:
     app: backend-dev

@@ -54,6 +54,14 @@ spec:
       containers:
         - name: frontend
           image: traider/frontend:dev
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           ports:
             - containerPort: 3000
               name: http
@@ -105,6 +113,10 @@ metadata:
   labels:
     app: frontend-dev
     component: frontend
+    environment: development
+    app.kubernetes.io/name: frontend
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: traider-platform
 spec:
   selector:
     app: frontend-dev
