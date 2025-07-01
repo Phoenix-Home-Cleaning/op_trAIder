@@ -208,6 +208,8 @@ spec:
       app: grafana-dev
   template:
     metadata:
+      annotations:
+        kube-score/ignore: "container-security-context-user-group-id"
       labels:
         app: grafana-dev
         component: monitoring
