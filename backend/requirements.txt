@@ -77,7 +77,7 @@ torch==2.5.1
 tensorflow==2.18.0
 
 # ML operations
-mlflow==2.19.0
+mlflow==3.1.0
 
 # =============================================================================
 # MONITORING & OBSERVABILITY
