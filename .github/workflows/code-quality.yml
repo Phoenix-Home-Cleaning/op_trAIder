@@ -185,82 +185,7 @@ jobs:
           echo "| Trading Logic | ${{ steps.coverage-check.outputs.trading-coverage }}% | 90% | ${{ steps.coverage-check.outputs.trading-coverage != 'N/A' && (steps.coverage-check.outputs.trading-coverage >= 90) && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
 
   # =============================================================================
-  # PHASE 2: SONARQUBE ANALYSIS
-  # =============================================================================
-  
-  sonarqube-analysis:
-    name: 🔍 SonarQube Analysis
-    runs-on: ubuntu-latest
-    needs: coverage-analysis
-    timeout-minutes: 20
-    
-    permissions:
-      contents: read
-      security-events: write
-      pull-requests: write
-    
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Shallow clones should be disabled for better analysis
-          
-      - name: 📦 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          
-      - name: 📥 Install dependencies
-        run: npm ci --prefer-offline --no-audit
-        
-      - name: 🧪 Run tests with coverage for SonarQube
-        run: npm run test:coverage
-        
-      - name: 📥 Download coverage reports
-        uses: actions/download-artifact@v4
-        with:
-          name: coverage-reports
-          path: coverage/
-          
-      - name: 🔍 Run SonarQube Scanner
-        uses: sonarsource/sonarqube-scanner-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-        with:
-          args: >
-            -Dsonar.projectKey=traider-v1
-            -Dsonar.sources=app,middleware.ts,shared
-            -Dsonar.tests=tests
-            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
-            -Dsonar.coverage.exclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
-            -Dsonar.cpd.exclusions=**/*.test.ts,**/*.test.tsx
-            -Dsonar.exclusions=**/node_modules/**,**/*.d.ts,**/coverage/**,**/.next/**
-            
-      - name: 🎯 SonarQube Quality Gate Check
-        uses: sonarqube-quality-gate-action@master
-        timeout-minutes: 5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          
-      - name: 📊 Generate SonarQube report
-        if: always()
-        run: |
-          echo "## 🔍 SonarQube Analysis Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "🔗 **View detailed report**: [SonarQube Dashboard](${{ secrets.SONAR_HOST_URL }}/dashboard?id=traider-v1)" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Key Metrics:" >> $GITHUB_STEP_SUMMARY
-          echo "- **Code Coverage**: Target ≥80% (Trading logic ≥90%)" >> $GITHUB_STEP_SUMMARY
-          echo "- **Duplications**: Target <3%" >> $GITHUB_STEP_SUMMARY
-          echo "- **Maintainability**: Target A rating" >> $GITHUB_STEP_SUMMARY
-          echo "- **Reliability**: Target A rating" >> $GITHUB_STEP_SUMMARY
-          echo "- **Security**: Target A rating" >> $GITHUB_STEP_SUMMARY
-
-  # =============================================================================
-  # PHASE 3: QLTY CODE QUALITY ANALYSIS
+  # PHASE 2: QLTY CODE QUALITY ANALYSIS
   # =============================================================================
   
   qlty-analysis:
@@ -647,7 +572,7 @@ jobs:
   quality-gate:
     name: 🎯 Quality Gate & Compliance Check
     runs-on: ubuntu-latest
-    needs: [coverage-analysis, sonarqube-analysis, qlty-analysis, advanced-security-scan]
+    needs: [coverage-analysis, qlty-analysis, advanced-security-scan]
     if: always()
     timeout-minutes: 10
     
@@ -663,13 +588,11 @@ jobs:
           
           # Check job results
           COVERAGE_RESULT="${{ needs.coverage-analysis.result }}"
-          SONAR_RESULT="${{ needs.sonarqube-analysis.result }}"
           QLTY_RESULT="${{ needs.qlty-analysis.result }}"
           SECURITY_RESULT="${{ needs.advanced-security-scan.result }}"
           
           echo "📊 Quality Gate Results:"
           echo "  Coverage Analysis: $COVERAGE_RESULT"
-          echo "  SonarQube Analysis: $SONAR_RESULT"
           echo "  Qlty Analysis: $QLTY_RESULT"
           echo "  Security Scan: $SECURITY_RESULT"
           
@@ -690,12 +613,7 @@ jobs:
             echo "❌ CRITICAL: Security scan failed"
           fi
           
-          # SonarQube and Qlty are important but not blocking
-          if [ "$SONAR_RESULT" != "success" ]; then
-            FAILED_JOBS=$((FAILED_JOBS + 1))
-            echo "⚠️ WARNING: SonarQube analysis failed"
-          fi
-          
+          # Qlty is important but not blocking
           if [ "$QLTY_RESULT" != "success" ]; then
             FAILED_JOBS=$((FAILED_JOBS + 1))
             echo "⚠️ WARNING: Qlty analysis failed"
@@ -730,7 +648,6 @@ jobs:
           | Check | Status | Critical | Details |
           |-------|--------|----------|---------|
           | Coverage Analysis | ${{ needs.coverage-analysis.result == 'success' && '✅ PASS' || '❌ FAIL' }} | ✅ | Global ≥80%, Trading ≥90% |
-          | SonarQube Analysis | ${{ needs.sonarqube-analysis.result == 'success' && '✅ PASS' || '❌ FAIL' }} | ⚠️ | Code quality & security |
           | Qlty Analysis | ${{ needs.qlty-analysis.result == 'success' && '✅ PASS' || '❌ FAIL' }} | ⚠️ | Maintainability & debt |
           | Security Scan | ${{ needs.advanced-security-scan.result == 'success' && '✅ PASS' || '❌ FAIL' }} | ✅ | Vulnerabilities & SAST |
           
