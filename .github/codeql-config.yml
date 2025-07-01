@@ -26,14 +26,6 @@ queries:
   # Security and quality queries
   - name: security-and-quality
     uses: security-and-quality
-    
-  # Custom trading-specific queries
-  - name: trading-security
-    uses: ./.github/codeql-queries/trading-security.ql
-    
-  # Custom risk management queries  
-  - name: risk-management
-    uses: ./.github/codeql-queries/risk-management.ql
 
 # =============================================================================
 # PATH FILTERS
