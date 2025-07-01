@@ -45,7 +45,7 @@ bcrypt==4.2.1
 # HTTP clients for exchange APIs - SECURITY UPDATES
 httpx==0.28.1
 aiohttp==3.11.11
-requests==2.32.3
+requests==2.32.4
 
 # WebSocket client for real-time data
 websockets==14.1
