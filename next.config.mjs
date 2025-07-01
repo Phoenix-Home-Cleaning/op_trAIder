@@ -22,6 +22,12 @@
  * @author TRAIDER Team
  */
 
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Enable experimental features for better performance
@@ -104,8 +110,6 @@ const nextConfig = {
   // Webpack configuration for trading-specific optimizations
   webpack: (config, { dev, isServer }) => {
     // Optimize bundle for trading libraries
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const path = require('path');
     config.resolve.alias = {
       ...config.resolve.alias,
       '@': path.resolve(__dirname, 'app'),
@@ -135,19 +139,19 @@ const nextConfig = {
 
     // Add bundle analyzer in development
     if (dev && !isServer && process.env.ANALYZE === 'true') {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
-        config.plugins.push(
-          new BundleAnalyzerPlugin({
-            analyzerMode: 'disabled',
-            generateStatsFile: true,
-            statsFilename: 'bundle-stats.json',
-          })
-        );
-              } catch {
+      import('webpack-bundle-analyzer')
+        .then(({ BundleAnalyzerPlugin }) => {
+          config.plugins.push(
+            new BundleAnalyzerPlugin({
+              analyzerMode: 'disabled',
+              generateStatsFile: true,
+              statsFilename: 'bundle-stats.json',
+            })
+          );
+        })
+        .catch(() => {
           // Bundle analyzer not available in this environment
-        }
+        });
     }
 
     return config;
@@ -155,7 +159,7 @@ const nextConfig = {
 
   // Compiler options for better performance
   compiler: {
-            // Remove console statements in production
+    // Remove console statements in production
     removeConsole: process.env.NODE_ENV === 'production',
   },
 
@@ -181,4 +185,4 @@ const nextConfig = {
   }),
 };
 
-module.exports = nextConfig; 
+export default nextConfig; 

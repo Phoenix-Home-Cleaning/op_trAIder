@@ -3,7 +3,7 @@
  * @description Enforces conventional commit format for institutional-grade development
  */
 
-module.exports = {
+export default {
   extends: ['@commitlint/config-conventional'],
   rules: {
     // Enforce conventional commit types

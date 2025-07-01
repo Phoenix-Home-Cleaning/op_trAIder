@@ -6,7 +6,7 @@
  * Optimized for institutional-grade trading platform styling requirements.
  */
 
-module.exports = {
+export default {
   plugins: {
     '@tailwindcss/postcss': {},
     autoprefixer: {},
