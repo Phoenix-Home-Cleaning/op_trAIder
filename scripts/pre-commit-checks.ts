@@ -180,11 +180,13 @@ function validateSecrets(files: string[]): ValidationResult {
     /grep\s+-r/gi, // grep commands in workflows
     /pattern\.test\(/gi, // regex test patterns
     /regex\s+pattern/gi, // regex pattern comments
+    /REPLACE_WITH_[A-Z_]+/gi, // Kubernetes manifest placeholders
+    /REPLACE_WITH_.*?['"]/gi, // Generic replacement placeholders
   ];
 
   for (const file of files) {
     // Skip excluded files
-    if (EXCLUDED_FILES.some(excluded => file.includes(excluded))) {
+    if (EXCLUDED_FILES.some((excluded) => file.includes(excluded))) {
       continue;
     }
 
@@ -200,15 +202,17 @@ function validateSecrets(files: string[]): ValidationResult {
           const matchedText = match[0];
           const lineNum = content.substring(0, match.index).split('\n').length;
           const line = lines[lineNum - 1] || '';
-          
+
           // Skip comments and obvious false positives
-          if (line.trim().startsWith('#') || 
-              line.trim().startsWith('//') ||
-              line.includes('description=') ||
-              line.includes('Field(..., description=')) {
+          if (
+            line.trim().startsWith('#') ||
+            line.trim().startsWith('//') ||
+            line.includes('description=') ||
+            line.includes('Field(..., description=')
+          ) {
             continue;
           }
-          
+
           // Check if this match should be excluded (test patterns)
           const isTestPattern = TEST_EXCLUSIONS.some((exclusion) => {
             exclusion.lastIndex = 0;
@@ -304,10 +308,18 @@ function validateFileHeaders(files: string[]): ValidationResult {
 
       if (!hasFileOverview || !hasModule || !hasDescription || !hasAuthor) {
         const missing = [];
-        if (!hasFileOverview) {missing.push('@fileoverview');}
-        if (!hasModule) {missing.push('@module');}
-        if (!hasDescription) {missing.push('@description');}
-        if (!hasAuthor) {missing.push('@author TRAIDER Team');}
+        if (!hasFileOverview) {
+          missing.push('@fileoverview');
+        }
+        if (!hasModule) {
+          missing.push('@module');
+        }
+        if (!hasDescription) {
+          missing.push('@description');
+        }
+        if (!hasAuthor) {
+          missing.push('@author TRAIDER Team');
+        }
 
         result.errors.push(`${file}: Missing ${missing.join(', ')} in header`);
         result.success = false;
@@ -400,7 +412,10 @@ function validateTimerCleanup(files: string[]): ValidationResult {
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         if (line && /(?:setTimeout|setInterval|requestAnimationFrame)\s*\(/.test(line)) {
-          const hasCleanup = content.includes('clearTimeout') || content.includes('clearInterval') || content.includes('cancelAnimationFrame');
+          const hasCleanup =
+            content.includes('clearTimeout') ||
+            content.includes('clearInterval') ||
+            content.includes('cancelAnimationFrame');
           if (!hasCleanup) {
             result.errors.push(`${file}:${i + 1}: Timer without cleanup detected`);
             result.success = false;
@@ -439,7 +454,11 @@ function validateConsoleStatements(files: string[]): ValidationResult {
 
   const codeFiles = files.filter(
     (file) =>
-      file.endsWith('.ts') || file.endsWith('.tsx') || file.endsWith('.js') || file.endsWith('.jsx')
+      (file.endsWith('.ts') ||
+        file.endsWith('.tsx') ||
+        file.endsWith('.js') ||
+        file.endsWith('.jsx')) &&
+      !file.includes('pre-commit-checks.ts') // Exclude this script itself
   );
 
   for (const file of codeFiles) {
@@ -449,7 +468,23 @@ function validateConsoleStatements(files: string[]): ValidationResult {
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
-        if (line && (line.includes('console.log') || line.includes('console.error') || line.includes('console.warn'))) {
+        const trimmedLine = line?.trim() || '';
+
+        // Skip comments and documentation
+        if (
+          trimmedLine.startsWith('//') ||
+          trimmedLine.startsWith('*') ||
+          trimmedLine.startsWith('/*')
+        ) {
+          continue;
+        }
+
+        if (
+          line &&
+          (line.includes('console.log') ||
+            line.includes('console.error') ||
+            line.includes('console.warn'))
+        ) {
           const match = line.match(/console\.(log|error|warn)/);
           if (match) {
             result.errors.push(`${file}:${i + 1}: Console statement found`);
@@ -497,7 +532,11 @@ function validateTestFocus(files: string[]): ValidationResult {
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
-        if (line?.includes('it.only') || line?.includes('describe.only') || line?.includes('test.only')) {
+        if (
+          line?.includes('it.only') ||
+          line?.includes('describe.only') ||
+          line?.includes('test.only')
+        ) {
           result.errors.push(`${file}:${i + 1}: Focused test (.only) found`);
           result.success = false;
         }
