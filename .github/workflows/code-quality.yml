@@ -185,13 +185,273 @@ jobs:
           echo "| Trading Logic | ${{ steps.coverage-check.outputs.trading-coverage }}% | 90% | ${{ steps.coverage-check.outputs.trading-coverage != 'N/A' && (steps.coverage-check.outputs.trading-coverage >= 90) && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
 
   # =============================================================================
-  # PHASE 2: QLTY CODE QUALITY ANALYSIS
+  # PHASE 2: SONARQUBE COMPREHENSIVE ANALYSIS
+  # =============================================================================
+  
+  sonarqube-analysis:
+    name: 🔍 SonarQube Comprehensive Analysis
+    runs-on: ubuntu-latest
+    needs: coverage-analysis
+    timeout-minutes: 20
+    
+    permissions:
+      contents: read
+      security-events: write
+      pull-requests: write
+      checks: write
+    
+    outputs:
+      quality-gate-status: ${{ steps.sonar-quality-gate.outputs.quality-gate-status }}
+      coverage-percentage: ${{ steps.sonar-metrics.outputs.coverage }}
+      duplications-percentage: ${{ steps.sonar-metrics.outputs.duplications }}
+      maintainability-rating: ${{ steps.sonar-metrics.outputs.maintainability }}
+      reliability-rating: ${{ steps.sonar-metrics.outputs.reliability }}
+      security-rating: ${{ steps.sonar-metrics.outputs.security }}
+      analysis-passed: ${{ steps.sonar-quality-gate.outputs.passed }}
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for SonarQube blame information and trend analysis
+          
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: 🐍 Setup Python for backend analysis
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          
+      - name: 📥 Install dependencies
+        run: |
+          echo "::group::Installing Dependencies"
+          npm ci --prefer-offline --no-audit
+          
+          # Install Python dependencies for backend analysis
+          if [ -f "backend/requirements.txt" ]; then
+            pip install -r backend/requirements.txt
+          fi
+          echo "::endgroup::"
+        
+      - name: 🧪 Generate test coverage for SonarQube
+        run: |
+          echo "::group::Generating Test Coverage"
+          # Run tests with coverage in LCOV format for SonarQube
+          npm run test:coverage
+          
+          # Verify coverage files exist
+          if [ ! -f "coverage/lcov.info" ]; then
+            echo "❌ LCOV coverage file not found"
+            exit 1
+          fi
+          
+          # Display coverage summary for debugging
+          echo "📊 Coverage files generated:"
+          ls -la coverage/
+          echo "::endgroup::"
+        
+      - name: 📥 Download coverage reports
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-reports
+          path: coverage/
+          
+      - name: 🔧 Prepare SonarQube project configuration
+        run: |
+          echo "::group::SonarQube Configuration"
+          
+          # Create sonar-project.properties with institutional-grade settings
+          cat > sonar-project.properties << 'EOF'
+          # =============================================================================
+          # TRAIDER V1 - SonarQube Project Configuration
+          # Institutional-Grade Trading Platform Analysis
+          # =============================================================================
+          
+          # Project identification
+          sonar.projectKey=traider-v1
+          sonar.projectName=TRAIDER V1 - Autonomous Trading Platform
+          sonar.projectVersion=${{ github.sha }}
+          sonar.organization=phoenix-home-cleaning
+          
+          # Source code configuration
+          sonar.sources=app,middleware.ts,shared,backend
+          sonar.tests=tests
+          sonar.sourceEncoding=UTF-8
+          
+          # Language-specific configurations
+          sonar.javascript.lcov.reportPaths=coverage/lcov.info
+          sonar.typescript.lcov.reportPaths=coverage/lcov.info
+          sonar.python.coverage.reportPaths=coverage/coverage.xml
+          
+          # Exclusions for better analysis focus
+          sonar.coverage.exclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx,**/*.d.ts,**/node_modules/**,**/.next/**,**/dist/**,**/build/**,**/coverage/**
+          sonar.cpd.exclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
+          sonar.exclusions=**/node_modules/**,**/*.d.ts,**/coverage/**,**/.next/**,**/dist/**,**/build/**,**/__pycache__/**,**/*.pyc
+          
+          # Quality gate and analysis parameters
+          sonar.qualitygate.wait=true
+          sonar.qualitygate.timeout=300
+          
+          # Institutional compliance settings
+          sonar.analysis.mode=publish
+          sonar.buildString=${{ github.run_number }}
+          sonar.scm.revision=${{ github.sha }}
+          sonar.pullrequest.key=${{ github.event.pull_request.number }}
+          sonar.pullrequest.branch=${{ github.head_ref }}
+          sonar.pullrequest.base=${{ github.base_ref }}
+          
+          # Trading-specific quality rules
+          sonar.issue.ignore.multicriteria=e1,e2,e3
+          sonar.issue.ignore.multicriteria.e1.ruleKey=typescript:S1481
+          sonar.issue.ignore.multicriteria.e1.resourceKey=**/*test*/**
+          sonar.issue.ignore.multicriteria.e2.ruleKey=typescript:S125
+          sonar.issue.ignore.multicriteria.e2.resourceKey=**/*test*/**
+          sonar.issue.ignore.multicriteria.e3.ruleKey=python:S1481
+          sonar.issue.ignore.multicriteria.e3.resourceKey=**/test_*.py
+          EOF
+          
+          echo "✅ SonarQube configuration prepared"
+          echo "::endgroup::"
+          
+      - name: 🔍 Run SonarQube analysis
+        uses: sonarqube-scanner-action@v2.3.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        with:
+          projectBaseDir: .
+          args: >
+            -Dsonar.verbose=true
+            -Dsonar.log.level=INFO
+            
+      - name: 🎯 Wait for SonarQube Quality Gate
+        id: sonar-quality-gate
+        uses: sonarqube-quality-gate-action@v1.3.0
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        continue-on-error: true
+        
+      - name: 📊 Extract SonarQube metrics
+        id: sonar-metrics
+        run: |
+          echo "::group::SonarQube Metrics Extraction"
+          
+          # Extract key metrics from SonarQube API
+          PROJECT_KEY="traider-v1"
+          SONAR_API_URL="${{ secrets.SONAR_HOST_URL }}/api"
+          
+          # Get project metrics
+          METRICS_RESPONSE=$(curl -s -u "${{ secrets.SONAR_TOKEN }}:" \
+            "${SONAR_API_URL}/measures/component?component=${PROJECT_KEY}&metricKeys=coverage,duplicated_lines_density,reliability_rating,maintainability_rating,security_rating,ncloc,complexity,cognitive_complexity")
+          
+          # Parse metrics (simplified - in production would use jq)
+          COVERAGE=$(echo "$METRICS_RESPONSE" | grep -o '"coverage"[^}]*"value":"[^"]*"' | grep -o '[0-9.]*' | head -1 || echo "0")
+          DUPLICATIONS=$(echo "$METRICS_RESPONSE" | grep -o '"duplicated_lines_density"[^}]*"value":"[^"]*"' | grep -o '[0-9.]*' | head -1 || echo "0")
+          MAINTAINABILITY=$(echo "$METRICS_RESPONSE" | grep -o '"maintainability_rating"[^}]*"value":"[^"]*"' | grep -o '[0-9]' | head -1 || echo "5")
+          RELIABILITY=$(echo "$METRICS_RESPONSE" | grep -o '"reliability_rating"[^}]*"value":"[^"]*"' | grep -o '[0-9]' | head -1 || echo "5")
+          SECURITY=$(echo "$METRICS_RESPONSE" | grep -o '"security_rating"[^}]*"value":"[^"]*"' | grep -o '[0-9]' | head -1 || echo "5")
+          
+          # Set outputs
+          echo "coverage=${COVERAGE}" >> $GITHUB_OUTPUT
+          echo "duplications=${DUPLICATIONS}" >> $GITHUB_OUTPUT
+          echo "maintainability=${MAINTAINABILITY}" >> $GITHUB_OUTPUT
+          echo "reliability=${RELIABILITY}" >> $GITHUB_OUTPUT
+          echo "security=${SECURITY}" >> $GITHUB_OUTPUT
+          
+          # Determine if analysis passed based on institutional standards
+          ANALYSIS_PASSED=true
+          
+          # Coverage threshold: 80% minimum
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            echo "❌ Coverage (${COVERAGE}%) below institutional threshold (80%)"
+            ANALYSIS_PASSED=false
+          fi
+          
+          # Duplication threshold: 3% maximum
+          if (( $(echo "$DUPLICATIONS > 3" | bc -l) )); then
+            echo "❌ Code duplication (${DUPLICATIONS}%) exceeds institutional limit (3%)"
+            ANALYSIS_PASSED=false
+          fi
+          
+          # Quality ratings: A or B only (1-2 rating)
+          if [ "$MAINTAINABILITY" -gt 2 ]; then
+            echo "❌ Maintainability rating ($MAINTAINABILITY) below institutional standard (≤2)"
+            ANALYSIS_PASSED=false
+          fi
+          
+          if [ "$RELIABILITY" -gt 2 ]; then
+            echo "❌ Reliability rating ($RELIABILITY) below institutional standard (≤2)"
+            ANALYSIS_PASSED=false
+          fi
+          
+          if [ "$SECURITY" -gt 1 ]; then
+            echo "❌ Security rating ($SECURITY) below institutional standard (≤1)"
+            ANALYSIS_PASSED=false
+          fi
+          
+          if [ "$ANALYSIS_PASSED" = true ]; then
+            echo "✅ All SonarQube quality standards met"
+            echo "passed=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ SonarQube quality standards not met"
+            echo "passed=false" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "📊 SonarQube Quality Metrics:"
+          echo "  Coverage: ${COVERAGE}%"
+          echo "  Duplications: ${DUPLICATIONS}%"
+          echo "  Maintainability: ${MAINTAINABILITY}/5"
+          echo "  Reliability: ${RELIABILITY}/5"
+          echo "  Security: ${SECURITY}/5"
+          echo "::endgroup::"
+          
+      - name: 📊 Generate SonarQube analysis report
+        if: always()
+        run: |
+          echo "## 🔍 SonarQube Comprehensive Analysis Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 **View detailed report**: [SonarQube Dashboard](${{ secrets.SONAR_HOST_URL }}/dashboard?id=traider-v1)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📊 Quality Metrics" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value | Threshold | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|-----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Code Coverage | ${{ steps.sonar-metrics.outputs.coverage }}% | ≥80% | ${{ steps.sonar-metrics.outputs.coverage >= 80 && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Duplications | ${{ steps.sonar-metrics.outputs.duplications }}% | ≤3% | ${{ steps.sonar-metrics.outputs.duplications <= 3 && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Maintainability | ${{ steps.sonar-metrics.outputs.maintainability }}/5 | ≤2 (A-B) | ${{ steps.sonar-metrics.outputs.maintainability <= 2 && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Reliability | ${{ steps.sonar-metrics.outputs.reliability }}/5 | ≤2 (A-B) | ${{ steps.sonar-metrics.outputs.reliability <= 2 && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security | ${{ steps.sonar-metrics.outputs.security }}/5 | ≤1 (A) | ${{ steps.sonar-metrics.outputs.security <= 1 && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎯 Quality Gate Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Overall Result**: ${{ steps.sonar-quality-gate.outputs.quality-gate-status == 'PASSED' && '✅ PASSED' || '❌ FAILED' }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🏛️ Institutional Standards" >> $GITHUB_STEP_SUMMARY
+          echo "- **Coverage**: Minimum 80% for trading systems" >> $GITHUB_STEP_SUMMARY
+          echo "- **Duplications**: Maximum 3% for maintainability" >> $GITHUB_STEP_SUMMARY
+          echo "- **Maintainability**: A-B rating for long-term sustainability" >> $GITHUB_STEP_SUMMARY
+          echo "- **Reliability**: A-B rating for system stability" >> $GITHUB_STEP_SUMMARY
+          echo "- **Security**: A rating mandatory for financial systems" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "*Analysis powered by SonarQube Enterprise for Institutional Trading Platforms*" >> $GITHUB_STEP_SUMMARY
+
+  # =============================================================================
+  # PHASE 3: QLTY CODE QUALITY ANALYSIS
   # =============================================================================
   
   qlty-analysis:
     name: 📈 Qlty Code Quality Analysis
     runs-on: ubuntu-latest
-    needs: coverage-analysis
+    needs: [coverage-analysis, sonarqube-analysis]
     timeout-minutes: 15
     
     outputs:
@@ -572,7 +832,7 @@ jobs:
   quality-gate:
     name: 🎯 Quality Gate & Compliance Check
     runs-on: ubuntu-latest
-    needs: [coverage-analysis, qlty-analysis, advanced-security-scan]
+    needs: [coverage-analysis, sonarqube-analysis, qlty-analysis, advanced-security-scan]
     if: always()
     timeout-minutes: 10
     
@@ -588,11 +848,13 @@ jobs:
           
           # Check job results
           COVERAGE_RESULT="${{ needs.coverage-analysis.result }}"
+          SONAR_RESULT="${{ needs.sonarqube-analysis.result }}"
           QLTY_RESULT="${{ needs.qlty-analysis.result }}"
           SECURITY_RESULT="${{ needs.advanced-security-scan.result }}"
           
           echo "📊 Quality Gate Results:"
           echo "  Coverage Analysis: $COVERAGE_RESULT"
+          echo "  SonarQube Analysis: $SONAR_RESULT"
           echo "  Qlty Analysis: $QLTY_RESULT"
           echo "  Security Scan: $SECURITY_RESULT"
           
@@ -611,6 +873,13 @@ jobs:
             FAILED_JOBS=$((FAILED_JOBS + 1))
             CRITICAL_FAILURES=$((CRITICAL_FAILURES + 1))
             echo "❌ CRITICAL: Security scan failed"
+          fi
+          
+          # SonarQube is critical for institutional standards
+          if [ "$SONAR_RESULT" != "success" ]; then
+            FAILED_JOBS=$((FAILED_JOBS + 1))
+            CRITICAL_FAILURES=$((CRITICAL_FAILURES + 1))
+            echo "❌ CRITICAL: SonarQube analysis failed"
           fi
           
           # Qlty is important but not blocking
@@ -648,8 +917,18 @@ jobs:
           | Check | Status | Critical | Details |
           |-------|--------|----------|---------|
           | Coverage Analysis | ${{ needs.coverage-analysis.result == 'success' && '✅ PASS' || '❌ FAIL' }} | ✅ | Global ≥80%, Trading ≥90% |
+          | SonarQube Analysis | ${{ needs.sonarqube-analysis.result == 'success' && '✅ PASS' || '❌ FAIL' }} | ✅ | Institutional quality standards |
           | Qlty Analysis | ${{ needs.qlty-analysis.result == 'success' && '✅ PASS' || '❌ FAIL' }} | ⚠️ | Maintainability & debt |
           | Security Scan | ${{ needs.advanced-security-scan.result == 'success' && '✅ PASS' || '❌ FAIL' }} | ✅ | Vulnerabilities & SAST |
+          
+          ## 🔍 SonarQube Quality Metrics
+          
+          - **Coverage**: ${{ needs.sonarqube-analysis.outputs.coverage-percentage }}% (Target: ≥80%)
+          - **Duplications**: ${{ needs.sonarqube-analysis.outputs.duplications-percentage }}% (Target: ≤3%)
+          - **Maintainability**: ${{ needs.sonarqube-analysis.outputs.maintainability-rating }}/5 (Target: ≤2)
+          - **Reliability**: ${{ needs.sonarqube-analysis.outputs.reliability-rating }}/5 (Target: ≤2)
+          - **Security**: ${{ needs.sonarqube-analysis.outputs.security-rating }}/5 (Target: ≤1)
+          - **Quality Gate**: ${{ needs.sonarqube-analysis.outputs.quality-gate-status }}
           
           ## 🛡️ Security Analysis
           
