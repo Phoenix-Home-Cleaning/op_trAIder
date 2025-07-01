@@ -61,7 +61,7 @@ torch==2.7.1  # Latest version compatible with Python 3.13
 xgboost==3.0.2
 
 # Feature engineering
-feature-engine==1.8.1
+feature-engine==1.8.3
 
 # =============================================================================
 # FINANCIAL DATA & TRADING
