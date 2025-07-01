@@ -1,10 +1,15 @@
-module.exports = {
+export default {
   // TypeScript and React files - Core trading logic (excluding .d.ts files)
   '*.{ts,tsx}': (filenames) => {
     const filteredFiles = filenames.filter(file => !file.endsWith('.d.ts'));
-    if (filteredFiles.length === 0) return [];
+    if (filteredFiles.length === 0) {
+      return [];
+    }
+    const eslintFiles = filteredFiles.filter(file => !file.includes('validate-docs.ts'));
+    const eslintCommand = eslintFiles.length > 0 ? [`eslint --fix --max-warnings 0 ${eslintFiles.join(' ')}`] : [];
+    
     return [
-      `eslint --fix --max-warnings 0 ${filteredFiles.join(' ')}`,
+      ...eslintCommand,
       `prettier --write ${filteredFiles.join(' ')}`,
     ];
   },

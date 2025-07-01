@@ -39,10 +39,10 @@ const __dirname = path.dirname(__filename);
 
 export default defineConfig({
   plugins: [react()],
-  
+
   // Optimize build for testing performance
   optimizeDeps: {
-    include: ['vitest > @vitest/utils > pretty-format']
+    include: ['vitest > @vitest/utils > pretty-format'],
   },
 
   test: {
@@ -53,18 +53,9 @@ export default defineConfig({
     setupFiles: ['./tests/setup.ts'],
 
     // Test file patterns
-    include: [
-      'tests/**/*.{test,spec}.{js,ts,jsx,tsx}',
-      'app/**/*.{test,spec}.{js,ts,jsx,tsx}'
-    ],
+    include: ['tests/**/*.{test,spec}.{js,ts,jsx,tsx}', 'app/**/*.{test,spec}.{js,ts,jsx,tsx}'],
 
-    exclude: [
-      'node_modules/**',
-      'dist/**',
-      '.next/**',
-      'coverage/**',
-      'backend/**'
-    ],
+    exclude: ['node_modules/**', 'dist/**', '.next/**', 'coverage/**', 'backend/**'],
 
     // Global test configuration
     globals: true,
@@ -81,13 +72,13 @@ export default defineConfig({
     // Coverage configuration
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html', 'lcov'],
+      reporter: ['text', 'json', 'html', 'lcov', 'json-summary'],
       reportsDirectory: './coverage',
 
       // Coverage thresholds - Phase 0 Foundation Complete
       // Core infrastructure (auth, API, layout) is tested
       // Thresholds set for implemented components only
-      // 
+      //
       // Phase 1 MVP targets:
       // - branches: 60%, functions: 50%, lines: 40%, statements: 40%
       // Phase 2 Enhanced targets:
@@ -97,16 +88,12 @@ export default defineConfig({
       thresholds: {
         branches: 45, // Phase 0: Foundation coverage (current: 46.87%)
         functions: 25, // Phase 0: Core functions covered (current: 28.57%)
-        lines: 10,    // Phase 0: Essential paths tested (current: 10%)
+        lines: 10, // Phase 0: Essential paths tested (current: 10%)
         statements: 10, // Phase 0: Critical statements covered (current: 10%)
       },
 
       // Include/exclude patterns
-      include: [
-        'app/**/*.{js,ts,jsx,tsx}',
-        'shared/**/*.{js,ts}',
-        'middleware.ts'
-      ],
+      include: ['app/**/*.{js,ts,jsx,tsx}', 'shared/**/*.{js,ts}', 'middleware.ts'],
 
       exclude: [
         'node_modules/**',
@@ -121,8 +108,8 @@ export default defineConfig({
         'docs/**',
         'backend/**', // Backend has separate coverage
         'infrastructure/**',
-        'scripts/**'
-      ]
+        'scripts/**',
+      ],
     },
 
     // Reporter configuration
@@ -149,8 +136,8 @@ export default defineConfig({
       NEXTAUTH_SECRET: 'test-secret-key-for-testing-only',
       DATABASE_URL: 'postgresql://test:test@localhost:5432/traider_test',
       REDIS_URL: 'redis://localhost:6379/1',
-      LOG_LEVEL: 'ERROR' // Reduce log noise in tests
-    }
+      LOG_LEVEL: 'ERROR', // Reduce log noise in tests
+    },
   },
 
   // Path resolution for imports
@@ -161,8 +148,8 @@ export default defineConfig({
       '@/lib': path.resolve(__dirname, './app/lib'),
       '@/types': path.resolve(__dirname, './types'),
       '@/shared': path.resolve(__dirname, './shared'),
-      '@/tests': path.resolve(__dirname, './tests')
-    }
+      '@/tests': path.resolve(__dirname, './tests'),
+    },
   },
 
   // Build configuration for tests
@@ -170,6 +157,6 @@ export default defineConfig({
     'process.env.NODE_ENV': '"test"',
     __DEV__: true,
     __TEST__: true,
-    __PROD__: false
-  }
-}); 
+    __PROD__: false,
+  },
+});

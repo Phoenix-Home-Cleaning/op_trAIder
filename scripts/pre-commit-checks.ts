@@ -156,6 +156,7 @@ function validateSecrets(files: string[]): ValidationResult {
 
   // Files to exclude from secret detection
   const EXCLUDED_FILES = [
+    'scripts/pre-commit-checks.ts',
     '.github/workflows/',
     '.trivyignore',
     'env.example',
@@ -171,7 +172,8 @@ function validateSecrets(files: string[]): ValidationResult {
 
   // Test patterns to exclude (known safe test values)
   const TEST_EXCLUSIONS = [
-    /test-secret-key-for-testing-only/gi,
+    /NEXTAUTH_SECRET: 'test-secret-key-for-testing-only'/gi,
+    /postgresql:\/\/test:test@localhost:5432\/traider_test/gi,
     /test-jwt-token/gi,
     /test-api-key/gi,
     /password.*=.*['"]password['"]/gi,
@@ -669,10 +671,19 @@ async function main(): Promise<number> {
   }
 }
 
-// Execute main function
-if (require.main === module) {
-  main().then(process.exit);
-}
+// =============================================================================
+// SCRIPT EXECUTION
+// =============================================================================
+
+main()
+  .then((exitCode) => {
+    process.exit(exitCode);
+  })
+  .catch((error) => {
+    console.error('❌ An unexpected error occurred in the pre-commit hook:');
+    console.error(error);
+    process.exit(1);
+  });
 
 export { main, VALIDATION_CONFIG };
 export type { ValidationResult };

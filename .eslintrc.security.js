@@ -22,8 +22,13 @@
  * @since 1.0.0-alpha
  * @author TRAIDER Team
  */
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-module.exports = {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export default {
   extends: [
     'eslint:recommended',
     '@typescript-eslint/recommended',

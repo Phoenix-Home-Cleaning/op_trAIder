@@ -26,8 +26,8 @@
  * @author TRAIDER Team
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
 // =============================================================================
 // CONFIGURATION - INSTITUTIONAL GRADE THRESHOLDS
@@ -82,7 +82,7 @@ const COVERAGE_CONFIG = {
  * @throws {Error} If coverage file not found or invalid
  */
 function loadCoverageSummary() {
-  const coveragePath = path.join(process.cwd(), 'coverage', 'coverage-summary.json');
+  const coveragePath = path.join(process.cwd(), 'coverage', 'coverage-final.json');
   
   if (!fs.existsSync(coveragePath)) {
     throw new Error(`Coverage summary not found at ${coveragePath}`);
@@ -128,18 +128,27 @@ function calculatePatternCoverage(coverageData, patterns) {
   let coveredStatements = 0;
   
   for (const [filePath, fileData] of Object.entries(coverageData)) {
-    if (filePath === 'total' || !matchesPatterns(filePath, patterns)) {
+    if (!fileData || !matchesPatterns(filePath, patterns)) {
       continue;
     }
     
-    totalLines += fileData.lines.total;
-    coveredLines += fileData.lines.covered;
-    totalBranches += fileData.branches.total;
-    coveredBranches += fileData.branches.covered;
-    totalFunctions += fileData.functions.total;
-    coveredFunctions += fileData.functions.covered;
-    totalStatements += fileData.statements.total;
-    coveredStatements += fileData.statements.covered;
+    const s = fileData.s || {};
+    const f = fileData.f || {};
+    const b = fileData.b || {};
+    const l = fileData.l || {};
+    const fnMap = fileData.fnMap || {};
+    
+    totalLines += Object.keys(l).length;
+    coveredLines += Object.values(l).filter(c => c > 0).length;
+    
+    totalBranches += Object.values(b).flat().length;
+    coveredBranches += Object.values(b).flat().filter(c => c > 0).length;
+    
+    totalFunctions += Object.keys(fnMap).length;
+    coveredFunctions += Object.values(f).filter(c => c > 0).length;
+    
+    totalStatements += Object.keys(s).length;
+    coveredStatements += Object.values(s).filter(c => c > 0).length;
   }
   
   return {
@@ -153,6 +162,58 @@ function calculatePatternCoverage(coverageData, patterns) {
       functions: { total: totalFunctions, covered: coveredFunctions },
       statements: { total: totalStatements, covered: coveredStatements }
     }
+  };
+}
+
+/**
+ * Get global coverage from the 'total' field in coverage-final.json
+ * 
+ * @param {Object} coverageData - Full coverage data from coverage-final.json
+ * @returns {Object} Aggregated global coverage metrics
+ */
+function getGlobalCoverage(coverageData) {
+  const total = Object.values(coverageData).reduce((acc, fileData) => {
+    if (!fileData) {
+      return acc;
+    }
+    
+    const s = fileData.s || {};
+    const f = fileData.f || {};
+    const b = fileData.b || {};
+    const l = fileData.l || {};
+    const fnMap = fileData.fnMap || {};
+
+    acc.totalLines += Object.keys(l).length;
+    acc.coveredLines += Object.values(l).filter(c => c > 0).length;
+    acc.totalBranches += Object.values(b).flat().length;
+    acc.coveredBranches += Object.values(b).flat().filter(c => c > 0).length;
+    acc.totalFunctions += Object.keys(fnMap).length;
+    acc.coveredFunctions += Object.values(f).filter(c => c > 0).length;
+    acc.totalStatements += Object.keys(s).length;
+    acc.coveredStatements += Object.values(s).filter(c => c > 0).length;
+    return acc;
+  }, {
+    totalLines: 0,
+    coveredLines: 0,
+    totalBranches: 0,
+    coveredBranches: 0,
+    totalFunctions: 0,
+    coveredFunctions: 0,
+    totalStatements: 0,
+    coveredStatements: 0,
+  });
+
+  return {
+    lines: total.totalLines > 0 ? (total.coveredLines / total.totalLines) * 100 : 100,
+    branches: total.totalBranches > 0 ? (total.coveredBranches / total.totalBranches) * 100 : 100,
+    functions: total.totalFunctions > 0 ? (total.coveredFunctions / total.totalFunctions) * 100 : 100,
+    statements: total.totalStatements > 0 ? (total.coveredStatements / total.totalStatements) * 100 : 100,
+    totals: {
+      lines: { total: total.totalLines, covered: total.coveredLines },
+      branches: { total: total.totalBranches, covered: total.coveredBranches },
+      functions: { total: total.totalFunctions, covered: total.coveredFunctions },
+      statements: { total: total.totalStatements, covered: total.coveredStatements },
+    },
   };
 }
 
@@ -173,7 +234,9 @@ function validateCoverage(coverage, thresholds, category) {
   };
   
   for (const [metric, threshold] of Object.entries(thresholds)) {
-    if (metric === 'paths') continue;
+    if (metric === 'paths') {
+      continue;
+    }
     
     const actual = coverage[metric];
     if (actual < threshold) {
@@ -249,67 +312,33 @@ function generateReport(results) {
  */
 async function enforceCoverage() {
   try {
-    console.log('🔍 Starting coverage enforcement...\n');
-    
-    // Load coverage data
     const coverageData = loadCoverageSummary();
-    const results = [];
     
-    // Check global coverage
-    const globalCoverage = coverageData.total;
-    const globalResult = validateCoverage(
-      {
-        lines: globalCoverage.lines.pct,
-        branches: globalCoverage.branches.pct,
-        functions: globalCoverage.functions.pct,
-        statements: globalCoverage.statements.pct
-      },
-      COVERAGE_CONFIG.global,
-      'Global'
-    );
-    results.push(globalResult);
-    
-    // Check trading logic coverage
+    const globalCoverage = getGlobalCoverage(coverageData);
     const tradingCoverage = calculatePatternCoverage(coverageData, COVERAGE_CONFIG.trading.paths);
-    const tradingResult = validateCoverage(
-      tradingCoverage,
-      COVERAGE_CONFIG.trading,
-      'Trading Logic'
-    );
-    results.push(tradingResult);
-    
-    // Check risk management coverage
     const riskCoverage = calculatePatternCoverage(coverageData, COVERAGE_CONFIG.risk.paths);
-    if (riskCoverage.totals.lines.total > 0) {
-      const riskResult = validateCoverage(
-        riskCoverage,
-        COVERAGE_CONFIG.risk,
-        'Risk Management'
-      );
-      results.push(riskResult);
-    }
     
-    // Generate and display report
-    const report = generateReport(results);
-    console.log(report);
+    const globalResults = validateCoverage(globalCoverage, COVERAGE_CONFIG.global, 'Global');
+    const tradingResults = validateCoverage(tradingCoverage, COVERAGE_CONFIG.trading, 'Trading Logic');
+    const riskResults = validateCoverage(riskCoverage, COVERAGE_CONFIG.risk, 'Risk Management');
+    
+    const allResults = [globalResults, tradingResults, riskResults];
+    const report = generateReport(allResults);
     
     // Save report for CI/CD
     const reportsDir = path.join(process.cwd(), 'coverage');
     fs.writeFileSync(path.join(reportsDir, 'enforcement-report.txt'), report);
     
     // Exit with appropriate code
-    const allPassed = results.every(r => r.passed);
+    const allPassed = allResults.every(r => r.passed);
     process.exit(allPassed ? 0 : 1);
     
-  } catch (error) {
-    console.error('❌ Coverage enforcement failed:', error.message);
+  } catch {
     process.exit(1);
   }
 }
 
-// Run if called directly
-if (require.main === module) {
-  enforceCoverage();
-}
+// Run the script
+enforceCoverage();
 
-module.exports = { enforceCoverage, COVERAGE_CONFIG }; 
+export { enforceCoverage, COVERAGE_CONFIG }; 

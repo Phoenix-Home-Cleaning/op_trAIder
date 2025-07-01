@@ -3,6 +3,7 @@
   "version": "1.0.0-alpha",
   "description": "Institutional-Grade Autonomous Crypto Trading Platform",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "node scripts/build-workaround.mjs",

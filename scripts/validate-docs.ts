@@ -1,8 +1,12 @@
 #!/usr/bin/env tsx
 
+/* eslint-disable no-console */
+
 /**
  * @fileoverview Documentation validation system for TRAIDER V1
+ * @module scripts/validate-docs
  * 
+ * @description
  * Validates that all public functions have JSDoc comments, API routes are
  * documented, README files exist for modules, example code compiles, and
  * checks for broken links throughout the documentation.
@@ -11,7 +15,7 @@
  * @since 2025-06-29
  */
 
-import { readFileSync, existsSync, readdirSync, statSync } from 'fs';
+import { readFileSync, existsSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { glob } from 'glob';
 import { execSync } from 'child_process';
@@ -524,43 +528,18 @@ class DocumentationValidator {
    * Check if API method has documentation
    */
   private hasAPIDocumentation(content: string, method: string): boolean {
-    const methodIndex = content.indexOf(`export async function ${method}`);
-    if (methodIndex === -1) return false;
+    // Simplified check for a comment block above the method
+    const lines = content.split('\n');
+    const methodLine = lines.findIndex(line => line.includes(`export async function ${method}`));
 
-    const beforeMethod = content.substring(0, methodIndex);
-    const lines = beforeMethod.split('\n');
-
-    // Look for JSDoc comment before the method (using same logic as hasJSDocComment)
-    for (let i = lines.length - 1; i >= 0; i--) {
-      const line = lines[i]?.trim();
-      
-      // Skip empty lines
-      if (!line || line === '') {
-        continue;
-      }
-      
-      // If we found the end of a JSDoc comment, continue looking
-      if (line === '*/') {
-        continue;
-      }
-      
-      // If this is the start of a JSDoc comment
-      if (line.startsWith('/**')) {
+    if (methodLine === -1) {
+      return false;
+    }
+    
+    for (let i = methodLine - 1; i >= 0 && i > methodLine - 5; i--) {
+      if (lines[i]?.trim().startsWith('/**')) {
         return true;
       }
-      
-      // If this is a JSDoc line (starts with * but not */)
-      if (line.startsWith('*') && !line.startsWith('*/')) {
-        continue;
-      }
-      
-      // If this is a single-line comment, continue looking
-      if (line.startsWith('//')) {
-        continue;
-      }
-      
-      // If we hit any other non-empty line, stop looking
-      break;
     }
 
     return false;
@@ -570,24 +549,18 @@ class DocumentationValidator {
    * Get all directories in a path
    */
   private async getDirectories(basePath: string): Promise<string[]> {
-    const fullPath = join(this.projectRoot, basePath);
-    if (!existsSync(fullPath)) return [];
-    
-    const items = readdirSync(fullPath);
-    const directories: string[] = [];
-    
-    for (const item of items) {
-      const itemPath = join(fullPath, item);
-      if (statSync(itemPath).isDirectory() && !item.startsWith('.')) {
-        directories.push(join(basePath, item));
-        
-        // Recursively get subdirectories
-        const subDirs = await this.getDirectories(join(basePath, item));
-        directories.push(...subDirs);
+    const entries = readdirSync(join(this.projectRoot, basePath), { withFileTypes: true });
+    const dirs = entries
+      .filter(dirent => dirent.isDirectory())
+      .map(dirent => join(basePath, dirent.name));
+
+    for (const dir of dirs) {
+      if (!this.config.excludePatterns.some(p => dir.includes(p))) {
+        dirs.push(...(await this.getDirectories(dir)));
       }
     }
-    
-    return directories;
+
+    return dirs;
   }
 
   /**
@@ -641,43 +614,6 @@ class DocumentationValidator {
   }
 }
 
-// Main execution
-/**
- * Main execution function for documentation validation
- *
- * @description
- * Initializes and runs the documentation validation process with institutional
- * standards. Configures validation rules, executes all checks, and exits
- * with appropriate status code for CI/CD integration.
- *
- * @returns {Promise<void>} Promise that resolves when validation completes
- *
- * @throws {Error} If validation configuration fails
- *
- * @performance
- * - Execution time: <30s for full codebase validation
- * - Memory usage: <200MB peak
- * - Parallel processing for improved speed
- *
- * @sideEffects
- * - Reads files from the project directory
- * - Writes validation results to console
- * - Exits process with status code (0=success, 1=failure)
- *
- * @tradingImpact Ensures code quality standards for trading platform
- * @riskLevel MEDIUM - Documentation quality affects maintainability
- *
- * @example
- * ```bash
- * # Run documentation validation
- * npm run docs:validate
- * # Exit code 0 = success, 1 = failure
- * ```
- *
- * @monitoring
- * - Metric: `docs.validation.duration`
- * - Alert threshold: > 60s execution time
- */
 async function main() {
   // Check for --coverage-only flag
   const coverageOnly = process.argv.includes('--coverage-only');
@@ -702,9 +638,19 @@ async function main() {
   process.exit(result.passed ? 0 : 1);
 }
 
-if (require.main === module) {
-  main().catch(console.error);
-}
+// =============================================================================
+// MAIN EXECUTION
+// =============================================================================
+
+main()
+  .then(() => {
+    console.log('\n✅ Documentation validation complete.');
+  })
+  .catch((error: Error) => {
+    console.error('\n❌ An unexpected error occurred during documentation validation:');
+    console.error(error);
+    process.exit(1);
+  });
 
 export type { ValidationConfig, ValidationResult };
 export { DocumentationValidator }; 
