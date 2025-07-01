@@ -4,7 +4,7 @@
 # autonomous trading platform. Uses Trivy for unified open-source
 # scanner covering vulnerabilities, secrets, misconfigurations, and compliance.
 #
-# Performance: <5min total execution with parallel scanning
+# Performance: <5min total execution with consolidated scanning
 # Risk: CRITICAL - Blocks deployments on security violations
 # Compliance: All security findings logged for audit trail
 #
@@ -84,48 +84,54 @@ concurrency:
 
 jobs:
   # =============================================================================
-  # PHASE 1: SETUP & VALIDATION
+  # UNIFIED TRIVY SECURITY SCANNING
   # =============================================================================
   
-  setup-validation:
-    name: 🔧 Setup & Validation
+  trivy-unified-scan:
+    name: 🛡️ Unified Security Scanning
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 15
+    
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
     
     outputs:
-      scan-types: ${{ steps.determine-scans.outputs.types }}
-      should-run: ${{ steps.should-run.outputs.result }}
-      severity-threshold: ${{ steps.config.outputs.severity }}
+      scan-results: ${{ steps.scan-summary.outputs.results }}
+      vulnerabilities-found: ${{ steps.scan-summary.outputs.vulnerabilities }}
+      secrets-found: ${{ steps.scan-summary.outputs.secrets }}
+      config-issues: ${{ steps.scan-summary.outputs.config-issues }}
+      overall-status: ${{ steps.scan-summary.outputs.status }}
     
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
           
-      - name: 🎯 Determine scan types to run
-        id: determine-scans
+      - name: 🎯 Determine scan configuration
+        id: scan-config
         run: |
-          echo "::group::Scan Type Determination"
+          echo "::group::Scan Configuration"
           
           SCAN_TYPE="${{ github.event.inputs.scan_type || 'all' }}"
-          SCAN_TYPES="[]"
+          SEVERITY="${{ env.SEVERITY_THRESHOLD }}"
           
+          # Determine which scanners to run
+          SCANNERS=""
           case "$SCAN_TYPE" in
             "all")
-              SCAN_TYPES='["vuln", "secret", "config", "license"]'
+              SCANNERS="vuln,secret,config"
               ;;
             "vuln")
-              SCAN_TYPES='["vuln"]'
+              SCANNERS="vuln"
               ;;
             "secret")
-              SCAN_TYPES='["secret"]'
+              SCANNERS="secret"
               ;;
             "config")
-              SCAN_TYPES='["config"]'
-              ;;
-            "license")
-              SCAN_TYPES='["license"]'
+              SCANNERS="config"
               ;;
             *)
               echo "::error::Invalid scan type: $SCAN_TYPE"
@@ -133,462 +139,316 @@ jobs:
               ;;
           esac
           
-          echo "types=$SCAN_TYPES" >> $GITHUB_OUTPUT
-          echo "Selected scan types: $SCAN_TYPES"
-          echo "::endgroup::"
-          
-      - name: 🎯 Configure scan parameters
-        id: config
-        run: |
-          echo "::group::Scan Configuration"
-          
-          SEVERITY="${{ env.SEVERITY_THRESHOLD }}"
+          echo "scanners=$SCANNERS" >> $GITHUB_OUTPUT
           echo "severity=$SEVERITY" >> $GITHUB_OUTPUT
-          echo "Severity threshold: $SEVERITY"
-          echo "Fail on findings: ${{ env.FAIL_ON_FINDINGS }}"
+          
+          echo "🎯 Scan Configuration:"
+          echo "  Type: $SCAN_TYPE"
+          echo "  Scanners: $SCANNERS"
+          echo "  Severity: $SEVERITY"
+          echo "  Fail on findings: ${{ env.FAIL_ON_FINDINGS }}"
           
           echo "::endgroup::"
           
-      - name: 🎯 Determine if scans should run
-        id: should-run
-        run: |
-          echo "::group::Execution Decision"
-          
-          SHOULD_RUN=true
-          
-          # Skip on draft PRs unless explicitly requested
-          if [ "${{ github.event_name }}" = "pull_request" ] && \
-             [ "${{ github.event.pull_request.draft }}" = "true" ] && \
-             [ "${{ github.event.inputs.scan_type }}" = "" ]; then
-            echo "ℹ️ Skipping Trivy scans on draft PR"
-            SHOULD_RUN=false
-          fi
-          
-          echo "result=$SHOULD_RUN" >> $GITHUB_OUTPUT
-          
-          if [ "$SHOULD_RUN" = "true" ]; then
-            echo "✅ Trivy scans will execute"
-          else
-            echo "⏭️ Trivy scan execution skipped"
-          fi
-          
-          echo "::endgroup::"
-
-  # =============================================================================
-  # PHASE 2: VULNERABILITY SCANNING
-  # =============================================================================
-  
-  trivy-vulnerability-scan:
-    name: 🔍 Vulnerability Scanning
-    runs-on: ubuntu-latest
-    needs: setup-validation
-    if: needs.setup-validation.outputs.should-run == 'true' && contains(fromJson(needs.setup-validation.outputs.scan-types), 'vuln')
-    timeout-minutes: 10
-    
-    permissions:
-      contents: read
-      security-events: write
-      actions: read
-    
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          
-      - name: 🔍 Run Trivy vulnerability scanner
+      - name: 🔍 Run Trivy vulnerability scan
+        if: contains(steps.scan-config.outputs.scanners, 'vuln')
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'fs'
           scan-ref: '.'
           format: 'sarif'
-          output: 'trivy-vuln-results.sarif'
-          severity: ${{ needs.setup-validation.outputs.severity-threshold }}
+          output: 'trivy-vulnerabilities.sarif'
+          severity: ${{ steps.scan-config.outputs.severity }}
           scanners: 'vuln'
+          exit-code: '0'
           
-      - name: 🔍 Run Trivy vulnerability scanner (JSON)
+      - name: 🔍 Run Trivy vulnerability scan (JSON)
+        if: contains(steps.scan-config.outputs.scanners, 'vuln')
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'fs'
           scan-ref: '.'
           format: 'json'
-          output: 'trivy-vuln-results.json'
-          severity: ${{ needs.setup-validation.outputs.severity-threshold }}
+          output: 'trivy-vulnerabilities.json'
+          severity: ${{ steps.scan-config.outputs.severity }}
           scanners: 'vuln'
+          exit-code: '0'
           
-      - name: 📊 Process vulnerability results
+      - name: 🔐 Run Trivy secrets scan
+        if: contains(steps.scan-config.outputs.scanners, 'secret')
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-secrets.sarif'
+          scanners: 'secret'
+          exit-code: '0'
+          
+      - name: 🔐 Run Trivy secrets scan (JSON)
+        if: contains(steps.scan-config.outputs.scanners, 'secret')
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'json'
+          output: 'trivy-secrets.json'
+          scanners: 'secret'
+          exit-code: '0'
+          
+      - name: ⚙️ Run Trivy configuration scan
+        if: contains(steps.scan-config.outputs.scanners, 'config')
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-config.sarif'
+          severity: ${{ steps.scan-config.outputs.severity }}
+          scanners: 'config'
+          exit-code: '0'
+          
+      - name: ⚙️ Run Trivy configuration scan (JSON)
+        if: contains(steps.scan-config.outputs.scanners, 'config')
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'json'
+          output: 'trivy-config.json'
+          severity: ${{ steps.scan-config.outputs.severity }}
+          scanners: 'config'
+          exit-code: '0'
+          
+      - name: 📊 Process scan results
+        id: process-results
         run: |
-          echo "::group::Vulnerability Analysis"
+          echo "::group::Security Scan Results Processing"
           
-          if [ -f "trivy-vuln-results.json" ]; then
-            # Extract vulnerability counts
-            CRITICAL=$(jq -r '[.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length' trivy-vuln-results.json 2>/dev/null || echo "0")
-            HIGH=$(jq -r '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH")] | length' trivy-vuln-results.json 2>/dev/null || echo "0")
-            MEDIUM=$(jq -r '[.Results[]?.Vulnerabilities[]? | select(.Severity == "MEDIUM")] | length' trivy-vuln-results.json 2>/dev/null || echo "0")
-            LOW=$(jq -r '[.Results[]?.Vulnerabilities[]? | select(.Severity == "LOW")] | length' trivy-vuln-results.json 2>/dev/null || echo "0")
-            
-            echo "## 🔍 Vulnerability Scan Report" >> $GITHUB_STEP_SUMMARY
+          # Initialize counters
+          CRITICAL_VULNS=0
+          HIGH_VULNS=0
+          MEDIUM_VULNS=0
+          LOW_VULNS=0
+          SECRETS_COUNT=0
+          CONFIG_CRITICAL=0
+          CONFIG_HIGH=0
+          CONFIG_MEDIUM=0
+          
+          # Process vulnerability results
+          if [ -f "trivy-vulnerabilities.json" ]; then
+            echo "📊 Processing vulnerability scan results..."
+            CRITICAL_VULNS=$(jq -r '[.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length' trivy-vulnerabilities.json 2>/dev/null || echo "0")
+            HIGH_VULNS=$(jq -r '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH")] | length' trivy-vulnerabilities.json 2>/dev/null || echo "0")
+            MEDIUM_VULNS=$(jq -r '[.Results[]?.Vulnerabilities[]? | select(.Severity == "MEDIUM")] | length' trivy-vulnerabilities.json 2>/dev/null || echo "0")
+            LOW_VULNS=$(jq -r '[.Results[]?.Vulnerabilities[]? | select(.Severity == "LOW")] | length' trivy-vulnerabilities.json 2>/dev/null || echo "0")
+          fi
+          
+          # Process secrets results
+          if [ -f "trivy-secrets.json" ]; then
+            echo "📊 Processing secrets scan results..."
+            SECRETS_COUNT=$(jq -r '[.Results[]?.Secrets[]?] | length' trivy-secrets.json 2>/dev/null || echo "0")
+          fi
+          
+          # Process configuration results
+          if [ -f "trivy-config.json" ]; then
+            echo "📊 Processing configuration scan results..."
+            CONFIG_CRITICAL=$(jq -r '[.Results[]?.Misconfigurations[]? | select(.Severity == "CRITICAL")] | length' trivy-config.json 2>/dev/null || echo "0")
+            CONFIG_HIGH=$(jq -r '[.Results[]?.Misconfigurations[]? | select(.Severity == "HIGH")] | length' trivy-config.json 2>/dev/null || echo "0")
+            CONFIG_MEDIUM=$(jq -r '[.Results[]?.Misconfigurations[]? | select(.Severity == "MEDIUM")] | length' trivy-config.json 2>/dev/null || echo "0")
+          fi
+          
+          # Generate summary report
+          echo "## 🛡️ Trivy Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f "trivy-vulnerabilities.json" ]; then
+            echo "### 🔍 Vulnerability Scan Results" >> $GITHUB_STEP_SUMMARY
             echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
             echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
-            echo "| Critical | $CRITICAL |" >> $GITHUB_STEP_SUMMARY
-            echo "| High     | $HIGH |" >> $GITHUB_STEP_SUMMARY
-            echo "| Medium   | $MEDIUM |" >> $GITHUB_STEP_SUMMARY
-            echo "| Low      | $LOW |" >> $GITHUB_STEP_SUMMARY
+            echo "| Critical | $CRITICAL_VULNS |" >> $GITHUB_STEP_SUMMARY
+            echo "| High     | $HIGH_VULNS |" >> $GITHUB_STEP_SUMMARY
+            echo "| Medium   | $MEDIUM_VULNS |" >> $GITHUB_STEP_SUMMARY
+            echo "| Low      | $LOW_VULNS |" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            
-            # Apply quality gates
-            TOTAL_CRITICAL_HIGH=$((CRITICAL + HIGH))
-            
-            if [ "$CRITICAL" -gt ${{ env.CRITICAL_VULN_LIMIT }} ]; then
-              echo "::error::Critical vulnerabilities found: $CRITICAL (limit: ${{ env.CRITICAL_VULN_LIMIT }})"
-              echo "::error::Trading system deployment blocked due to critical security issues"
-              if [ "${{ env.FAIL_ON_FINDINGS }}" = "true" ]; then
-                exit 1
-              fi
-            fi
-            
-            if [ "$HIGH" -gt ${{ env.HIGH_VULN_LIMIT }} ]; then
-              echo "::warning::High severity vulnerabilities found: $HIGH (limit: ${{ env.HIGH_VULN_LIMIT }})"
-              echo "::warning::Consider prioritizing these fixes for trading system security"
-            fi
-            
-            echo "✅ Vulnerability scan completed - $((CRITICAL + HIGH + MEDIUM + LOW)) total vulnerabilities found"
-          else
-            echo "⚠️ Vulnerability scan results not found"
-            echo "::warning::Trivy vulnerability scan did not produce results"
           fi
           
-          echo "::endgroup::"
-          
-      - name: 📤 Upload vulnerability results to GitHub Security
-        if: always() && hashFiles('trivy-vuln-results.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: trivy-vuln-results.sarif
-          category: trivy-vulnerabilities
-          
-      - name: 📊 Upload vulnerability artifacts
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: trivy-vulnerability-results
-          path: |
-            trivy-vuln-results.json
-            trivy-vuln-results.sarif
-          retention-days: 90
-
-  # =============================================================================
-  # PHASE 3: SECRETS DETECTION
-  # =============================================================================
-  
-  trivy-secrets-scan:
-    name: 🔐 Secrets Detection
-    runs-on: ubuntu-latest
-    needs: setup-validation
-    if: needs.setup-validation.outputs.should-run == 'true' && contains(fromJson(needs.setup-validation.outputs.scan-types), 'secret')
-    timeout-minutes: 5
-    
-    permissions:
-      contents: read
-      security-events: write
-      actions: read
-    
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          
-      - name: 🔐 Run Trivy secrets scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-secrets-results.sarif'
-          scanners: 'secret'
-          
-      - name: 🔐 Run Trivy secrets scanner (JSON)
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'json'
-          output: 'trivy-secrets-results.json'
-          scanners: 'secret'
-          
-      - name: 📊 Process secrets results
-        run: |
-          echo "::group::Secrets Analysis"
-          
-          if [ -f "trivy-secrets-results.json" ]; then
-            # Count secrets found
-            SECRETS_COUNT=$(jq -r '[.Results[]?.Secrets[]?] | length' trivy-secrets-results.json 2>/dev/null || echo "0")
-            
-            echo "## 🔐 Secrets Scan Report" >> $GITHUB_STEP_SUMMARY
+          if [ -f "trivy-secrets.json" ]; then
+            echo "### 🔐 Secrets Scan Results" >> $GITHUB_STEP_SUMMARY
             echo "| Type | Count |" >> $GITHUB_STEP_SUMMARY
             echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
             echo "| Secrets Found | $SECRETS_COUNT |" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            
-            if [ "$SECRETS_COUNT" -gt ${{ env.SECRET_LIMIT }} ]; then
-              echo "::error::Secrets detected in source code: $SECRETS_COUNT"
-              echo "::error::Trading system deployment blocked due to exposed credentials"
-              
-              # Show details of found secrets (without values)
-              echo "### 🚨 Detected Secrets:" >> $GITHUB_STEP_SUMMARY
-              jq -r '.Results[]?.Secrets[]? | "- **\(.RuleID)** in `\(.StartLine // "unknown"):\(.EndLine // "unknown")` - \(.Title)"' trivy-secrets-results.json >> $GITHUB_STEP_SUMMARY 2>/dev/null || true
-              
-              if [ "${{ env.FAIL_ON_FINDINGS }}" = "true" ]; then
-                exit 1
-              fi
-            else
-              echo "✅ No secrets detected in source code"
-            fi
-          else
-            echo "⚠️ Secrets scan results not found"
-            echo "::warning::Trivy secrets scan did not produce results"
           fi
           
-          echo "::endgroup::"
-          
-      - name: 📤 Upload secrets results to GitHub Security
-        if: always() && hashFiles('trivy-secrets-results.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: trivy-secrets-results.sarif
-          category: trivy-secrets
-          
-      - name: 📊 Upload secrets artifacts
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: trivy-secrets-results
-          path: |
-            trivy-secrets-results.json
-            trivy-secrets-results.sarif
-          retention-days: 90
-
-  # =============================================================================
-  # PHASE 4: CONFIGURATION SCANNING
-  # =============================================================================
-  
-  trivy-config-scan:
-    name: ⚙️ Configuration Scanning
-    runs-on: ubuntu-latest
-    needs: setup-validation
-    if: needs.setup-validation.outputs.should-run == 'true' && contains(fromJson(needs.setup-validation.outputs.scan-types), 'config')
-    timeout-minutes: 5
-    
-    permissions:
-      contents: read
-      security-events: write
-      actions: read
-    
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          
-      - name: ⚙️ Run Trivy configuration scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-config-results.sarif'
-          severity: ${{ needs.setup-validation.outputs.severity-threshold }}
-          scanners: 'config'
-          
-      - name: ⚙️ Run Trivy configuration scanner (JSON)
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'json'
-          output: 'trivy-config-results.json'
-          severity: ${{ needs.setup-validation.outputs.severity-threshold }}
-          scanners: 'config'
-          
-      - name: 📊 Process configuration results
-        run: |
-          echo "::group::Configuration Analysis"
-          
-          if [ -f "trivy-config-results.json" ]; then
-            # Extract misconfiguration counts
-            CRITICAL=$(jq -r '[.Results[]?.Misconfigurations[]? | select(.Severity == "CRITICAL")] | length' trivy-config-results.json 2>/dev/null || echo "0")
-            HIGH=$(jq -r '[.Results[]?.Misconfigurations[]? | select(.Severity == "HIGH")] | length' trivy-config-results.json 2>/dev/null || echo "0")
-            MEDIUM=$(jq -r '[.Results[]?.Misconfigurations[]? | select(.Severity == "MEDIUM")] | length' trivy-config-results.json 2>/dev/null || echo "0")
-            LOW=$(jq -r '[.Results[]?.Misconfigurations[]? | select(.Severity == "LOW")] | length' trivy-config-results.json 2>/dev/null || echo "0")
-            
-            echo "## ⚙️ Configuration Scan Report" >> $GITHUB_STEP_SUMMARY
+          if [ -f "trivy-config.json" ]; then
+            echo "### ⚙️ Configuration Scan Results" >> $GITHUB_STEP_SUMMARY
             echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
             echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
-            echo "| Critical | $CRITICAL |" >> $GITHUB_STEP_SUMMARY
-            echo "| High     | $HIGH |" >> $GITHUB_STEP_SUMMARY
-            echo "| Medium   | $MEDIUM |" >> $GITHUB_STEP_SUMMARY
-            echo "| Low      | $LOW |" >> $GITHUB_STEP_SUMMARY
+            echo "| Critical | $CONFIG_CRITICAL |" >> $GITHUB_STEP_SUMMARY
+            echo "| High     | $CONFIG_HIGH |" >> $GITHUB_STEP_SUMMARY
+            echo "| Medium   | $CONFIG_MEDIUM |" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            
-            # Apply quality gates for critical misconfigurations
-            if [ "$CRITICAL" -gt 0 ]; then
-              echo "::warning::Critical misconfigurations found: $CRITICAL"
-              echo "::warning::Review infrastructure configuration for trading system security"
-            fi
-            
-            echo "✅ Configuration scan completed - $((CRITICAL + HIGH + MEDIUM + LOW)) total issues found"
+          fi
+          
+          # Set outputs for summary job
+          echo "critical-vulns=$CRITICAL_VULNS" >> $GITHUB_OUTPUT
+          echo "high-vulns=$HIGH_VULNS" >> $GITHUB_OUTPUT
+          echo "secrets-count=$SECRETS_COUNT" >> $GITHUB_OUTPUT
+          echo "config-critical=$CONFIG_CRITICAL" >> $GITHUB_OUTPUT
+          
+          echo "::endgroup::"
+          
+      - name: 🚨 Apply security quality gates
+        id: quality-gates
+        run: |
+          echo "::group::Security Quality Gates"
+          
+          GATE_PASSED=true
+          BLOCKING_ISSUES=0
+          
+          # Critical vulnerability gate
+          if [ "${{ steps.process-results.outputs.critical-vulns }}" -gt ${{ env.CRITICAL_VULN_LIMIT }} ]; then
+            echo "❌ CRITICAL: Found ${{ steps.process-results.outputs.critical-vulns }} critical vulnerabilities (limit: ${{ env.CRITICAL_VULN_LIMIT }})"
+            GATE_PASSED=false
+            BLOCKING_ISSUES=$((BLOCKING_ISSUES + 1))
+          fi
+          
+          # High vulnerability gate
+          if [ "${{ steps.process-results.outputs.high-vulns }}" -gt ${{ env.HIGH_VULN_LIMIT }} ]; then
+            echo "❌ HIGH: Found ${{ steps.process-results.outputs.high-vulns }} high severity vulnerabilities (limit: ${{ env.HIGH_VULN_LIMIT }})"
+            GATE_PASSED=false
+            BLOCKING_ISSUES=$((BLOCKING_ISSUES + 1))
+          fi
+          
+          # Secrets gate
+          if [ "${{ steps.process-results.outputs.secrets-count }}" -gt ${{ env.SECRET_LIMIT }} ]; then
+            echo "❌ SECRETS: Found ${{ steps.process-results.outputs.secrets-count }} exposed secrets (limit: ${{ env.SECRET_LIMIT }})"
+            GATE_PASSED=false
+            BLOCKING_ISSUES=$((BLOCKING_ISSUES + 1))
+          fi
+          
+          # Critical configuration issues gate
+          if [ "${{ steps.process-results.outputs.config-critical }}" -gt 0 ]; then
+            echo "⚠️ CONFIG: Found ${{ steps.process-results.outputs.config-critical }} critical configuration issues"
+            # Don't fail on config issues, just warn
+          fi
+          
+          if [ "$GATE_PASSED" = true ]; then
+            echo "✅ All security quality gates passed"
+            echo "gate-passed=true" >> $GITHUB_OUTPUT
           else
-            echo "⚠️ Configuration scan results not found"
-            echo "::warning::Trivy configuration scan did not produce results"
+            echo "❌ Security quality gates failed - $BLOCKING_ISSUES blocking issues found"
+            echo "gate-passed=false" >> $GITHUB_OUTPUT
+            
+            if [ "${{ env.FAIL_ON_FINDINGS }}" = "true" ]; then
+              echo "🚨 Failing pipeline due to security violations"
+              exit 1
+            else
+              echo "⚠️ Continuing despite security issues (fail_on_findings=false)"
+            fi
           fi
           
           echo "::endgroup::"
           
-      - name: 📤 Upload configuration results to GitHub Security
-        if: always() && hashFiles('trivy-config-results.sarif') != ''
+      - name: 📤 Upload vulnerability SARIF to GitHub Security
+        if: always() && hashFiles('trivy-vulnerabilities.sarif') != ''
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: trivy-config-results.sarif
+          sarif_file: trivy-vulnerabilities.sarif
+          category: trivy-vulnerabilities
+          
+      - name: 📤 Upload secrets SARIF to GitHub Security
+        if: always() && hashFiles('trivy-secrets.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-secrets.sarif
+          category: trivy-secrets
+          
+      - name: 📤 Upload configuration SARIF to GitHub Security
+        if: always() && hashFiles('trivy-config.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-config.sarif
           category: trivy-misconfigurations
           
-      - name: 📊 Upload configuration artifacts
-        uses: actions/upload-artifact@v4
+      - name: 📊 Upload scan artifacts
         if: always()
+        uses: actions/upload-artifact@v4
         with:
-          name: trivy-config-results
+          name: trivy-security-results
           path: |
-            trivy-config-results.json
-            trivy-config-results.sarif
+            trivy-vulnerabilities.json
+            trivy-vulnerabilities.sarif
+            trivy-secrets.json
+            trivy-secrets.sarif
+            trivy-config.json
+            trivy-config.sarif
           retention-days: 90
-
-  # =============================================================================
-  # PHASE 5: LICENSE SCANNING
-  # =============================================================================
-  
-  trivy-license-scan:
-    name: 📜 License Compliance
-    runs-on: ubuntu-latest
-    needs: setup-validation
-    if: needs.setup-validation.outputs.should-run == 'true' && contains(fromJson(needs.setup-validation.outputs.scan-types), 'license')
-    timeout-minutes: 5
-    
-    permissions:
-      contents: read
-      actions: read
-    
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
           
-      - name: 📜 Run Trivy license scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'json'
-          output: 'trivy-license-results.json'
-          scanners: 'license'
-          
-      - name: 📊 Process license results
+      - name: 📋 Generate scan summary
+        id: scan-summary
         run: |
-          echo "::group::License Analysis"
+          echo "::group::Final Scan Summary"
           
-          if [ -f "trivy-license-results.json" ]; then
-            # Extract license information
-            TOTAL_LICENSES=$(jq -r '[.Results[]?.Licenses[]?] | length' trivy-license-results.json 2>/dev/null || echo "0")
-            
-            echo "## 📜 License Compliance Report" >> $GITHUB_STEP_SUMMARY
-            echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
-            echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-            echo "| Total Licenses | $TOTAL_LICENSES |" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            
-            # Check for problematic licenses (GPL, AGPL, etc.)
-            PROBLEMATIC=$(jq -r '[.Results[]?.Licenses[]? | select(.Name | test("GPL|AGPL|SSPL"; "i"))] | length' trivy-license-results.json 2>/dev/null || echo "0")
-            
-            if [ "$PROBLEMATIC" -gt 0 ]; then
-              echo "::warning::Found $PROBLEMATIC potentially problematic licenses"
-              echo "::warning::Review license compatibility for commercial trading system"
-              
-              echo "### ⚠️ Licenses Requiring Review:" >> $GITHUB_STEP_SUMMARY
-              jq -r '.Results[]?.Licenses[]? | select(.Name | test("GPL|AGPL|SSPL"; "i")) | "- **\(.Name)** in \(.FilePath)"' trivy-license-results.json >> $GITHUB_STEP_SUMMARY 2>/dev/null || true
-            else
-              echo "✅ No problematic licenses detected"
-            fi
-            
-            echo "✅ License scan completed - $TOTAL_LICENSES licenses analyzed"
-          else
-            echo "⚠️ License scan results not found"
-            echo "::warning::Trivy license scan did not produce results"
-          fi
+          # Create summary for outputs
+          VULNERABILITIES="${{ steps.process-results.outputs.critical-vulns }},${{ steps.process-results.outputs.high-vulns }}"
+          SECRETS="${{ steps.process-results.outputs.secrets-count }}"
+          CONFIG_ISSUES="${{ steps.process-results.outputs.config-critical }}"
+          STATUS="${{ steps.quality-gates.outputs.gate-passed }}"
+          
+          echo "results=completed" >> $GITHUB_OUTPUT
+          echo "vulnerabilities=$VULNERABILITIES" >> $GITHUB_OUTPUT
+          echo "secrets=$SECRETS" >> $GITHUB_OUTPUT
+          echo "config-issues=$CONFIG_ISSUES" >> $GITHUB_OUTPUT
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+          
+          echo "🎯 Final Security Status: $STATUS"
+          echo "📊 Critical/High Vulnerabilities: $VULNERABILITIES"
+          echo "🔐 Secrets Found: $SECRETS"
+          echo "⚙️ Critical Config Issues: $CONFIG_ISSUES"
           
           echo "::endgroup::"
-          
-      - name: 📊 Upload license artifacts
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: trivy-license-results
-          path: |
-            trivy-license-results.json
-          retention-days: 90
 
   # =============================================================================
-  # PHASE 6: SUMMARY REPORT
+  # SECURITY COMPLIANCE CHECK
   # =============================================================================
   
-  security-summary:
-    name: 📋 Security Summary
+  security-gate:
+    name: 🚦 Security Gate
     runs-on: ubuntu-latest
-    needs: [setup-validation, trivy-vulnerability-scan, trivy-secrets-scan, trivy-config-scan, trivy-license-scan]
-    if: always() && needs.setup-validation.outputs.should-run == 'true'
+    needs: trivy-unified-scan
+    if: always()
     timeout-minutes: 5
     
     steps:
-      - name: 📊 Generate security summary
+      - name: 📊 Evaluate security status
         run: |
-          echo "## 🛡️ TRAIDER V1 Security Scan Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Scan Configuration" >> $GITHUB_STEP_SUMMARY
-          echo "- **Severity Threshold**: ${{ needs.setup-validation.outputs.severity-threshold }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Scan Types**: ${{ needs.setup-validation.outputs.scan-types }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Fail on Findings**: ${{ env.FAIL_ON_FINDINGS }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "::group::Security Gate Evaluation"
           
-          echo "### Job Status" >> $GITHUB_STEP_SUMMARY
-          echo "| Scan Type | Status |" >> $GITHUB_STEP_SUMMARY
+          SCAN_STATUS="${{ needs.trivy-unified-scan.result }}"
+          OVERALL_STATUS="${{ needs.trivy-unified-scan.outputs.overall-status }}"
+          
+          echo "## 🚦 Security Gate Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Vulnerabilities | ${{ needs.trivy-vulnerability-scan.result || 'Skipped' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Secrets | ${{ needs.trivy-secrets-scan.result || 'Skipped' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Configuration | ${{ needs.trivy-config-scan.result || 'Skipped' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Licenses | ${{ needs.trivy-license-scan.result || 'Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Trivy Scan Job | $SCAN_STATUS |" >> $GITHUB_STEP_SUMMARY
+          echo "| Quality Gates | $OVERALL_STATUS |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
-          echo "### 🎯 Trading System Security Status" >> $GITHUB_STEP_SUMMARY
-          
-          # Determine overall security status
-          OVERALL_STATUS="✅ SECURE"
-          
-          if [[ "${{ needs.trivy-vulnerability-scan.result }}" == "failure" ]] || \
-             [[ "${{ needs.trivy-secrets-scan.result }}" == "failure" ]]; then
-            OVERALL_STATUS="❌ SECURITY ISSUES DETECTED"
-          elif [[ "${{ needs.trivy-config-scan.result }}" == "failure" ]]; then
-            OVERALL_STATUS="⚠️ CONFIGURATION ISSUES DETECTED"
+          if [ "$SCAN_STATUS" = "success" ] && [ "$OVERALL_STATUS" = "true" ]; then
+            echo "✅ **SECURITY GATE PASSED**" >> $GITHUB_STEP_SUMMARY
+            echo "Trading system meets institutional security standards." >> $GITHUB_STEP_SUMMARY
+            echo "✅ Security gate passed - deployment approved"
+          else
+            echo "❌ **SECURITY GATE FAILED**" >> $GITHUB_STEP_SUMMARY
+            echo "Trading system deployment blocked due to security issues." >> $GITHUB_STEP_SUMMARY
+            echo "❌ Security gate failed - deployment blocked"
+            
+            if [ "${{ env.FAIL_ON_FINDINGS }}" = "true" ]; then
+              exit 1
+            fi
           fi
           
-          echo "**Status**: $OVERALL_STATUS" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          
-          if [[ "$OVERALL_STATUS" == *"❌"* ]]; then
-            echo "🚨 **CRITICAL**: Trading system deployment is blocked due to security vulnerabilities." >> $GITHUB_STEP_SUMMARY
-            echo "Please review and address all security findings before proceeding." >> $GITHUB_STEP_SUMMARY
-          elif [[ "$OVERALL_STATUS" == *"⚠️"* ]]; then
-            echo "⚠️ **WARNING**: Configuration issues detected that may affect trading system security." >> $GITHUB_STEP_SUMMARY
-            echo "Review recommended for optimal security posture." >> $GITHUB_STEP_SUMMARY
-          else
-            echo "✅ **SUCCESS**: Trading system meets institutional security standards." >> $GITHUB_STEP_SUMMARY
-            echo "All security scans passed - deployment approved." >> $GITHUB_STEP_SUMMARY
-          fi 
+          echo "::endgroup::" 

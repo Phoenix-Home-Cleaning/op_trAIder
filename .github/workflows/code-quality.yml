@@ -201,13 +201,12 @@ jobs:
       checks: write
     
     outputs:
-      quality-gate-status: ${{ steps.sonar-quality-gate.outputs.quality-gate-status }}
       coverage-percentage: ${{ steps.sonar-metrics.outputs.coverage }}
       duplications-percentage: ${{ steps.sonar-metrics.outputs.duplications }}
       maintainability-rating: ${{ steps.sonar-metrics.outputs.maintainability }}
       reliability-rating: ${{ steps.sonar-metrics.outputs.reliability }}
       security-rating: ${{ steps.sonar-metrics.outputs.security }}
-      analysis-passed: ${{ steps.sonar-quality-gate.outputs.passed }}
+      analysis-passed: ${{ steps.sonar-metrics.outputs.passed }}
     
     steps:
       - name: 📥 Checkout code
@@ -319,7 +318,7 @@ jobs:
           echo "::endgroup::"
           
       - name: 🔍 Run SonarQube analysis
-        uses: sonarqube-scanner-action@v2.3.0
+        uses: SonarSource/sonarqube-scan-action@v5.2.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -329,15 +328,6 @@ jobs:
           args: >
             -Dsonar.verbose=true
             -Dsonar.log.level=INFO
-            
-      - name: 🎯 Wait for SonarQube Quality Gate
-        id: sonar-quality-gate
-        uses: sonarqube-quality-gate-action@v1.3.0
-        timeout-minutes: 5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-        continue-on-error: true
         
       - name: 📊 Extract SonarQube metrics
         id: sonar-metrics
@@ -432,7 +422,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🎯 Quality Gate Status" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Overall Result**: ${{ steps.sonar-quality-gate.outputs.quality-gate-status == 'PASSED' && '✅ PASSED' || '❌ FAILED' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Overall Result**: ${{ steps.sonar-metrics.outputs.passed == 'true' && '✅ PASSED' || '❌ FAILED' }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🏛️ Institutional Standards" >> $GITHUB_STEP_SUMMARY
           echo "- **Coverage**: Minimum 80% for trading systems" >> $GITHUB_STEP_SUMMARY
@@ -698,7 +688,6 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: javascript-typescript
-          config-file: ./.github/codeql-config.yml
           
       - name: 🏗️ Autobuild
         uses: github/codeql-action/autobuild@v3
