@@ -1,0 +1,450 @@
+# 🔄 TRAIDER V1 - Renovate Dependency Management Pipeline
+#
+# Institutional-grade automated dependency management for autonomous trading platform.
+# Integrates with security scanning, quality gates, and compliance validation.
+#
+# Performance: <5min execution with intelligent batching
+# Risk: MEDIUM - Automated dependency updates with security validation
+# Compliance: All dependency changes logged and audited
+#
+# See: docs/infrastructure/renovate-setup.md
+# Author: TRAIDER Team
+# Since: 1.0.0-alpha
+
+name: 🔄 Renovate Dependency Management
+
+on:
+  schedule:
+    # Run Renovate Monday-Friday at 06:00 UTC (before market open)
+    - cron: '0 6 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      log_level:
+        description: 'Log level for Renovate'
+        required: true
+        default: 'info'
+        type: choice
+        options:
+          - debug
+          - info
+          - warn
+          - error
+      dry_run:
+        description: 'Dry run mode (no PRs created)'
+        required: false
+        default: false
+        type: boolean
+      force_refresh:
+        description: 'Force refresh all dependencies'
+        required: false
+        default: false
+        type: boolean
+
+# Global environment variables
+env:
+  RENOVATE_PLATFORM: github
+  RENOVATE_AUTODISCOVER: true
+  RENOVATE_AUTODISCOVER_FILTER: ${{ github.repository }}
+  RENOVATE_DRY_RUN: ${{ github.event.inputs.dry_run == 'true' }}
+  LOG_LEVEL: ${{ github.event.inputs.log_level || 'info' }}
+  
+  # === Security & Compliance ===
+  RENOVATE_REQUIRE_CONFIG: optional
+  RENOVATE_CONFIG_FILE: renovate.json
+  RENOVATE_SECURITY_ADVISORY_ENABLED: true
+  RENOVATE_VULNERABILITY_ALERTS: true
+  
+  # === Performance Optimization ===
+  RENOVATE_PR_CONCURRENT_LIMIT: 5
+  RENOVATE_PR_HOURLY_LIMIT: 2
+  RENOVATE_BRANCH_CONCURRENT_LIMIT: 10
+  
+  # === Quality Gates ===
+  RENOVATE_REQUIRE_STATUS_CHECKS: true
+  RENOVATE_IGNORE_TESTS: false
+  RENOVATE_RESPECT_LATEST: true
+
+# Ensure only one Renovate workflow runs at a time
+concurrency:
+  group: renovate-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  # =============================================================================
+  # PHASE 1: PRE-FLIGHT VALIDATION
+  # =============================================================================
+  
+  preflight-validation:
+    name: 🔍 Pre-flight Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    outputs:
+      config-valid: ${{ steps.validate-config.outputs.valid }}
+      token-valid: ${{ steps.validate-token.outputs.valid }}
+      should-run: ${{ steps.should-run.outputs.result }}
+    
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          
+      - name: 🔍 Validate Renovate configuration
+        id: validate-config
+        run: |
+          echo "::group::Renovate Configuration Validation"
+          
+          if [ ! -f "renovate.json" ]; then
+            echo "::error::renovate.json configuration file not found"
+            echo "valid=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          # Validate JSON syntax
+          if ! jq empty renovate.json 2>/dev/null; then
+            echo "::error::renovate.json contains invalid JSON syntax"
+            echo "valid=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          # Check for required configuration
+          REQUIRED_FIELDS=(
+            ".schedule"
+            ".packageRules"
+            ".vulnerabilityAlerts"
+            ".dependencyDashboard"
+          )
+          
+          for field in "${REQUIRED_FIELDS[@]}"; do
+            if ! jq -e "$field" renovate.json >/dev/null 2>&1; then
+              echo "::error::Required field $field missing from renovate.json"
+              echo "valid=false" >> $GITHUB_OUTPUT
+              exit 1
+            fi
+          done
+          
+          echo "✅ Renovate configuration is valid"
+          echo "valid=true" >> $GITHUB_OUTPUT
+          echo "::endgroup::"
+          
+      - name: 🔐 Validate GitHub token permissions
+        id: validate-token
+        env:
+          GITHUB_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
+        run: |
+          echo "::group::GitHub Token Validation"
+          
+          if [ -z "$GITHUB_TOKEN" ]; then
+            echo "::error::RENOVATE_TOKEN secret not configured"
+            echo "valid=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          # Test token permissions
+          if ! curl -s -H "Authorization: token $GITHUB_TOKEN" \
+               -H "Accept: application/vnd.github.v3+json" \
+               "https://api.github.com/repos/${{ github.repository }}" >/dev/null; then
+            echo "::error::RENOVATE_TOKEN does not have access to repository"
+            echo "valid=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          # Check required permissions
+          REPO_INFO=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+                          -H "Accept: application/vnd.github.v3+json" \
+                          "https://api.github.com/repos/${{ github.repository }}")
+          
+          if ! echo "$REPO_INFO" | jq -e '.permissions.push == true' >/dev/null; then
+            echo "::error::RENOVATE_TOKEN does not have push permissions"
+            echo "valid=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          echo "✅ GitHub token permissions validated"
+          echo "valid=true" >> $GITHUB_OUTPUT
+          echo "::endgroup::"
+          
+      - name: 🎯 Determine if Renovate should run
+        id: should-run
+        run: |
+          echo "::group::Execution Decision"
+          
+          SHOULD_RUN=true
+          
+          # Skip on draft PRs unless explicitly requested
+          if [ "${{ github.event_name }}" = "pull_request" ] && \
+             [ "${{ github.event.pull_request.draft }}" = "true" ] && \
+             [ "${{ github.event.inputs.force_refresh }}" != "true" ]; then
+            echo "ℹ️ Skipping Renovate on draft PR"
+            SHOULD_RUN=false
+          fi
+          
+          # Skip if validation failed
+          if [ "${{ steps.validate-config.outputs.valid }}" != "true" ] || \
+             [ "${{ steps.validate-token.outputs.valid }}" != "true" ]; then
+            echo "❌ Validation failed - skipping Renovate execution"
+            SHOULD_RUN=false
+          fi
+          
+          echo "result=$SHOULD_RUN" >> $GITHUB_OUTPUT
+          
+          if [ "$SHOULD_RUN" = "true" ]; then
+            echo "✅ Renovate will execute"
+          else
+            echo "⏭️ Renovate execution skipped"
+          fi
+          
+          echo "::endgroup::"
+
+  # =============================================================================
+  # PHASE 2: RENOVATE EXECUTION
+  # =============================================================================
+  
+  renovate:
+    name: 🔄 Execute Renovate
+    runs-on: ubuntu-latest
+    needs: preflight-validation
+    if: needs.preflight-validation.outputs.should-run == 'true'
+    timeout-minutes: 30
+    
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      repository-projects: write
+      
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.RENOVATE_TOKEN }}
+          fetch-depth: 0
+          
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: 📦 Install Renovate
+        run: |
+          echo "::group::Installing Renovate"
+          npm install -g renovate@latest
+          renovate --version
+          echo "::endgroup::"
+          
+      - name: 🔄 Execute Renovate
+        env:
+          RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
+          GITHUB_COM_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
+          RENOVATE_GIT_AUTHOR: "renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>"
+          
+          # === Logging & Debugging ===
+          LOG_LEVEL: ${{ env.LOG_LEVEL }}
+          RENOVATE_LOG_LEVEL: ${{ env.LOG_LEVEL }}
+          RENOVATE_LOG_FILE: renovate.log
+          RENOVATE_LOG_FILE_LEVEL: debug
+          
+          # === Repository Configuration ===
+          RENOVATE_REPOSITORIES: ${{ github.repository }}
+          RENOVATE_BASE_BRANCHES: ${{ github.ref_name }}
+          
+          # === Security & Compliance ===
+          RENOVATE_OSV_VULNERABILITY_ALERTS: true
+          RENOVATE_VULNERABILITY_ALERTS: true
+          RENOVATE_SECURITY_ADVISORY_ENABLED: true
+          
+          # === Performance Tuning ===
+          RENOVATE_PERSIST_REPO_DATA: true
+          RENOVATE_REPOSITORY_CACHE: enabled
+          RENOVATE_BRANCH_PREFIX: "renovate/"
+          
+          # === Quality Gates ===
+          RENOVATE_REQUIRE_CONFIG: optional
+          RENOVATE_CONFIG_MIGRATION: true
+          RENOVATE_DEPENDENCY_DASHBOARD: true
+          
+          # === Custom Configuration ===
+          RENOVATE_FORCE: ${{ github.event.inputs.force_refresh == 'true' }}
+          
+        run: |
+          echo "::group::Renovate Execution"
+          
+          # Set additional environment variables based on context
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "🔧 Manual execution mode"
+            export RENOVATE_FORCE_CLI=true
+          fi
+          
+          if [ "${{ env.RENOVATE_DRY_RUN }}" = "true" ]; then
+            echo "🧪 Dry run mode - no changes will be made"
+            export RENOVATE_DRY_RUN=true
+          fi
+          
+          # Execute Renovate with comprehensive logging
+          renovate \
+            --platform=github \
+            --endpoint=https://api.github.com/ \
+            --autodiscover=true \
+            --autodiscover-filter="${{ github.repository }}" \
+            --log-level="${{ env.LOG_LEVEL }}" \
+            --log-file=renovate.log \
+            --log-file-level=debug \
+            2>&1 | tee renovate-output.log
+          
+          RENOVATE_EXIT_CODE=${PIPESTATUS[0]}
+          
+          echo "Renovate completed with exit code: $RENOVATE_EXIT_CODE"
+          
+          echo "::endgroup::"
+          
+          exit $RENOVATE_EXIT_CODE
+          
+      - name: 📊 Process Renovate results
+        if: always()
+        run: |
+          echo "::group::Renovate Results Analysis"
+          
+          # Count created/updated PRs
+          if [ -f "renovate.log" ]; then
+            PRS_CREATED=$(grep -c "PR created" renovate.log || echo "0")
+            PRS_UPDATED=$(grep -c "PR updated" renovate.log || echo "0")
+            BRANCHES_CREATED=$(grep -c "Branch created" renovate.log || echo "0")
+            
+            echo "📈 Renovate Statistics:"
+            echo "  PRs Created: $PRS_CREATED"
+            echo "  PRs Updated: $PRS_UPDATED"
+            echo "  Branches Created: $BRANCHES_CREATED"
+            
+            # Add to job summary
+            echo "## 🔄 Renovate Execution Summary" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| PRs Created | $PRS_CREATED |" >> $GITHUB_STEP_SUMMARY
+            echo "| PRs Updated | $PRS_UPDATED |" >> $GITHUB_STEP_SUMMARY
+            echo "| Branches Created | $BRANCHES_CREATED |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            # Check for security updates
+            SECURITY_UPDATES=$(grep -c "vulnerability" renovate.log || echo "0")
+            if [ "$SECURITY_UPDATES" -gt 0 ]; then
+              echo "🔒 Security Updates: $SECURITY_UPDATES" >> $GITHUB_STEP_SUMMARY
+              echo "::notice::$SECURITY_UPDATES security-related dependency updates were processed"
+            fi
+            
+            # Check for errors
+            ERRORS=$(grep -c "ERROR" renovate.log || echo "0")
+            if [ "$ERRORS" -gt 0 ]; then
+              echo "❌ Errors Encountered: $ERRORS" >> $GITHUB_STEP_SUMMARY
+              echo "::warning::$ERRORS errors were encountered during Renovate execution"
+            fi
+          else
+            echo "⚠️ No Renovate log file found"
+          fi
+          
+          echo "::endgroup::"
+          
+      - name: 📤 Upload Renovate logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: renovate-logs-${{ github.run_number }}
+          path: |
+            renovate.log
+            renovate-output.log
+          retention-days: 30
+          
+      - name: 🔍 Security scan of updated dependencies
+        if: success()
+        run: |
+          echo "::group::Post-Renovate Security Scan"
+          
+          # Quick security audit of any new dependencies
+          if [ -f "package-lock.json" ]; then
+            echo "🔍 Running npm audit on updated dependencies..."
+            npm audit --audit-level=moderate --json > post-renovate-audit.json || true
+            
+            # Check for new vulnerabilities
+            if [ -f "post-renovate-audit.json" ]; then
+              HIGH_VULNS=$(cat post-renovate-audit.json | jq '.metadata.vulnerabilities.high // 0')
+              CRITICAL_VULNS=$(cat post-renovate-audit.json | jq '.metadata.vulnerabilities.critical // 0')
+              
+              if [ "$CRITICAL_VULNS" -gt 0 ] || [ "$HIGH_VULNS" -gt 5 ]; then
+                echo "⚠️ High/Critical vulnerabilities detected after Renovate updates"
+                echo "::warning::Security review required for Renovate PRs"
+              else
+                echo "✅ No critical security issues detected"
+              fi
+            fi
+          fi
+          
+          echo "::endgroup::"
+
+  # =============================================================================
+  # PHASE 3: POST-EXECUTION MONITORING
+  # =============================================================================
+  
+  post-execution-monitoring:
+    name: 📊 Post-Execution Monitoring
+    runs-on: ubuntu-latest
+    needs: [preflight-validation, renovate]
+    if: always() && needs.preflight-validation.outputs.should-run == 'true'
+    timeout-minutes: 5
+    
+    steps:
+      - name: 📊 Generate execution report
+        run: |
+          echo "::group::Execution Report Generation"
+          
+          EXECUTION_STATUS="${{ needs.renovate.result }}"
+          
+          echo "## 🔄 TRAIDER Renovate Execution Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Execution Time:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "**Repository:** ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          case "$EXECUTION_STATUS" in
+            "success")
+              echo "**Status:** ✅ SUCCESS" >> $GITHUB_STEP_SUMMARY
+              echo "**Result:** Renovate completed successfully" >> $GITHUB_STEP_SUMMARY
+              ;;
+            "failure")
+              echo "**Status:** ❌ FAILURE" >> $GITHUB_STEP_SUMMARY
+              echo "**Result:** Renovate execution failed - check logs" >> $GITHUB_STEP_SUMMARY
+              ;;
+            "cancelled")
+              echo "**Status:** ⏹️ CANCELLED" >> $GITHUB_STEP_SUMMARY
+              echo "**Result:** Renovate execution was cancelled" >> $GITHUB_STEP_SUMMARY
+              ;;
+            *)
+              echo "**Status:** ❓ UNKNOWN" >> $GITHUB_STEP_SUMMARY
+              echo "**Result:** Renovate execution status unknown" >> $GITHUB_STEP_SUMMARY
+              ;;
+          esac
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎯 Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "- Review any created/updated PRs" >> $GITHUB_STEP_SUMMARY
+          echo "- Verify security scans pass on updated dependencies" >> $GITHUB_STEP_SUMMARY
+          echo "- Check dependency dashboard for overview" >> $GITHUB_STEP_SUMMARY
+          echo "- Monitor trading system performance after merging updates" >> $GITHUB_STEP_SUMMARY
+          
+          echo "::endgroup::"
+          
+      - name: 🚨 Notify on failure
+        if: needs.renovate.result == 'failure'
+        run: |
+          echo "::error::Renovate execution failed"
+          echo "::error::Check the renovate-logs artifact for detailed error information"
+          echo "::error::Manual intervention may be required"
+          
+      - name: ✅ Success notification
+        if: needs.renovate.result == 'success'
+        run: |
+          echo "::notice::Renovate execution completed successfully"
+          echo "::notice::Review any created PRs for dependency updates" 

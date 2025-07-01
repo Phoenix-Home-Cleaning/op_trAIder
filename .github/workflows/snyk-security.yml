@@ -1,0 +1,709 @@
+# 🛡️ TRAIDER V1 - Snyk Security Scanning Pipeline
+#
+# Comprehensive security vulnerability scanning using Snyk for institutional-grade
+# autonomous trading platform. Covers open source dependencies, container images,
+# and infrastructure as code with automated remediation suggestions.
+#
+# Performance: <8min total execution with parallel scanning
+# Risk: CRITICAL - Blocks deployments on critical vulnerabilities
+# Compliance: All security findings logged for audit trail
+#
+# See: docs/security/snyk-integration.md
+# Author: TRAIDER Team
+# Since: 1.0.0-alpha
+
+name: 🛡️ Snyk Security Scanning
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'package*.json'
+      - 'requirements*.txt'
+      - 'Dockerfile*'
+      - 'infrastructure/**'
+      - '.github/workflows/**'
+  pull_request:
+    branches: [main, develop]
+    types: [opened, synchronize, reopened]
+  schedule:
+    # Daily security scans at 01:00 UTC (before market open)
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+    inputs:
+      scan_type:
+        description: 'Type of Snyk scan to run'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - open-source
+          - container
+          - iac
+          - code
+      severity_threshold:
+        description: 'Minimum severity threshold'
+        required: true
+        default: 'medium'
+        type: choice
+        options:
+          - low
+          - medium
+          - high
+          - critical
+      monitor_only:
+        description: 'Monitor only (no PR blocking)'
+        required: false
+        default: false
+        type: boolean
+
+# Global environment variables
+env:
+  NODE_VERSION: '18'
+  PYTHON_VERSION: '3.11'
+  FORCE_COLOR: 1
+  CI: true
+  
+  # === Snyk Configuration ===
+  SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+  SEVERITY_THRESHOLD: ${{ github.event.inputs.severity_threshold || 'medium' }}
+  MONITOR_ONLY: ${{ github.event.inputs.monitor_only == 'true' }}
+  
+  # === Quality Gates ===
+  VULNERABILITY_THRESHOLD: medium
+  CRITICAL_VULN_LIMIT: 0
+  HIGH_VULN_LIMIT: 5
+  MEDIUM_VULN_LIMIT: 20
+
+# Ensure only one Snyk workflow runs at a time per branch
+concurrency:
+  group: snyk-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # =============================================================================
+  # PHASE 1: SETUP & VALIDATION
+  # =============================================================================
+  
+  setup-validation:
+    name: 🔧 Setup & Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    outputs:
+      snyk-token-valid: ${{ steps.validate-token.outputs.valid }}
+      scan-types: ${{ steps.determine-scans.outputs.types }}
+      should-run: ${{ steps.should-run.outputs.result }}
+    
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          
+      - name: 🔐 Validate Snyk token
+        id: validate-token
+        run: |
+          echo "::group::Snyk Token Validation"
+          
+          if [ -z "${{ env.SNYK_TOKEN }}" ]; then
+            echo "::error::SNYK_TOKEN secret not configured"
+            echo "::error::Please add SNYK_TOKEN to repository secrets"
+            echo "valid=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          # Test Snyk token validity
+          if ! curl -s -H "Authorization: token ${{ env.SNYK_TOKEN }}" \
+               "https://api.snyk.io/v1/user/me" >/dev/null; then
+            echo "::error::SNYK_TOKEN is invalid or expired"
+            echo "::error::Please update SNYK_TOKEN in repository secrets"
+            echo "valid=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          echo "✅ Snyk token is valid"
+          echo "valid=true" >> $GITHUB_OUTPUT
+          echo "::endgroup::"
+          
+      - name: 🎯 Determine scan types to run
+        id: determine-scans
+        run: |
+          echo "::group::Scan Type Determination"
+          
+          SCAN_TYPE="${{ github.event.inputs.scan_type || 'all' }}"
+          SCAN_TYPES="[]"
+          
+          case "$SCAN_TYPE" in
+            "all")
+              SCAN_TYPES='["open-source", "container", "iac"]'
+              ;;
+            "open-source")
+              SCAN_TYPES='["open-source"]'
+              ;;
+            "container")
+              SCAN_TYPES='["container"]'
+              ;;
+            "iac")
+              SCAN_TYPES='["iac"]'
+              ;;
+            *)
+              echo "::error::Invalid scan type: $SCAN_TYPE"
+              exit 1
+              ;;
+          esac
+          
+          echo "types=$SCAN_TYPES" >> $GITHUB_OUTPUT
+          echo "Selected scan types: $SCAN_TYPES"
+          echo "::endgroup::"
+          
+      - name: 🎯 Determine if scans should run
+        id: should-run
+        run: |
+          echo "::group::Execution Decision"
+          
+          SHOULD_RUN=true
+          
+          # Skip if token validation failed
+          if [ "${{ steps.validate-token.outputs.valid }}" != "true" ]; then
+            echo "❌ Token validation failed - skipping scans"
+            SHOULD_RUN=false
+          fi
+          
+          # Skip on draft PRs unless explicitly requested
+          if [ "${{ github.event_name }}" = "pull_request" ] && \
+             [ "${{ github.event.pull_request.draft }}" = "true" ] && \
+             [ "${{ github.event.inputs.scan_type }}" = "" ]; then
+            echo "ℹ️ Skipping Snyk scans on draft PR"
+            SHOULD_RUN=false
+          fi
+          
+          echo "result=$SHOULD_RUN" >> $GITHUB_OUTPUT
+          
+          if [ "$SHOULD_RUN" = "true" ]; then
+            echo "✅ Snyk scans will execute"
+          else
+            echo "⏭️ Snyk scan execution skipped"
+          fi
+          
+          echo "::endgroup::"
+
+  # =============================================================================
+  # PHASE 2: OPEN SOURCE DEPENDENCY SCANNING
+  # =============================================================================
+  
+  snyk-open-source:
+    name: 📦 Open Source Dependencies
+    runs-on: ubuntu-latest
+    needs: setup-validation
+    if: needs.setup-validation.outputs.should-run == 'true' && contains(fromJson(needs.setup-validation.outputs.scan-types), 'open-source')
+    timeout-minutes: 15
+    
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    
+    strategy:
+      matrix:
+        package-manager: [npm, pip]
+        include:
+          - package-manager: npm
+            package-file: package.json
+            install-cmd: npm ci --prefer-offline --no-audit
+            scan-args: --file=package.json
+          - package-manager: pip
+            package-file: backend/requirements.txt
+            install-cmd: pip install -r backend/requirements.txt
+            scan-args: --file=backend/requirements.txt
+    
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: 🔧 Setup Node.js
+        if: matrix.package-manager == 'npm'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: 🔧 Setup Python
+        if: matrix.package-manager == 'pip'
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          
+      - name: 📦 Install dependencies
+        if: hashFiles(matrix.package-file) != ''
+        run: ${{ matrix.install-cmd }}
+        
+      - name: 🔍 Run Snyk Open Source scan
+        if: hashFiles(matrix.package-file) != ''
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ env.SNYK_TOKEN }}
+        with:
+          args: >
+            --severity-threshold=${{ env.SEVERITY_THRESHOLD }}
+            --json-file-output=snyk-${{ matrix.package-manager }}-results.json
+            --sarif-file-output=snyk-${{ matrix.package-manager }}-results.sarif
+            ${{ matrix.scan-args }}
+            
+      - name: 📊 Process scan results
+        if: always() && hashFiles(matrix.package-file) != ''
+        run: |
+          echo "::group::${{ matrix.package-manager }} Vulnerability Analysis"
+          
+          RESULTS_FILE="snyk-${{ matrix.package-manager }}-results.json"
+          
+          if [ -f "$RESULTS_FILE" ]; then
+            # Extract vulnerability counts
+            CRITICAL=$(jq -r '.vulnerabilities | map(select(.severity == "critical")) | length' "$RESULTS_FILE" 2>/dev/null || echo "0")
+            HIGH=$(jq -r '.vulnerabilities | map(select(.severity == "high")) | length' "$RESULTS_FILE" 2>/dev/null || echo "0")
+            MEDIUM=$(jq -r '.vulnerabilities | map(select(.severity == "medium")) | length' "$RESULTS_FILE" 2>/dev/null || echo "0")
+            LOW=$(jq -r '.vulnerabilities | map(select(.severity == "low")) | length' "$RESULTS_FILE" 2>/dev/null || echo "0")
+            
+            TOTAL=$((CRITICAL + HIGH + MEDIUM + LOW))
+            
+            echo "## 📦 ${{ matrix.package-manager }} Dependencies - Snyk Scan Results" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Critical | $CRITICAL |" >> $GITHUB_STEP_SUMMARY
+            echo "| High     | $HIGH |" >> $GITHUB_STEP_SUMMARY
+            echo "| Medium   | $MEDIUM |" >> $GITHUB_STEP_SUMMARY
+            echo "| Low      | $LOW |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Total** | **$TOTAL** |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            # Check against thresholds
+            SCAN_FAILED=false
+            
+            if [ "$CRITICAL" -gt "${{ env.CRITICAL_VULN_LIMIT }}" ]; then
+              echo "::error::Critical vulnerabilities exceed limit: $CRITICAL > ${{ env.CRITICAL_VULN_LIMIT }}"
+              echo "::error::Trading system deployment blocked due to critical security issues"
+              SCAN_FAILED=true
+            fi
+            
+            if [ "$HIGH" -gt "${{ env.HIGH_VULN_LIMIT }}" ]; then
+              echo "::error::High vulnerabilities exceed limit: $HIGH > ${{ env.HIGH_VULN_LIMIT }}"
+              SCAN_FAILED=true
+            fi
+            
+            if [ "$MEDIUM" -gt "${{ env.MEDIUM_VULN_LIMIT }}" ]; then
+              echo "::warning::Medium vulnerabilities exceed recommended limit: $MEDIUM > ${{ env.MEDIUM_VULN_LIMIT }}"
+            fi
+            
+            # Generate remediation advice
+            if [ "$TOTAL" -gt 0 ]; then
+              echo "### 🔧 Remediation Advice" >> $GITHUB_STEP_SUMMARY
+              
+              if [ "${{ matrix.package-manager }}" = "npm" ]; then
+                echo "- Run \`npm audit fix\` to automatically fix vulnerabilities" >> $GITHUB_STEP_SUMMARY
+                echo "- Use \`snyk wizard\` for guided remediation" >> $GITHUB_STEP_SUMMARY
+                echo "- Consider \`npm update\` for patch updates" >> $GITHUB_STEP_SUMMARY
+              elif [ "${{ matrix.package-manager }}" = "pip" ]; then
+                echo "- Update vulnerable packages: \`pip install --upgrade <package>\`" >> $GITHUB_STEP_SUMMARY
+                echo "- Use \`safety check\` for additional Python security scanning" >> $GITHUB_STEP_SUMMARY
+                echo "- Consider pinning secure versions in requirements.txt" >> $GITHUB_STEP_SUMMARY
+              fi
+              
+              echo "" >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            if [ "${{ env.MONITOR_ONLY }}" != "true" ] && [ "$SCAN_FAILED" = "true" ]; then
+              echo "❌ Scan failed - vulnerability thresholds exceeded"
+              exit 1
+            else
+              echo "✅ ${{ matrix.package-manager }} scan completed - $TOTAL vulnerabilities found"
+            fi
+          else
+            echo "⚠️ No Snyk results found for ${{ matrix.package-manager }}"
+            echo "::warning::${{ matrix.package-manager }} vulnerability scan did not produce results"
+          fi
+          
+          echo "::endgroup::"
+          
+      - name: 📤 Upload SARIF to GitHub Security
+        if: always() && hashFiles('snyk-${{ matrix.package-manager }}-results.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: snyk-${{ matrix.package-manager }}-results.sarif
+          category: snyk-${{ matrix.package-manager }}-dependencies
+          
+      - name: 🔄 Monitor project in Snyk
+        if: github.ref == 'refs/heads/main' && hashFiles(matrix.package-file) != ''
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ env.SNYK_TOKEN }}
+        with:
+          command: monitor
+          args: ${{ matrix.scan-args }}
+          
+      - name: 📊 Upload scan artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-${{ matrix.package-manager }}-results
+          path: |
+            snyk-${{ matrix.package-manager }}-results.json
+            snyk-${{ matrix.package-manager }}-results.sarif
+          retention-days: 90
+
+  # =============================================================================
+  # PHASE 3: CONTAINER SECURITY SCANNING
+  # =============================================================================
+  
+  snyk-container:
+    name: 🐳 Container Security
+    runs-on: ubuntu-latest
+    needs: setup-validation
+    if: needs.setup-validation.outputs.should-run == 'true' && contains(fromJson(needs.setup-validation.outputs.scan-types), 'container') && hashFiles('Dockerfile*') != ''
+    timeout-minutes: 20
+    
+    permissions:
+      contents: read
+      security-events: write
+    
+    strategy:
+      matrix:
+        dockerfile: [Dockerfile.frontend, Dockerfile.backend]
+        include:
+          - dockerfile: Dockerfile.frontend
+            image-name: traider-frontend
+            context: .
+          - dockerfile: Dockerfile.backend
+            image-name: traider-backend
+            context: ./backend
+    
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: 🔧 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: 🏗️ Build container image
+        if: hashFiles(matrix.dockerfile) != ''
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          tags: ${{ matrix.image-name }}:snyk-scan
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          
+      - name: 🔍 Run Snyk Container scan
+        if: hashFiles(matrix.dockerfile) != ''
+        uses: snyk/actions/docker@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ env.SNYK_TOKEN }}
+        with:
+          image: ${{ matrix.image-name }}:snyk-scan
+          args: >
+            --severity-threshold=${{ env.SEVERITY_THRESHOLD }}
+            --json-file-output=snyk-container-${{ matrix.image-name }}-results.json
+            --sarif-file-output=snyk-container-${{ matrix.image-name }}-results.sarif
+            
+      - name: 📊 Process container scan results
+        if: always() && hashFiles(matrix.dockerfile) != ''
+        run: |
+          echo "::group::${{ matrix.image-name }} Container Analysis"
+          
+          RESULTS_FILE="snyk-container-${{ matrix.image-name }}-results.json"
+          
+          if [ -f "$RESULTS_FILE" ]; then
+            # Extract vulnerability counts
+            CRITICAL=$(jq -r '.vulnerabilities | map(select(.severity == "critical")) | length' "$RESULTS_FILE" 2>/dev/null || echo "0")
+            HIGH=$(jq -r '.vulnerabilities | map(select(.severity == "high")) | length' "$RESULTS_FILE" 2>/dev/null || echo "0")
+            MEDIUM=$(jq -r '.vulnerabilities | map(select(.severity == "medium")) | length' "$RESULTS_FILE" 2>/dev/null || echo "0")
+            LOW=$(jq -r '.vulnerabilities | map(select(.severity == "low")) | length' "$RESULTS_FILE" 2>/dev/null || echo "0")
+            
+            TOTAL=$((CRITICAL + HIGH + MEDIUM + LOW))
+            
+            echo "## 🐳 ${{ matrix.image-name }} Container - Snyk Scan Results" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Critical | $CRITICAL |" >> $GITHUB_STEP_SUMMARY
+            echo "| High     | $HIGH |" >> $GITHUB_STEP_SUMMARY
+            echo "| Medium   | $MEDIUM |" >> $GITHUB_STEP_SUMMARY
+            echo "| Low      | $LOW |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Total** | **$TOTAL** |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            # Container-specific thresholds (more strict)
+            SCAN_FAILED=false
+            
+            if [ "$CRITICAL" -gt 0 ]; then
+              echo "::error::Critical container vulnerabilities found: $CRITICAL"
+              echo "::error::Container deployment blocked due to critical security issues"
+              SCAN_FAILED=true
+            fi
+            
+            if [ "$HIGH" -gt 2 ]; then
+              echo "::error::Too many high container vulnerabilities: $HIGH > 2"
+              SCAN_FAILED=true
+            fi
+            
+            if [ "$TOTAL" -gt 0 ]; then
+              echo "### 🔧 Container Remediation Advice" >> $GITHUB_STEP_SUMMARY
+              echo "- Update base image to latest security patches" >> $GITHUB_STEP_SUMMARY
+              echo "- Remove unnecessary packages from container" >> $GITHUB_STEP_SUMMARY
+              echo "- Use multi-stage builds to reduce attack surface" >> $GITHUB_STEP_SUMMARY
+              echo "- Consider using distroless or minimal base images" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            if [ "${{ env.MONITOR_ONLY }}" != "true" ] && [ "$SCAN_FAILED" = "true" ]; then
+              echo "❌ Container scan failed - vulnerability thresholds exceeded"
+              exit 1
+            else
+              echo "✅ ${{ matrix.image-name }} container scan completed - $TOTAL vulnerabilities found"
+            fi
+          else
+            echo "⚠️ No Snyk container results found for ${{ matrix.image-name }}"
+          fi
+          
+          echo "::endgroup::"
+          
+      - name: 📤 Upload SARIF to GitHub Security
+        if: always() && hashFiles('snyk-container-${{ matrix.image-name }}-results.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: snyk-container-${{ matrix.image-name }}-results.sarif
+          category: snyk-container-${{ matrix.image-name }}
+          
+      - name: 📊 Upload container scan artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-container-${{ matrix.image-name }}-results
+          path: |
+            snyk-container-${{ matrix.image-name }}-results.json
+            snyk-container-${{ matrix.image-name }}-results.sarif
+          retention-days: 90
+
+  # =============================================================================
+  # PHASE 4: INFRASTRUCTURE AS CODE SCANNING
+  # =============================================================================
+  
+  snyk-iac:
+    name: 🏗️ Infrastructure as Code
+    runs-on: ubuntu-latest
+    needs: setup-validation
+    if: needs.setup-validation.outputs.should-run == 'true' && contains(fromJson(needs.setup-validation.outputs.scan-types), 'iac') && hashFiles('infrastructure/**', '**/*.tf', 'docker-compose*.yml') != ''
+    timeout-minutes: 10
+    
+    permissions:
+      contents: read
+      security-events: write
+    
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: 🔍 Run Snyk IaC scan
+        uses: snyk/actions/iac@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ env.SNYK_TOKEN }}
+        with:
+          args: >
+            --severity-threshold=${{ env.SEVERITY_THRESHOLD }}
+            --json-file-output=snyk-iac-results.json
+            --sarif-file-output=snyk-iac-results.sarif
+            
+      - name: 📊 Process IaC scan results
+        if: always()
+        run: |
+          echo "::group::Infrastructure as Code Analysis"
+          
+          if [ -f "snyk-iac-results.json" ]; then
+            # Extract issue counts
+            CRITICAL=$(jq -r '.vulnerabilities | map(select(.severity == "critical")) | length' snyk-iac-results.json 2>/dev/null || echo "0")
+            HIGH=$(jq -r '.vulnerabilities | map(select(.severity == "high")) | length' snyk-iac-results.json 2>/dev/null || echo "0")
+            MEDIUM=$(jq -r '.vulnerabilities | map(select(.severity == "medium")) | length' snyk-iac-results.json 2>/dev/null || echo "0")
+            LOW=$(jq -r '.vulnerabilities | map(select(.severity == "low")) | length' snyk-iac-results.json 2>/dev/null || echo "0")
+            
+            TOTAL=$((CRITICAL + HIGH + MEDIUM + LOW))
+            
+            echo "## 🏗️ Infrastructure as Code - Snyk Scan Results" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Critical | $CRITICAL |" >> $GITHUB_STEP_SUMMARY
+            echo "| High     | $HIGH |" >> $GITHUB_STEP_SUMMARY
+            echo "| Medium   | $MEDIUM |" >> $GITHUB_STEP_SUMMARY
+            echo "| Low      | $LOW |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Total** | **$TOTAL** |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            # IaC-specific thresholds
+            SCAN_FAILED=false
+            
+            if [ "$CRITICAL" -gt 0 ]; then
+              echo "::error::Critical IaC security issues found: $CRITICAL"
+              echo "::error::Infrastructure deployment blocked due to critical security misconfigurations"
+              SCAN_FAILED=true
+            fi
+            
+            if [ "$HIGH" -gt 3 ]; then
+              echo "::error::Too many high IaC security issues: $HIGH > 3"
+              SCAN_FAILED=true
+            fi
+            
+            if [ "$TOTAL" -gt 0 ]; then
+              echo "### 🔧 IaC Remediation Advice" >> $GITHUB_STEP_SUMMARY
+              echo "- Review Kubernetes security contexts and policies" >> $GITHUB_STEP_SUMMARY
+              echo "- Ensure proper RBAC configurations" >> $GITHUB_STEP_SUMMARY
+              echo "- Validate network policies and ingress configurations" >> $GITHUB_STEP_SUMMARY
+              echo "- Check for hardcoded secrets in configuration files" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            if [ "${{ env.MONITOR_ONLY }}" != "true" ] && [ "$SCAN_FAILED" = "true" ]; then
+              echo "❌ IaC scan failed - security thresholds exceeded"
+              exit 1
+            else
+              echo "✅ IaC scan completed - $TOTAL issues found"
+            fi
+          else
+            echo "⚠️ No Snyk IaC results found"
+          fi
+          
+          echo "::endgroup::"
+          
+      - name: 📤 Upload SARIF to GitHub Security
+        if: always() && hashFiles('snyk-iac-results.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: snyk-iac-results.sarif
+          category: snyk-infrastructure-as-code
+          
+      - name: 📊 Upload IaC scan artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-iac-results
+          path: |
+            snyk-iac-results.json
+            snyk-iac-results.sarif
+          retention-days: 90
+
+  # =============================================================================
+  # PHASE 5: SECURITY SUMMARY & REPORTING
+  # =============================================================================
+  
+  security-summary:
+    name: 📊 Security Summary
+    runs-on: ubuntu-latest
+    needs: [setup-validation, snyk-open-source, snyk-container, snyk-iac]
+    if: always() && needs.setup-validation.outputs.should-run == 'true'
+    timeout-minutes: 5
+    
+    steps:
+      - name: 📊 Generate comprehensive security report
+        run: |
+          echo "## 🛡️ TRAIDER V1 - Comprehensive Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Scan Date:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "**Repository:** ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Severity Threshold:** ${{ env.SEVERITY_THRESHOLD }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### 🔍 Scan Results Overview" >> $GITHUB_STEP_SUMMARY
+          echo "| Scan Type | Status | Notes |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          
+          # Open Source Dependencies
+          if [ "${{ contains(fromJson(needs.setup-validation.outputs.scan-types), 'open-source') }}" = "true" ]; then
+            if [ "${{ needs.snyk-open-source.result }}" = "success" ]; then
+              echo "| Open Source Dependencies | ✅ Passed | No critical vulnerabilities |" >> $GITHUB_STEP_SUMMARY
+            elif [ "${{ needs.snyk-open-source.result }}" = "failure" ]; then
+              echo "| Open Source Dependencies | ❌ Failed | Critical vulnerabilities found |" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "| Open Source Dependencies | ⏭️ Skipped | Not applicable |" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+          
+          # Container Security
+          if [ "${{ contains(fromJson(needs.setup-validation.outputs.scan-types), 'container') }}" = "true" ]; then
+            if [ "${{ needs.snyk-container.result }}" = "success" ]; then
+              echo "| Container Security | ✅ Passed | Images secure |" >> $GITHUB_STEP_SUMMARY
+            elif [ "${{ needs.snyk-container.result }}" = "failure" ]; then
+              echo "| Container Security | ❌ Failed | Container vulnerabilities found |" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "| Container Security | ⏭️ Skipped | No Dockerfiles found |" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+          
+          # Infrastructure as Code
+          if [ "${{ contains(fromJson(needs.setup-validation.outputs.scan-types), 'iac') }}" = "true" ]; then
+            if [ "${{ needs.snyk-iac.result }}" = "success" ]; then
+              echo "| Infrastructure as Code | ✅ Passed | No critical misconfigurations |" >> $GITHUB_STEP_SUMMARY
+            elif [ "${{ needs.snyk-iac.result }}" = "failure" ]; then
+              echo "| Infrastructure as Code | ❌ Failed | Security misconfigurations found |" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "| Infrastructure as Code | ⏭️ Skipped | No IaC files found |" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Overall status
+          OVERALL_STATUS="✅ PASSED"
+          if [ "${{ needs.snyk-open-source.result }}" = "failure" ] || \
+             [ "${{ needs.snyk-container.result }}" = "failure" ] || \
+             [ "${{ needs.snyk-iac.result }}" = "failure" ]; then
+            OVERALL_STATUS="❌ FAILED"
+          fi
+          
+          echo "### 🎯 Overall Security Status: $OVERALL_STATUS" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "$OVERALL_STATUS" = "❌ FAILED" ]; then
+            echo "### 🚨 Critical Actions Required" >> $GITHUB_STEP_SUMMARY
+            echo "- Review and address all critical and high severity findings" >> $GITHUB_STEP_SUMMARY
+            echo "- Update vulnerable dependencies immediately" >> $GITHUB_STEP_SUMMARY
+            echo "- Fix container security issues before deployment" >> $GITHUB_STEP_SUMMARY
+            echo "- Resolve infrastructure misconfigurations" >> $GITHUB_STEP_SUMMARY
+            echo "- **Trading system deployment is blocked until issues are resolved**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ✅ Security Validation Complete" >> $GITHUB_STEP_SUMMARY
+            echo "- All security scans passed successfully" >> $GITHUB_STEP_SUMMARY
+            echo "- No critical vulnerabilities detected" >> $GITHUB_STEP_SUMMARY
+            echo "- Trading system is cleared for deployment" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📚 Additional Resources" >> $GITHUB_STEP_SUMMARY
+          echo "- [Security Dashboard](https://github.com/${{ github.repository }}/security)" >> $GITHUB_STEP_SUMMARY
+          echo "- [Snyk Project Dashboard](https://app.snyk.io)" >> $GITHUB_STEP_SUMMARY
+          echo "- [Security Documentation](docs/security/)" >> $GITHUB_STEP_SUMMARY
+          
+      - name: 🚨 Fail workflow if critical issues found
+        if: needs.snyk-open-source.result == 'failure' || needs.snyk-container.result == 'failure' || needs.snyk-iac.result == 'failure'
+        run: |
+          echo "::error::Critical security vulnerabilities detected"
+          echo "::error::Trading system deployment blocked for security compliance"
+          echo "::error::Review scan results and address all critical/high severity findings"
+          exit 1
+          
+      - name: ✅ Security validation complete
+        if: needs.snyk-open-source.result != 'failure' && needs.snyk-container.result != 'failure' && needs.snyk-iac.result != 'failure'
+        run: |
+          echo "::notice::All Snyk security scans completed successfully"
+          echo "::notice::No critical security vulnerabilities detected"
+          echo "::notice::Trading system cleared for deployment" 

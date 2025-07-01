@@ -108,6 +108,83 @@ jobs:
             fi
           fi
           
+      - name: 🔍 Snyk Open Source Vulnerability Scan
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=medium --json --file=package.json
+          
+      - name: 📊 Process Snyk results
+        if: always()
+        run: |
+          echo "::group::Snyk Vulnerability Analysis"
+          
+          # Check if Snyk results exist
+          if [ -f "snyk-result.json" ]; then
+            # Extract vulnerability counts from Snyk results
+            HIGH_SNYK=$(jq -r '.vulnerabilities | map(select(.severity == "high")) | length' snyk-result.json 2>/dev/null || echo "0")
+            MEDIUM_SNYK=$(jq -r '.vulnerabilities | map(select(.severity == "medium")) | length' snyk-result.json 2>/dev/null || echo "0")
+            LOW_SNYK=$(jq -r '.vulnerabilities | map(select(.severity == "low")) | length' snyk-result.json 2>/dev/null || echo "0")
+            CRITICAL_SNYK=$(jq -r '.vulnerabilities | map(select(.severity == "critical")) | length' snyk-result.json 2>/dev/null || echo "0")
+            
+            echo "📊 Snyk Vulnerability Report:" >> $GITHUB_STEP_SUMMARY
+            echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Critical | $CRITICAL_SNYK |" >> $GITHUB_STEP_SUMMARY
+            echo "| High     | $HIGH_SNYK |" >> $GITHUB_STEP_SUMMARY
+            echo "| Medium   | $MEDIUM_SNYK |" >> $GITHUB_STEP_SUMMARY
+            echo "| Low      | $LOW_SNYK |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            # Fail on critical vulnerabilities
+            if [ "$CRITICAL_SNYK" -gt 0 ]; then
+              echo "::error::Critical vulnerabilities found by Snyk: $CRITICAL_SNYK"
+              echo "::error::Trading system deployment blocked due to critical security issues"
+              exit 1
+            fi
+            
+            # Warn on high vulnerabilities
+            if [ "$HIGH_SNYK" -gt 0 ]; then
+              echo "::warning::High severity vulnerabilities found by Snyk: $HIGH_SNYK"
+              echo "::warning::Consider prioritizing these fixes for trading system security"
+            fi
+            
+            echo "✅ Snyk scan completed - $((CRITICAL_SNYK + HIGH_SNYK + MEDIUM_SNYK + LOW_SNYK)) total vulnerabilities found"
+          else
+            echo "⚠️ Snyk results not found - scan may have failed"
+            echo "::warning::Snyk vulnerability scan did not produce results"
+          fi
+          
+          echo "::endgroup::"
+          
+      - name: 🔍 Snyk Container Scan (if Dockerfile exists)
+        if: hashFiles('Dockerfile*') != ''
+        uses: snyk/actions/docker@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          image: traider-frontend:latest
+          args: --severity-threshold=high --json
+          
+      - name: 🔍 Snyk Infrastructure as Code Scan
+        if: hashFiles('infrastructure/**/*.yml', 'infrastructure/**/*.yaml', '**/*.tf') != ''
+        uses: snyk/actions/iac@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=medium --json
+          
+      - name: 📤 Upload Snyk results to GitHub Code Scanning
+        if: always() && hashFiles('snyk-result.json') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: snyk-result.sarif
+          category: snyk-open-source
+          
       - name: 📊 Upload audit results
         uses: actions/upload-artifact@v4
         if: always()
@@ -115,6 +192,8 @@ jobs:
           name: dependency-audit-results
           path: |
             npm-audit.json
+            snyk-result.json
+            snyk-result.sarif
           retention-days: 90
 
   # =============================================================================
