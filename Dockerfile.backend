@@ -12,12 +12,13 @@
 # - Dependency vulnerability scanning
 # - Resource limits and health checks
 # - Secrets management
+# SECURITY UPDATE: Updated to Python 3.13 and latest security patches
 
 # =============================================================================
 # STAGE 1: BASE IMAGE WITH SECURITY HARDENING
 # =============================================================================
 
-FROM python:3.11-slim-bullseye AS base
+FROM python:3.13-slim-bookworm AS base
 
 # Set environment variables for Python optimization
 ENV PYTHONUNBUFFERED=1 \
@@ -29,6 +30,7 @@ ENV PYTHONUNBUFFERED=1 \
 
 # Install system dependencies and security updates
 RUN apt-get update && \
+    apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
         build-essential \
         curl \
@@ -65,13 +67,13 @@ RUN python -m venv /opt/venv && \
     /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
 
 # Compile Python files for faster startup
-RUN /opt/venv/bin/python -m compileall /opt/venv/lib/python3.11/site-packages/
+RUN /opt/venv/bin/python -m compileall /opt/venv/lib/python3.13/site-packages/
 
 # =============================================================================
 # STAGE 3: PRODUCTION RUNTIME
 # =============================================================================
 
-FROM python:3.11-slim-bullseye AS runner
+FROM python:3.13-slim-bookworm AS runner
 
 # Set production environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -81,8 +83,9 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONPATH="/app" \
     FASTAPI_ENV=production
 
-# Install only runtime dependencies
+# Install only runtime dependencies with security updates
 RUN apt-get update && \
+    apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
         libpq5 \
         curl \
@@ -144,9 +147,10 @@ LABEL maintainer="TRAIDER Team" \
       org.opencontainers.image.title="TRAIDER Backend" \
       org.opencontainers.image.description="FastAPI backend for autonomous cryptocurrency trading" \
       org.opencontainers.image.version="1.0.0-alpha" \
-      org.opencontainers.image.created="2025-01-27" \
+      org.opencontainers.image.created="2025-01-29" \
       org.opencontainers.image.source="https://github.com/traider/traider-v1" \
       org.opencontainers.image.licenses="Proprietary" \
       security.scan="required" \
+      security.updated="2025-01-29" \
       performance.tier="high" \
       trading.component="api" 
