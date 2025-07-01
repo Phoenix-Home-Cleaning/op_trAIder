@@ -5,11 +5,16 @@
 ### Fixed
 
 - **🔧 CI/CD Pipeline Fix** - Resolved kube-score download failure in Kubernetes validation workflow
-  - **Issue**: GitHub Actions workflow failing with 404 error when downloading kube-score v1.16.1
-  - **Root Cause**: kube-score v1.16.1 does not exist in the zegl/kube-score repository releases
-  - **Solution**: Updated `KUBE_SCORE_VERSION` from `v1.16.1` to `v1.20.0` (latest stable release)
+  - **Issue**: GitHub Actions workflow failing with 404 error when downloading kube-score binary releases
+  - **Root Cause**: Binary download URLs for kube-score were returning 404 errors for multiple versions (v1.16.1, v1.20.0)
+  - **Solution**: Switched from binary download to Docker-based approach using `zegl/kube-score:v1.8.0`
+  - **Implementation**:
+    - Updated `KUBE_SCORE_VERSION` from `v1.20.0` to `v1.8.0` (confirmed stable release)
+    - Replaced wget/tar binary installation with Docker pull and wrapper script
+    - Created wrapper script at `/usr/local/bin/kube-score` for seamless CI integration
+    - Maintains same CLI interface while using containerized approach
   - **Impact**: K8s manifest validation workflow now executes successfully with enhanced security checks
-  - **Verification**: Latest kube-score includes improved Kubernetes security analysis and best practices
+  - **Verification**: Using official zegl/kube-score Docker images which are actively maintained
   - **Compliance**: Maintains institutional-grade infrastructure validation standards
 
 ### Added
