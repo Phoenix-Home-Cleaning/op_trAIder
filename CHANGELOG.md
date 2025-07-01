@@ -4,6 +4,15 @@
 
 ### Fixed
 
+- **🔧 CI/CD Pipeline Fix** - Resolved kubeval schema validation failure.
+  - **Issue**: GitHub Actions workflow failing with 404 error when downloading Kubernetes JSON schemas from `kubernetesjsonschema.dev`.
+  - **Root Cause**: The default schema provider `kubernetesjsonschema.dev` is outdated or unavailable for Kubernetes v1.28.0.
+  - **Solution**: Switched to a more reliable and actively maintained schema provider.
+  - **Implementation**:
+    - Updated the `kubeval` command in the `ci-k8s-lint.yml` workflow to use `--schema-location https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/`.
+  - **Impact**: K8s manifest validation workflow now executes successfully against multiple Kubernetes versions (1.28.0, 1.29.0).
+  - **Compliance**: Ensures continuous validation of infrastructure against institutional standards.
+
 - **🔧 CI/CD Pipeline Fix** - Resolved kube-score download failure in Kubernetes validation workflow
   - **Issue**: GitHub Actions workflow failing with 404 error when downloading kube-score binary releases
   - **Root Cause**: Binary download URLs for kube-score were returning 404 errors for multiple versions (v1.16.1, v1.20.0)
