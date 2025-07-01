@@ -28,7 +28,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import fs from 'fs';
 import path from 'path';
-// @ts-expect-error - js-yaml types not available
 import yaml from 'js-yaml';
 
 // Test configuration constants
