@@ -1,23 +1,23 @@
 /**
  * @fileoverview Simplified dashboard comprehensive test suite for TRAIDER
  * @module tests.unit.frontend.dashboard-comprehensive
- * 
+ *
  * @description
  * Streamlined dashboard testing focused on core UI components and functionality
  * without complex NextAuth session mocking that causes TypeScript compilation issues.
- * 
+ *
  * @performance
  * - Component render time: <100ms
  * - Test execution: <500ms per test
- * 
+ *
  * @risk
  * - Failure impact: MEDIUM - UI component validation
  * - Recovery strategy: Component-level testing with mocked dependencies
- * 
+ *
  * @compliance
  * - UI accessibility: WCAG 2.1 AA compliance
  * - Performance benchmarks: Core Web Vitals
- * 
+ *
  * @see {@link app/dashboard/page.tsx}
  * @since 1.0.0-alpha.1
  * @author TRAIDER Team
@@ -41,11 +41,11 @@ vi.mock('next/navigation', () => ({
 // Mock dashboard page component
 const DashboardPage = () => {
   const { status } = useSession();
-  
+
   if (status === 'loading') {
     return <div>Loading...</div>;
   }
-  
+
   if (status === 'unauthenticated') {
     return <div>Please sign in</div>;
   }
@@ -54,7 +54,7 @@ const DashboardPage = () => {
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow-sm p-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">Trading Dashboard</h1>
-        
+
         {/* Portfolio Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-blue-50 rounded-lg p-4">
@@ -62,19 +62,19 @@ const DashboardPage = () => {
             <p className="text-2xl font-bold text-blue-900">$15,350.00</p>
             <p className="text-sm text-green-600">+2.5% (+$375.00)</p>
           </div>
-          
+
           <div className="bg-green-50 rounded-lg p-4">
             <h3 className="text-sm font-medium text-green-600">Active Positions</h3>
             <p className="text-2xl font-bold text-green-900">8</p>
             <p className="text-sm text-green-600">+2</p>
           </div>
-          
+
           <div className="bg-purple-50 rounded-lg p-4">
-                         <h3 className="text-sm font-medium text-purple-600">Today&apos;s P&L</h3>
+            <h3 className="text-sm font-medium text-purple-600">Today&apos;s P&L</h3>
             <p className="text-2xl font-bold text-purple-900">+$125.50</p>
             <p className="text-sm text-green-600">+0.8%</p>
           </div>
-          
+
           <div className="bg-orange-50 rounded-lg p-4">
             <h3 className="text-sm font-medium text-orange-600">Available Cash</h3>
             <p className="text-2xl font-bold text-orange-900">$5,000.00</p>
@@ -105,7 +105,9 @@ const DashboardPage = () => {
                   <td className="py-2 px-4">$51,000.00</td>
                   <td className="py-2 px-4">$10,200.00</td>
                   <td className="py-2 px-4">
-                    <span className="text-green-800 bg-green-100 px-2 py-1 rounded text-sm">+$200.00</span>
+                    <span className="text-green-800 bg-green-100 px-2 py-1 rounded text-sm">
+                      +$200.00
+                    </span>
                   </td>
                 </tr>
                 <tr className="border-b">
@@ -115,7 +117,9 @@ const DashboardPage = () => {
                   <td className="py-2 px-4">$3,100.00</td>
                   <td className="py-2 px-4">$4,650.00</td>
                   <td className="py-2 px-4">
-                    <span className="text-green-800 bg-green-100 px-2 py-1 rounded text-sm">+$150.00</span>
+                    <span className="text-green-800 bg-green-100 px-2 py-1 rounded text-sm">
+                      +$150.00
+                    </span>
                   </td>
                 </tr>
               </tbody>
@@ -211,7 +215,11 @@ describe('Dashboard Comprehensive Tests', () => {
 
       expect(screen.getByText('Total Portfolio Value')).toBeInTheDocument();
       expect(screen.getByText('$15,350.00')).toBeInTheDocument();
-      expect(screen.getByText('Active Positions')).toBeInTheDocument();
+
+      // Check for Active Positions (there are multiple instances, so use getAllByText)
+      const activePositionsElements = screen.getAllByText('Active Positions');
+      expect(activePositionsElements.length).toBeGreaterThan(0);
+
       expect(screen.getByText('8')).toBeInTheDocument();
     });
 
@@ -292,7 +300,7 @@ describe('Dashboard Comprehensive Tests', () => {
 
       const table = screen.getByRole('table');
       expect(table).toBeInTheDocument();
-      
+
       const columnHeaders = screen.getAllByRole('columnheader');
       expect(columnHeaders.length).toBeGreaterThan(0);
     });
