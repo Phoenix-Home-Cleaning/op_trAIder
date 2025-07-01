@@ -69,17 +69,19 @@ jobs:
       fail-fast: true
     
     steps:
-      - name: 📥 Checkout code
+      - name: 🔄 Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Full history for better analysis
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
           
-      - name: 📦 Setup Node.js ${{ matrix.node-version }}
+      - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
           cache-dependency-path: package-lock.json
+          registry-url: 'https://registry.npmjs.org'
           
       - name: 🔧 Configure npm for performance
         run: |
@@ -168,10 +170,10 @@ jobs:
       fail-fast: false # Allow other shards to complete
     
     steps:
-      - name: 📥 Checkout code
+      - name: 🔄 Checkout repository
         uses: actions/checkout@v4
         
-      - name: 📦 Setup Node.js ${{ matrix.node-version }}
+      - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
@@ -273,10 +275,10 @@ jobs:
           - 6379:6379
     
     steps:
-      - name: 📥 Checkout code
+      - name: 🔄 Checkout repository
         uses: actions/checkout@v4
         
-      - name: 📦 Setup Node.js
+      - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -384,10 +386,10 @@ jobs:
       security-events: write
     
     steps:
-      - name: 📥 Checkout code
+      - name: 🔄 Checkout repository
         uses: actions/checkout@v4
         
-      - name: 📦 Setup Node.js
+      - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -481,9 +483,9 @@ jobs:
         with:
           name: security-scan-results
           path: |
-            npm-audit.json
-            trivy-results.sarif
-          retention-days: 90
+            security-reports/
+            quality-reports/
+          retention-days: 30
 
   # =============================================================================
   # PHASE 4: PERFORMANCE & BUILD VALIDATION
@@ -495,10 +497,10 @@ jobs:
     timeout-minutes: 15
     
     steps:
-      - name: 📥 Checkout code
+      - name: 🔄 Checkout repository
         uses: actions/checkout@v4
         
-      - name: 📦 Setup Node.js
+      - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -573,11 +575,11 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: build-artifacts
+          name: frontend-build
           path: |
             .next/
-            build-stats.json
-          retention-days: 30
+            public/
+          retention-days: 7
 
   # =============================================================================
   # PHASE 5: QUALITY GATE & DEPLOYMENT READINESS

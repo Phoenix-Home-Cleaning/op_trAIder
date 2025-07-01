@@ -15,42 +15,45 @@ version: 2
 
 updates:
   # =============================================================================
-  # FRONTEND DEPENDENCIES (Node.js/npm)
+  # FRONTEND DEPENDENCIES (Node.js/npm) - AGGRESSIVE SECURITY UPDATES
   # =============================================================================
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "daily"
-      time: "06:00"
+      time: "02:00"
       timezone: "Etc/UTC"
     
-    # Security-focused configuration
-    open-pull-requests-limit: 20
+    # Aggressive security configuration
+    open-pull-requests-limit: 25
     reviewers:
       - "traider-security-team"
     assignees:
       - "traider-lead-dev"
     
-    # Commit and PR configuration
+    # Security-focused commit messages
     commit-message:
       prefix: "security"
       prefix-development: "deps"
       include: "scope"
     
-    # Labels for categorization
+    # Enhanced labels for tracking
     labels:
       - "dependencies"
       - "security"
       - "automated"
+      - "priority-high"
     
-    # Allow all dependency types
+    # Allow all dependency types for comprehensive coverage
     allow:
       - dependency-type: "direct"
       - dependency-type: "indirect"
+      - dependency-type: "all"
     
-    # Group updates by type
+    # Optimized grouping for faster security resolution
     groups:
-      security-updates:
+      critical-security:
+        applies-to: security-updates
         patterns:
           - "*"
         update-types:
@@ -58,45 +61,49 @@ updates:
           - "minor"
           - "major"
       
+      frontend-core:
+        applies-to: version-updates
+        patterns:
+          - "next*"
+          - "react*"
+          - "@next/*"
+          - "@react/*"
+        update-types:
+          - "patch"
+          - "minor"
+      
+      security-tools:
+        patterns:
+          - "eslint*"
+          - "@typescript-eslint/*"
+          - "typescript*"
+        update-types:
+          - "patch"
+          - "minor"
+      
       testing-framework:
         patterns:
           - "vitest*"
           - "@vitest/*"
           - "playwright*"
           - "@playwright/*"
+          - "jest*"
+          - "@jest/*"
         update-types:
-          - "minor"
           - "patch"
-      
-      build-tools:
-        patterns:
-          - "next*"
-          - "typescript*"
-          - "eslint*"
-          - "@types/*"
-        update-types:
           - "minor"
-          - "patch"
-      
-      documentation:
-        patterns:
-          - "typedoc*"
-          - "typedoc-plugin-*"
-        update-types:
-          - "minor"
-          - "patch"
 
   # =============================================================================
-  # BACKEND DEPENDENCIES (Python/pip) - Future implementation
+  # BACKEND DEPENDENCIES (Python/pip) - ENHANCED SECURITY
   # =============================================================================
   - package-ecosystem: "pip"
     directory: "/backend"
     schedule:
       interval: "daily"
-      time: "06:00"
+      time: "02:00"
       timezone: "Etc/UTC"
     
-    open-pull-requests-limit: 15
+    open-pull-requests-limit: 20
     reviewers:
       - "traider-security-team"
     assignees:
@@ -112,13 +119,17 @@ updates:
       - "backend"
       - "security"
       - "automated"
+      - "priority-high"
     
     allow:
       - dependency-type: "direct"
       - dependency-type: "indirect"
+      - dependency-type: "all"
     
+    # Enhanced grouping for Python security
     groups:
-      security-updates:
+      critical-security:
+        applies-to: security-updates
         patterns:
           - "*"
         update-types:
@@ -131,28 +142,100 @@ updates:
           - "fastapi*"
           - "uvicorn*"
           - "pydantic*"
+          - "starlette*"
         update-types:
-          - "minor"
           - "patch"
+          - "minor"
       
-      database-drivers:
+      database-security:
         patterns:
           - "psycopg*"
           - "sqlalchemy*"
           - "alembic*"
+          - "asyncpg*"
         update-types:
-          - "minor"
           - "patch"
+          - "minor"
+      
+      crypto-security:
+        patterns:
+          - "cryptography*"
+          - "jwt*"
+          - "passlib*"
+          - "bcrypt*"
+        update-types:
+          - "patch"
+          - "minor"
+          - "major"
+      
+      ml-frameworks:
+        patterns:
+          - "torch*"
+          - "tensorflow*"
+          - "numpy*"
+          - "pandas*"
+          - "scikit-learn*"
+        update-types:
+          - "patch"
+          - "minor"
 
   # =============================================================================
-  # INFRASTRUCTURE DEPENDENCIES (Docker)
+  # GITHUB ACTIONS DEPENDENCIES - IMMEDIATE SECURITY UPDATES
+  # =============================================================================
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "01:00"
+      timezone: "Etc/UTC"
+    
+    open-pull-requests-limit: 15
+    reviewers:
+      - "traider-devops-team"
+    assignees:
+      - "traider-ci-lead"
+    
+    commit-message:
+      prefix: "security"
+      prefix-development: "ci"
+      include: "scope"
+    
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "ci-cd"
+      - "automated"
+      - "security"
+      - "priority-critical"
+    
+    # Group Actions updates for security
+    groups:
+      actions-security:
+        patterns:
+          - "actions/*"
+        update-types:
+          - "patch"
+          - "minor"
+          - "major"
+      
+      security-actions:
+        patterns:
+          - "github/codeql-action*"
+          - "ossf/scorecard-action*"
+          - "snyk/actions*"
+        update-types:
+          - "patch"
+          - "minor"
+          - "major"
+
+  # =============================================================================
+  # INFRASTRUCTURE DEPENDENCIES (Docker) - SECURITY FOCUSED
   # =============================================================================
   - package-ecosystem: "docker"
-    directory: "/infrastructure"
+    directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "06:00"
+      interval: "daily"
+      time: "03:00"
       timezone: "Etc/UTC"
     
     open-pull-requests-limit: 10
@@ -162,7 +245,8 @@ updates:
       - "traider-infrastructure-lead"
     
     commit-message:
-      prefix: "infra"
+      prefix: "security"
+      prefix-development: "infra"
       include: "scope"
     
     labels:
@@ -170,47 +254,31 @@ updates:
       - "infrastructure"
       - "docker"
       - "automated"
-
-  # =============================================================================
-  # GITHUB ACTIONS DEPENDENCIES
-  # =============================================================================
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "06:00"
-      timezone: "Etc/UTC"
-    
-    open-pull-requests-limit: 10
-    reviewers:
-      - "traider-devops-team"
-    assignees:
-      - "traider-ci-lead"
-    
-    commit-message:
-      prefix: "ci"
-      include: "scope"
-    
-    labels:
-      - "dependencies"
-      - "github-actions"
-      - "ci-cd"
-      - "automated"
+      - "security"
     
     groups:
-      actions-core:
+      base-images:
         patterns:
-          - "actions/*"
+          - "node*"
+          - "python*"
+          - "alpine*"
+          - "ubuntu*"
         update-types:
-          - "minor"
           - "patch"
-      
-      security-actions:
-        patterns:
-          - "github/codeql-action*"
-          - "ossf/scorecard-action*"
-          - "securecodewarrior/github-action-add-sarif*"
-        update-types:
           - "minor"
-          - "patch" 
+          - "major"
+
+# =============================================================================
+# SECURITY CONFIGURATION NOTES
+# =============================================================================
+# 
+# This configuration implements:
+# 1. Daily security scans for all ecosystems
+# 2. Aggressive grouping to reduce PR noise
+# 3. Priority labeling for security issues
+# 4. Comprehensive coverage of all dependency types
+# 5. Immediate updates for critical security patches
+# 
+# Monitoring: All updates tracked in security dashboard
+# Compliance: Meets institutional security requirements
+# Performance: Optimized for minimal latency in security patches 
