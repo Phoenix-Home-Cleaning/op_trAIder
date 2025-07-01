@@ -392,7 +392,7 @@ jobs:
         
       - name: 🏗️ Build container image
         if: hashFiles(matrix.dockerfile) != ''
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
