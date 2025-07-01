@@ -1,0 +1,286 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "🔄 TRAIDER V1 - Renovate Configuration for Institutional-Grade Dependency Management",
+  
+  "extends": [
+    "config:base",
+    "security:openssf-scorecard",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    ":separatePatchReleases",
+    "group:monorepos",
+    "group:recommended",
+    "workarounds:all"
+  ],
+
+  "timezone": "Etc/UTC",
+  "schedule": ["before 6am on monday"],
+  
+  "labels": ["dependencies", "automated", "renovate"],
+  "reviewers": ["@traider-devops-team"],
+  "assignees": ["@traider-security-lead"],
+  
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  "branchConcurrentLimit": 10,
+  
+  "semanticCommits": "enabled",
+  "commitMessagePrefix": "deps:",
+  "commitMessageAction": "update",
+  "commitMessageTopic": "{{depName}}",
+  "commitMessageExtra": "to {{newVersion}}",
+  
+  "dependencyDashboard": true,
+  "dependencyDashboardTitle": "🔄 TRAIDER Dependency Dashboard",
+  "dependencyDashboardHeader": "This dashboard tracks all dependency updates for the TRAIDER autonomous trading platform. All updates undergo institutional-grade security and stability validation.",
+  "dependencyDashboardFooter": "🛡️ **Security Notice**: All dependency updates are automatically scanned for vulnerabilities. Critical security updates are prioritized and may bypass normal scheduling.",
+
+  "packageRules": [
+    {
+      "description": "🔒 Critical Security Updates - Immediate Priority",
+      "matchPackagePatterns": ["*"],
+      "vulnerabilityAlerts": {
+        "enabled": true,
+        "schedule": ["at any time"],
+        "prPriority": 10,
+        "labels": ["security", "critical", "immediate"],
+        "reviewers": ["@traider-security-team", "@traider-devops-lead"],
+        "assignees": ["@traider-ciso"]
+      }
+    },
+    
+    {
+      "description": "🚀 Trading Core Dependencies - High Stability Required",
+      "matchPackagePatterns": [
+        "next", "react", "typescript", "fastapi", "sqlalchemy", 
+        "timescaledb", "redis", "kafka", "prometheus"
+      ],
+      "schedule": ["before 6am on monday"],
+      "minimumReleaseAge": "7 days",
+      "prPriority": 8,
+      "labels": ["core-dependencies", "trading-critical"],
+      "reviewers": ["@traider-architecture-team"],
+      "assignees": ["@traider-tech-lead"],
+      "groupName": "Trading Core Dependencies",
+      "automerge": false,
+      "stabilityDays": 7,
+      "respectLatest": true
+    },
+    
+    {
+      "description": "🧪 Development Dependencies - Moderate Risk",
+      "matchDepTypes": ["devDependencies"],
+      "schedule": ["before 6am on monday"],
+      "minimumReleaseAge": "3 days",
+      "prPriority": 5,
+      "labels": ["dev-dependencies"],
+      "groupName": "Development Dependencies",
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true,
+      "matchUpdateTypes": ["patch", "minor"]
+    },
+    
+    {
+      "description": "🔧 Build Tools & Linters - Low Risk",
+      "matchPackagePatterns": [
+        "eslint", "prettier", "vitest", "playwright", "typedoc",
+        "husky", "lint-staged", "commitlint"
+      ],
+      "schedule": ["before 6am on monday"],
+      "minimumReleaseAge": "1 day",
+      "prPriority": 3,
+      "labels": ["build-tools"],
+      "groupName": "Build Tools & Linters",
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true
+    },
+    
+    {
+      "description": "🐍 Python Backend Dependencies",
+      "matchManagers": ["pip_requirements", "poetry"],
+      "schedule": ["before 6am on monday"],
+      "minimumReleaseAge": "5 days",
+      "prPriority": 7,
+      "labels": ["python", "backend"],
+      "reviewers": ["@traider-backend-team"],
+      "groupName": "Python Backend Dependencies",
+      "automerge": false,
+      "stabilityDays": 5
+    },
+    
+    {
+      "description": "🔐 Security Tools - Immediate Updates",
+      "matchPackagePatterns": [
+        "gitleaks", "trivy", "semgrep", "bandit", "safety",
+        "npm-audit", "pip-audit", "snyk"
+      ],
+      "schedule": ["at any time"],
+      "prPriority": 9,
+      "labels": ["security-tools", "immediate"],
+      "reviewers": ["@traider-security-team"],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true
+    },
+    
+    {
+      "description": "📊 Monitoring & Observability",
+      "matchPackagePatterns": [
+        "prometheus", "grafana", "opentelemetry", "sentry",
+        "datadog", "newrelic"
+      ],
+      "schedule": ["before 6am on monday"],
+      "minimumReleaseAge": "5 days",
+      "prPriority": 6,
+      "labels": ["monitoring", "observability"],
+      "groupName": "Monitoring & Observability",
+      "automerge": false
+    },
+    
+    {
+      "description": "🏗️ Infrastructure Tools",
+      "matchPackagePatterns": [
+        "docker", "kubernetes", "helm", "terraform",
+        "ansible", "nginx", "traefik"
+      ],
+      "schedule": ["before 6am on monday"],
+      "minimumReleaseAge": "10 days",
+      "prPriority": 4,
+      "labels": ["infrastructure"],
+      "groupName": "Infrastructure Tools",
+      "automerge": false,
+      "stabilityDays": 10
+    },
+    
+    {
+      "description": "🎯 Major Version Updates - Manual Review Required",
+      "matchUpdateTypes": ["major"],
+      "schedule": ["before 6am on monday"],
+      "minimumReleaseAge": "14 days",
+      "prPriority": 2,
+      "labels": ["major-update", "manual-review"],
+      "reviewers": ["@traider-architecture-team", "@traider-tech-lead"],
+      "assignees": ["@traider-cto"],
+      "automerge": false,
+      "stabilityDays": 14,
+      "prBodyTemplate": "⚠️ **MAJOR VERSION UPDATE**\n\nThis PR updates {{depName}} from {{currentVersion}} to {{newVersion}}.\n\n**⚠️ Breaking Changes Expected** - Manual review and testing required.\n\n**Pre-merge Checklist:**\n- [ ] Review changelog for breaking changes\n- [ ] Update code for API changes\n- [ ] Run full test suite\n- [ ] Validate trading logic still works\n- [ ] Check performance impact\n- [ ] Update documentation\n\n**Risk Assessment:** HIGH - Major version updates may introduce breaking changes that could affect trading operations.\n\n**Recommendation:** Deploy to staging environment first and run comprehensive backtesting before production deployment."
+    },
+    
+    {
+      "description": "🚫 Blocked Dependencies - Security or Stability Concerns",
+      "matchPackageNames": [
+        "lodash",
+        "moment"
+      ],
+      "enabled": false,
+      "prBodyTemplate": "❌ **BLOCKED DEPENDENCY**\n\nThis dependency has been blocked due to security or stability concerns.\n\nPlease use approved alternatives:\n- lodash → native ES6+ methods or ramda\n- moment → date-fns or dayjs"
+    }
+  ],
+
+  "hostRules": [
+    {
+      "matchHost": "github.com",
+      "concurrentRequestLimit": 10
+    },
+    {
+      "matchHost": "registry.npmjs.org",
+      "concurrentRequestLimit": 20
+    },
+    {
+      "matchHost": "pypi.org",
+      "concurrentRequestLimit": 10
+    }
+  ],
+
+  "gitAuthor": "renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>",
+  
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on monday"],
+    "commitMessageAction": "update",
+    "commitMessageTopic": "lock file maintenance",
+    "prTitle": "🔒 Lock file maintenance",
+    "labels": ["lock-file-maintenance"],
+    "automerge": true,
+    "automergeType": "pr",
+    "platformAutomerge": true
+  },
+
+  "osvVulnerabilityAlerts": true,
+  
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "schedule": ["at any time"],
+    "prCreation": "immediate",
+    "labels": ["security", "vulnerability"],
+    "reviewers": ["@traider-security-team"],
+    "assignees": ["@traider-security-lead"],
+    "prPriority": 10
+  },
+
+  "stabilityDays": 3,
+  "respectLatest": true,
+  "followTag": "latest",
+
+  "prBodyTemplate": "📦 **Dependency Update**\n\nThis PR updates {{depName}} from {{currentVersion}} to {{newVersion}}.\n\n{{#if hasReleaseNotes}}\n## 📋 Release Notes\n{{releaseNotes}}\n{{/if}}\n\n{{#if hasChangelog}}\n## 📝 Changelog\n{{changelog}}\n{{/if}}\n\n## 🔍 Security Analysis\n{{#if vulnerabilities}}\n⚠️ **Security Vulnerabilities Addressed:**\n{{#each vulnerabilities}}\n- {{this.title}} ({{this.severity}})\n{{/each}}\n{{else}}\n✅ No known security vulnerabilities.\n{{/if}}\n\n## 🧪 Testing Requirements\n- [ ] Unit tests pass\n- [ ] Integration tests pass\n- [ ] Security scans pass\n- [ ] Performance benchmarks within acceptable range\n- [ ] Trading logic validation (if applicable)\n\n## 🚀 Deployment Checklist\n- [ ] Staging deployment successful\n- [ ] Production deployment approved\n- [ ] Monitoring alerts configured\n- [ ] Rollback plan documented\n\n---\n*This PR was automatically created by Renovate Bot as part of TRAIDER's institutional-grade dependency management.*",
+
+  "prTitle": "{{semanticPrefix}}{{#if isPin}}pin{{else}}update{{/if}} {{depName}} to {{#if isRange}}{{newValue}}{{else}}{{#if isMajor}}{{prettyNewMajor}}{{else}}{{#if isMinor}}{{prettyNewMinor}}{{else}}{{prettyNewPatch}}{{/if}}{{/if}}{{/if}}",
+
+  "rebaseWhen": "behind-base-branch",
+  "rebaseLabel": "rebase",
+  
+  "stopUpdatingLabel": "renovate-stop",
+  
+  "configWarningReuseIssue": false,
+  
+  "onboarding": false,
+  "requireConfig": "optional",
+  
+  "forkProcessing": "enabled",
+  
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/bower_components/**",
+    "**/vendor/**",
+    "**/coverage/**",
+    "**/.next/**",
+    "**/dist/**",
+    "**/build/**"
+  ],
+
+  "ignoreDeps": [
+    "node",
+    "npm",
+    "yarn"
+  ],
+
+  "rangeStrategy": "bump",
+  
+  "bumpVersion": "patch",
+  
+  "commitBody": "Signed-off-by: TRAIDER Renovate Bot <renovate@traider.com>",
+  
+  "prFooter": "🤖 This PR was generated automatically by Renovate Bot\n📚 [Configuration Documentation](https://docs.traider.com/infrastructure/renovate)\n🔒 [Security Policy](https://docs.traider.com/security/dependency-management)",
+
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update Docker image versions in Kubernetes manifests",
+      "fileMatch": ["^infrastructure/k8s/.+\\.ya?ml$"],
+      "matchStrings": [
+        "image:\\s*(?<depName>[^:]+):(?<currentValue>[^\\s]+)"
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex", 
+      "description": "Update tool versions in shell scripts",
+      "fileMatch": ["^scripts/.+\\.sh$"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+\\w+_VERSION=[\"']?(?<currentValue>[^\"'\\s]+)[\"']?"
+      ]
+    }
+  ]
+} 

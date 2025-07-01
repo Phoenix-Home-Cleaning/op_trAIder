@@ -1,0 +1,403 @@
+# =============================================================================
+# TRAIDER V1 - Qlty Code Quality Configuration
+# Institutional-Grade Standards for Autonomous Trading Platform
+# =============================================================================
+#
+# Performance: <5min analysis time for medium projects
+# Risk: MEDIUM - Code quality gates block production deployments
+# Compliance: Institutional standards with trading-specific thresholds
+#
+# See: docs/infrastructure/qlty-setup-guide.md
+# Author: TRAIDER Team
+# Since: 1.0.0-alpha
+
+[config]
+# Qlty configuration version
+version = "0.1"
+
+# Project metadata
+project_name = "traider-v1"
+project_type = "typescript-nextjs"
+
+# Analysis scope
+include_patterns = [
+    "app/**/*.{ts,tsx,js,jsx}",
+    "middleware.ts",
+    "shared/**/*.{ts,tsx,js,jsx}",
+    "backend/**/*.py",
+    "scripts/**/*.{ts,js,py,ps1}",
+    "infrastructure/**/*.{yaml,yml,json}",
+    "*.{ts,tsx,js,jsx,py,json,yaml,yml}"
+]
+
+exclude_patterns = [
+    "node_modules/**",
+    ".next/**",
+    "coverage/**",
+    "dist/**",
+    "build/**",
+    "**/*.test.{ts,tsx,js,jsx}",
+    "**/*.spec.{ts,tsx,js,jsx}",
+    "**/*.d.ts",
+    ".git/**",
+    "logs/**",
+    "test-results/**",
+    "quality-reports/**",
+    "security-reports/**",
+    "__pycache__/**",
+    "*.pyc",
+    ".pytest_cache/**"
+]
+
+# =============================================================================
+# INSTITUTIONAL QUALITY THRESHOLDS
+# =============================================================================
+
+[thresholds]
+# Overall quality score (0-100)
+quality_score_min = 85
+
+# Code complexity thresholds
+cyclomatic_complexity_max = 12
+cognitive_complexity_max = 15
+nesting_depth_max = 4
+
+# Code duplication limits
+duplication_percentage_max = 3.0
+duplicate_lines_max = 50
+
+# File size limits
+file_lines_max = 500
+function_lines_max = 50
+
+# Technical debt thresholds
+debt_ratio_max = 5.0
+maintainability_index_min = 70
+
+# Security and reliability
+security_hotspots_max = 0
+reliability_rating_min = "A"
+security_rating_min = "A"
+
+# =============================================================================
+# TRADING-SPECIFIC QUALITY RULES
+# =============================================================================
+
+[rules.trading_logic]
+# Enhanced standards for trading-critical code
+paths = [
+    "app/lib/trading/**",
+    "app/lib/risk/**",
+    "app/lib/signals/**",
+    "backend/services/trading/**",
+    "backend/services/risk/**",
+    "backend/ml/**"
+]
+
+# Stricter thresholds for trading logic
+cyclomatic_complexity_max = 8
+cognitive_complexity_max = 10
+function_lines_max = 30
+duplication_percentage_max = 1.0
+
+[rules.market_data]
+# Market data handling standards
+paths = [
+    "app/lib/market-data/**",
+    "backend/services/market_data/**",
+    "backend/models/market_data.py"
+]
+
+# Performance-critical thresholds
+cyclomatic_complexity_max = 10
+response_time_max = "1ms"
+memory_usage_max = "100MB"
+
+[rules.authentication]
+# Security-critical authentication code
+paths = [
+    "app/lib/auth/**",
+    "backend/api/auth.py",
+    "middleware.ts"
+]
+
+# Security-focused rules
+security_rating_min = "A+"
+vulnerability_count_max = 0
+authentication_bypass_check = true
+
+# =============================================================================
+# LANGUAGE-SPECIFIC CONFIGURATIONS
+# =============================================================================
+
+[languages.typescript]
+enabled = true
+strict_mode = true
+
+# TypeScript-specific rules
+[languages.typescript.rules]
+no_any = "error"
+strict_null_checks = true
+no_implicit_returns = "error"
+prefer_const = "error"
+no_unused_vars = "error"
+
+# Performance rules for trading systems
+no_sync_operations = "error"
+prefer_async_await = "warn"
+no_blocking_operations = "error"
+
+[languages.python]
+enabled = true
+version = "3.11"
+
+# Python-specific rules
+[languages.python.rules]
+max_line_length = 88
+enforce_type_hints = true
+no_bare_except = "error"
+no_global_variables = "warn"
+
+# Trading system specific Python rules
+no_print_statements = "error"
+require_logging = "error"
+no_hardcoded_credentials = "error"
+
+[languages.javascript]
+enabled = true
+ecma_version = 2023
+
+[languages.javascript.rules]
+no_console_log = "warn"
+prefer_const = "error"
+no_var = "error"
+
+# =============================================================================
+# SECURITY ANALYSIS
+# =============================================================================
+
+[security]
+enabled = true
+fail_on_high = true
+fail_on_medium = false
+
+# Security scanners
+scanners = [
+    "semgrep",
+    "bandit",
+    "eslint-security",
+    "safety"
+]
+
+# Security rule categories
+[security.rules]
+injection_attacks = "error"
+xss_vulnerabilities = "error"
+csrf_protection = "error"
+authentication_bypass = "error"
+authorization_flaws = "error"
+sensitive_data_exposure = "error"
+security_misconfiguration = "warn"
+insecure_dependencies = "warn"
+
+# Trading-specific security rules
+[security.trading]
+api_key_exposure = "error"
+private_key_hardcoding = "error"
+trading_parameter_validation = "error"
+position_limit_bypass = "error"
+risk_calculation_tampering = "error"
+
+# =============================================================================
+# PERFORMANCE ANALYSIS
+# =============================================================================
+
+[performance]
+enabled = true
+
+# Performance thresholds
+[performance.thresholds]
+response_time_p95 = "500ms"
+memory_usage_max = "512MB"
+cpu_usage_max = "80%"
+
+# Trading-specific performance rules
+[performance.trading]
+signal_generation_latency_max = "5ms"
+market_data_processing_latency_max = "1ms"
+risk_calculation_latency_max = "50ms"
+order_execution_latency_max = "10ms"
+
+# =============================================================================
+# MAINTAINABILITY ANALYSIS
+# =============================================================================
+
+[maintainability]
+enabled = true
+
+# Maintainability metrics
+[maintainability.metrics]
+maintainability_index_min = 75
+technical_debt_ratio_max = 3.0
+code_coverage_min = 80
+documentation_coverage_min = 70
+
+# Code organization rules
+[maintainability.organization]
+max_dependencies_per_file = 15
+max_exports_per_file = 10
+prefer_composition_over_inheritance = true
+
+# =============================================================================
+# DOCUMENTATION REQUIREMENTS
+# =============================================================================
+
+[documentation]
+enabled = true
+enforce_jsdoc = true
+enforce_python_docstrings = true
+
+# Documentation coverage thresholds
+[documentation.coverage]
+functions_min = 90
+classes_min = 95
+modules_min = 85
+trading_logic_min = 100
+
+# Required documentation sections
+[documentation.required_sections]
+trading_functions = [
+    "description",
+    "parameters",
+    "returns",
+    "throws",
+    "performance",
+    "trading_impact",
+    "risk_level",
+    "example"
+]
+
+# =============================================================================
+# TESTING REQUIREMENTS
+# =============================================================================
+
+[testing]
+enabled = true
+
+# Test coverage requirements
+[testing.coverage]
+global_min = 80
+trading_logic_min = 90
+risk_management_min = 100
+authentication_min = 95
+
+# Test quality rules
+[testing.quality]
+test_naming_convention = "should_.*_when_.*"
+no_hardcoded_test_data = "error"
+require_test_documentation = true
+max_test_function_lines = 30
+
+# =============================================================================
+# REPORTING AND OUTPUT
+# =============================================================================
+
+[reporting]
+# Output formats
+formats = ["json", "sarif", "junit", "html"]
+
+# Report destinations
+output_dir = "quality-reports/qlty"
+
+# Report sections
+include_sections = [
+    "summary",
+    "quality_metrics",
+    "security_analysis",
+    "performance_analysis",
+    "maintainability",
+    "documentation",
+    "testing",
+    "recommendations"
+]
+
+# Detailed reporting for trading components
+[reporting.trading_focus]
+enabled = true
+include_call_graphs = true
+include_dependency_analysis = true
+include_performance_hotspots = true
+
+# =============================================================================
+# INTEGRATION SETTINGS
+# =============================================================================
+
+[integrations]
+# GitHub integration
+[integrations.github]
+enabled = true
+create_pr_comments = true
+create_check_runs = true
+upload_sarif = true
+
+# SonarQube integration
+[integrations.sonarqube]
+enabled = true
+project_key = "traider-v1"
+quality_gate_wait = true
+
+# Slack notifications (optional)
+[integrations.slack]
+enabled = false
+webhook_url = "${SLACK_WEBHOOK_URL}"
+notify_on_failure = true
+notify_on_improvement = true
+
+# =============================================================================
+# IGNORE PATTERNS
+# =============================================================================
+
+[ignore]
+# Files to completely ignore
+files = [
+    "**/*.min.js",
+    "**/*.bundle.js",
+    "**/vendor/**",
+    "**/third-party/**",
+    "**/*.generated.*"
+]
+
+# Rules to ignore for specific patterns
+[ignore.rules]
+# Legacy code with planned refactoring
+"app/legacy/**" = [
+    "cyclomatic_complexity",
+    "duplication_percentage"
+]
+
+# Configuration files
+"**/*.config.{js,ts}" = [
+    "file_lines_max"
+]
+
+# Test utilities
+"tests/utils/**" = [
+    "function_lines_max"
+]
+
+# =============================================================================
+# EXPERIMENTAL FEATURES
+# =============================================================================
+
+[experimental]
+# AI-powered code review suggestions
+ai_suggestions = true
+
+# Predictive quality analysis
+predictive_analysis = true
+
+# Performance regression detection
+performance_regression_detection = true
+
+# Security vulnerability prediction
+security_prediction = true 

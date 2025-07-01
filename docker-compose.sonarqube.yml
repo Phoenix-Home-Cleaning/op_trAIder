@@ -1,0 +1,300 @@
+# 🔍 TRAIDER V1 - SonarQube Self-Hosted Configuration
+# Institutional-grade code quality analysis infrastructure
+#
+# Performance: <2GB RAM, <10GB storage for small-medium projects
+# Risk: MEDIUM - Self-hosted quality analysis infrastructure
+# Compliance: Data remains on-premises, full audit control
+#
+# See: docs/infrastructure/sonarqube-setup.md
+# Author: TRAIDER Team
+# Since: 1.0.0-alpha
+
+version: '3.8'
+
+# =============================================================================
+# SONARQUBE SERVICES
+# =============================================================================
+
+services:
+  # SonarQube Database
+  sonarqube-db:
+    image: postgres:15-alpine
+    container_name: traider-sonarqube-db
+    restart: unless-stopped
+    
+    environment:
+      POSTGRES_USER: sonarqube
+      POSTGRES_PASSWORD: ${SONARQUBE_DB_PASSWORD:-sonarqube-secure-password}
+      POSTGRES_DB: sonarqube
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    
+    volumes:
+      - sonarqube-db-data:/var/lib/postgresql/data
+      - ./infrastructure/sonarqube/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    
+    networks:
+      - sonarqube-network
+    
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sonarqube -d sonarqube"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    # Security hardening
+    security_opt:
+      - no-new-privileges:true
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # SonarQube Server
+  sonarqube:
+    image: sonarqube:10-community
+    container_name: traider-sonarqube
+    restart: unless-stopped
+    
+    depends_on:
+      sonarqube-db:
+        condition: service_healthy
+    
+    environment:
+      # Database configuration
+      SONAR_JDBC_URL: jdbc:postgresql://sonarqube-db:5432/sonarqube
+      SONAR_JDBC_USERNAME: sonarqube
+      SONAR_JDBC_PASSWORD: ${SONARQUBE_DB_PASSWORD:-sonarqube-secure-password}
+      
+      # SonarQube configuration
+      SONAR_WEB_HOST: 0.0.0.0
+      SONAR_WEB_PORT: 9000
+      SONAR_WEB_CONTEXT: /sonarqube
+      
+      # Security configuration
+      SONAR_SECURITY_REALM: ${SONAR_SECURITY_REALM:-}
+      SONAR_AUTHENTICATOR_DOWNCASE: ${SONAR_AUTHENTICATOR_DOWNCASE:-false}
+      
+      # Performance tuning
+      SONAR_CE_JAVAOPTS: "-Xmx1g -Xms256m"
+      SONAR_WEB_JAVAOPTS: "-Xmx1g -Xms256m"
+      SONAR_SEARCH_JAVAOPTS: "-Xmx512m -Xms256m"
+      
+      # Elasticsearch configuration
+      SONAR_SEARCH_PORT_9001: 9001
+      SONAR_SEARCH_PORT_9002: 9002
+      
+      # Logging
+      SONAR_LOG_LEVEL: ${SONAR_LOG_LEVEL:-INFO}
+      SONAR_PATH_LOGS: /opt/sonarqube/logs
+      
+      # Institutional compliance
+      SONAR_FORCEAUTHENTICATION: true
+      SONAR_UPDATECENTER_ACTIVATE: false
+      SONAR_TELEMETRY_ENABLE: false
+    
+    volumes:
+      # Persistent data
+      - sonarqube-data:/opt/sonarqube/data
+      - sonarqube-logs:/opt/sonarqube/logs
+      - sonarqube-extensions:/opt/sonarqube/extensions
+      
+      # Configuration
+      - ./infrastructure/sonarqube/sonar.properties:/opt/sonarqube/conf/sonar.properties:ro
+      - ./infrastructure/sonarqube/plugins:/opt/sonarqube/extensions/plugins:ro
+      
+      # SSL certificates (if using HTTPS)
+      - ./infrastructure/sonarqube/certs:/opt/sonarqube/certs:ro
+    
+    ports:
+      - "${SONARQUBE_PORT:-9000}:9000"
+    
+    networks:
+      - sonarqube-network
+      - traider-network
+    
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/sonarqube/api/system/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    
+    # Security hardening
+    security_opt:
+      - no-new-privileges:true
+    
+    # Resource limits for institutional workloads
+    deploy:
+      resources:
+        limits:
+          memory: 3G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '1.0'
+    
+    # System limits for Elasticsearch
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+      nproc:
+        soft: 4096
+        hard: 4096
+
+# =============================================================================
+# MONITORING & OBSERVABILITY
+# =============================================================================
+
+  # SonarQube Metrics Exporter (Prometheus)
+  sonarqube-exporter:
+    image: dmeiners/sonarqube-exporter:latest
+    container_name: traider-sonarqube-exporter
+    restart: unless-stopped
+    
+    depends_on:
+      sonarqube:
+        condition: service_healthy
+    
+    environment:
+      SONAR_URL: http://sonarqube:9000/sonarqube
+      SONAR_TOKEN: ${SONARQUBE_TOKEN}
+      SONAR_PROJECT_KEY: traider-v1
+      
+      # Metrics configuration
+      METRICS_PORT: 8080
+      METRICS_PATH: /metrics
+      
+      # Collection intervals
+      COLLECTION_INTERVAL: 300  # 5 minutes
+      
+    ports:
+      - "${SONARQUBE_EXPORTER_PORT:-8080}:8080"
+    
+    networks:
+      - sonarqube-network
+      - monitoring-network
+    
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/metrics || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
+
+# =============================================================================
+# BACKUP & MAINTENANCE
+# =============================================================================
+
+  # Database backup service
+  sonarqube-backup:
+    image: postgres:15-alpine
+    container_name: traider-sonarqube-backup
+    restart: "no"
+    
+    depends_on:
+      - sonarqube-db
+    
+    environment:
+      PGPASSWORD: ${SONARQUBE_DB_PASSWORD:-sonarqube-secure-password}
+    
+    volumes:
+      - sonarqube-backups:/backups
+      - ./scripts/backup-sonarqube.sh:/backup.sh:ro
+    
+    networks:
+      - sonarqube-network
+    
+    command: ["sh", "/backup.sh"]
+    
+    # Backup schedule via external cron or CI/CD
+    profiles:
+      - backup
+
+# =============================================================================
+# NETWORKS
+# =============================================================================
+
+networks:
+  sonarqube-network:
+    driver: bridge
+    name: traider-sonarqube-network
+    
+  traider-network:
+    external: true
+    name: traider-network
+    
+  monitoring-network:
+    external: true
+    name: traider-monitoring-network
+
+# =============================================================================
+# VOLUMES
+# =============================================================================
+
+volumes:
+  # SonarQube data
+  sonarqube-data:
+    driver: local
+    name: traider-sonarqube-data
+    
+  sonarqube-logs:
+    driver: local
+    name: traider-sonarqube-logs
+    
+  sonarqube-extensions:
+    driver: local
+    name: traider-sonarqube-extensions
+  
+  # Database data
+  sonarqube-db-data:
+    driver: local
+    name: traider-sonarqube-db-data
+  
+  # Backups
+  sonarqube-backups:
+    driver: local
+    name: traider-sonarqube-backups
+
+# =============================================================================
+# USAGE INSTRUCTIONS
+# =============================================================================
+
+# Start SonarQube:
+#   docker-compose -f docker-compose.sonarqube.yml up -d
+#
+# Access SonarQube:
+#   http://localhost:9000/sonarqube
+#   Default credentials: admin/admin (change immediately)
+#
+# Run analysis:
+#   npm run quality:sonar
+#
+# Backup database:
+#   docker-compose -f docker-compose.sonarqube.yml --profile backup up sonarqube-backup
+#
+# View metrics:
+#   http://localhost:8080/metrics
+#
+# Stop SonarQube:
+#   docker-compose -f docker-compose.sonarqube.yml down 

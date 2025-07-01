@@ -1,0 +1,150 @@
+# 🔍 TRAIDER V1 - CodeQL Configuration
+# Advanced security analysis configuration for institutional trading platform
+#
+# Performance: Analysis target <10min for full codebase
+# Risk: CRITICAL - Security vulnerabilities block deployments
+# Compliance: All security findings logged and retained
+#
+# See: docs/security/codeql-configuration.md
+# Author: TRAIDER Team
+# Since: 1.0.0-alpha
+
+name: "TRAIDER CodeQL Configuration"
+
+# Disable default setup to use custom configuration
+disable-default-setup: true
+
+# =============================================================================
+# QUERY CONFIGURATION
+# =============================================================================
+
+queries:
+  # Security queries
+  - name: security-extended
+    uses: security-extended
+    
+  # Security and quality queries
+  - name: security-and-quality
+    uses: security-and-quality
+    
+  # Custom trading-specific queries
+  - name: trading-security
+    uses: ./.github/codeql-queries/trading-security.ql
+    
+  # Custom risk management queries  
+  - name: risk-management
+    uses: ./.github/codeql-queries/risk-management.ql
+
+# =============================================================================
+# PATH FILTERS
+# =============================================================================
+
+paths:
+  # Include source code
+  - "app/**"
+  - "middleware.ts"
+  - "shared/**"
+  
+paths-ignore:
+  # Exclude build artifacts
+  - ".next/**"
+  - "dist/**"
+  - "build/**"
+  - "coverage/**"
+  
+  # Exclude dependencies
+  - "node_modules/**"
+  - "**/node_modules/**"
+  
+  # Exclude test files (analyzed separately)
+  - "tests/**"
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.spec.ts"
+  - "**/*.spec.tsx"
+  
+  # Exclude configuration files
+  - "**/*.config.js"
+  - "**/*.config.ts"
+  - "**/*.d.ts"
+  
+  # Exclude documentation
+  - "docs/**"
+  - "README.md"
+  - "**/README.md"
+  
+  # Exclude infrastructure
+  - "infrastructure/**"
+  - "scripts/**"
+  - "public/**"
+
+# =============================================================================
+# TRADING-SPECIFIC SECURITY RULES
+# =============================================================================
+
+# Custom query packs for trading systems
+packs:
+  # Standard security pack
+  - "codeql/javascript-security-extended"
+  
+  # Additional quality checks
+  - "codeql/javascript-code-quality"
+  
+  # Custom trading security pack (if available)
+  # - "traider/trading-security-pack"
+
+# =============================================================================
+# ANALYSIS CONFIGURATION
+# =============================================================================
+
+# Analysis timeout
+timeout: 900  # 15 minutes
+
+# Build mode
+build-mode: autobuild
+
+# Language configuration
+languages:
+  - javascript-typescript
+
+# =============================================================================
+# SARIF CONFIGURATION
+# =============================================================================
+
+# SARIF output configuration
+sarif-category: "codeql-traider"
+
+# Upload SARIF results
+upload-sarif: true
+
+# =============================================================================
+# INSTITUTIONAL COMPLIANCE
+# =============================================================================
+
+# Audit and compliance settings
+compliance:
+  # Enable audit logging
+  audit-logging: true
+  
+  # Data retention (1 year for compliance)
+  retention-days: 365
+  
+  # Security standards compliance
+  standards:
+    - "OWASP-Top-10"
+    - "CWE-Top-25"
+    - "SANS-Top-25"
+    
+# =============================================================================
+# PERFORMANCE OPTIMIZATION
+# =============================================================================
+
+# Parallel analysis
+threads: 4
+
+# Memory configuration
+memory: "4GB"
+
+# Cache configuration
+cache: true
+cache-size: "2GB" 
