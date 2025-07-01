@@ -29,7 +29,7 @@ on:
 # Global environment variables
 env:
   KUBEVAL_VERSION: "v0.16.1"
-  KUBE_SCORE_VERSION: "v1.20.0"
+  KUBE_SCORE_VERSION: "v1.8.0"
   FORCE_COLOR: 1
 
 # Ensure only one workflow runs at a time per branch
@@ -71,9 +71,14 @@ jobs:
       - name: 🔧 Setup kube-score
         run: |
           echo "::group::Installing kube-score ${{ env.KUBE_SCORE_VERSION }}"
-          wget https://github.com/zegl/kube-score/releases/download/${{ env.KUBE_SCORE_VERSION }}/kube-score_${{ env.KUBE_SCORE_VERSION }}_linux_amd64.tar.gz
-          tar xf kube-score_${{ env.KUBE_SCORE_VERSION }}_linux_amd64.tar.gz
-          sudo cp kube-score /usr/local/bin
+          # Use Docker approach as binary downloads are having issues
+          docker pull zegl/kube-score:${{ env.KUBE_SCORE_VERSION }}
+          # Create a wrapper script to run kube-score via docker
+          sudo tee /usr/local/bin/kube-score > /dev/null << 'EOF'
+          #!/bin/bash
+          docker run --rm -i -v "$(pwd):/project" -w /project zegl/kube-score:v1.8.0 "$@"
+          EOF
+          sudo chmod +x /usr/local/bin/kube-score
           kube-score version
           echo "::endgroup::"
           
