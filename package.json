@@ -73,8 +73,8 @@
     "decimal.js": "^10.5.0",
     "next": "^15.3.4",
     "next-auth": "^4.24.11",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "typescript": "^5.0.0"
   },
   "devDependencies": {
@@ -91,8 +91,8 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/decimal.js": "^0.0.32",
     "@types/node": "^20.0.0",
-    "@types/react": "^19.1.8",
-    "@types/react-dom": "^19.1.6",
+    "@types/react": "^18.3.23",
+    "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^4.6.0",
     "@vitest/coverage-v8": "^2.1.8",
     "@vitest/ui": "^2.1.8",
