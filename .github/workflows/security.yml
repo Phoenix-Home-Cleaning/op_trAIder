@@ -141,38 +141,7 @@ jobs:
           exit 1
 
   # =============================================================================
-  # PHASE 2: STATIC ANALYSIS SECURITY TESTING (SAST)
-  # =============================================================================
-  sast-scan:
-    name: 🛡️ SAST Scan (CodeQL)
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    
-    permissions:
-      security-events: write
-      actions: read
-      contents: read
-    
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: ⚙️ Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: javascript,typescript,python
-          config-file: ./.github/codeql-config.yml
-          
-      - name: ⚙️ Autobuild
-        uses: github/codeql-action/autobuild@v3
-        
-      - name: 🔍 Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-
-  # =============================================================================
-  # PHASE 3: COMPLIANCE & BEST PRACTICES
+  # PHASE 2: COMPLIANCE & BEST PRACTICES
   # =============================================================================
   compliance-check:
     name: 📜 Compliance & Best Practices
@@ -204,12 +173,12 @@ jobs:
           fi
 
   # =============================================================================
-  # PHASE 4: SECURITY JOB ORCHESTRATION
+  # PHASE 3: SECURITY JOB ORCHESTRATION
   # =============================================================================
   security-gate:
     name: 🚦 Security Gate
     runs-on: ubuntu-latest
-    needs: [security-scan, sast-scan, compliance-check]
+    needs: [security-scan, compliance-check]
     if: always() # Always run this job to report status
 
     steps:
@@ -219,13 +188,14 @@ jobs:
           echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| 🔒 Comprehensive Security Scan | ${{ needs.security-scan.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🛡️ SAST Scan (CodeQL) | ${{ needs.sast-scan.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| 📜 Compliance & Best Practices | ${{ needs.compliance-check.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "> 🛡️ **Note**: SAST analysis is handled by GitHub's default CodeQL setup" >> $GITHUB_STEP_SUMMARY
 
       - name: 🚩 Final determination
         run: |
-          if [[ "${{ needs.security-scan.result }}" == "failure" || "${{ needs.sast-scan.result }}" == "failure" ]]; then
-            echo "::error::Security gate failed. Critical vulnerabilities or SAST issues found."
+          if [[ "${{ needs.security-scan.result }}" == "failure" ]]; then
+            echo "::error::Security gate failed. Critical vulnerabilities found."
             exit 1
           else
             echo "✅ Security gate passed."
