@@ -76,7 +76,7 @@ jobs:
           # Create a wrapper script to run kube-score via docker
           sudo tee /usr/local/bin/kube-score > /dev/null << 'EOF'
           #!/bin/bash
-          docker run --rm -i -v "$(pwd):/project" -w /project zegl/kube-score:v1.8.0 "$@"
+          docker run --rm -i -v "$(pwd):/project" -v "/tmp:/tmp" -w /project zegl/kube-score:v1.8.0 "$@"
           EOF
           sudo chmod +x /usr/local/bin/kube-score
           kube-score version
