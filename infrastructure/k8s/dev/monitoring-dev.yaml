@@ -58,15 +58,20 @@ spec:
         app: prometheus-dev
         component: monitoring
     spec:
+      securityContext:
+        runAsUser: 65534
+        runAsGroup: 65534
+        fsGroup: 65534
       containers:
         - name: prometheus
           image: prom/prometheus:v2.45.0
           imagePullPolicy: Always
           securityContext:
-            runAsUser: 1001
-            runAsGroup: 1001
+            runAsUser: 65534
+            runAsGroup: 65534
             runAsNonRoot: true
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
@@ -207,6 +212,10 @@ spec:
         app: grafana-dev
         component: monitoring
     spec:
+      securityContext:
+        runAsUser: 472
+        runAsGroup: 472
+        fsGroup: 472
       containers:
         - name: grafana
           image: grafana/grafana:10.0.0
