@@ -2,6 +2,7 @@
 
 /**
  * @fileoverview Comprehensive documentation generation system for TRAIDER V1
+ * @module scripts/generate-docs
  * 
  * Generates API documentation, architecture diagrams, OpenAPI specs, and
  * performance reports from code comments and structure. Ensures documentation
@@ -831,7 +832,8 @@ async function main() {
   await generator.generateAll();
 }
 
-if (require.main === module) {
+// Check if this module is being run directly (ES module equivalent of require.main === module)
+if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(console.error);
 }
 
