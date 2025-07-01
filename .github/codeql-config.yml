@@ -79,21 +79,6 @@ paths-ignore:
   - "public/**"
 
 # =============================================================================
-# TRADING-SPECIFIC SECURITY RULES
-# =============================================================================
-
-# Custom query packs for trading systems
-packs:
-  # Standard security pack
-  - "codeql/javascript-security-extended"
-  
-  # Additional quality checks
-  - "codeql/javascript-code-quality"
-  
-  # Custom trading security pack (if available)
-  # - "traider/trading-security-pack"
-
-# =============================================================================
 # ANALYSIS CONFIGURATION
 # =============================================================================
 
