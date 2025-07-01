@@ -18,9 +18,11 @@
  * @author TRAIDER Team
  */
 
-import { vi } from 'vitest';
+import { vi, Mock } from 'vitest';
 import { render, RenderOptions } from '@testing-library/react';
-import { ReactElement } from 'react';
+import React, { ReactElement } from 'react';
+import { useSession } from 'next-auth/react';
+import { Session } from 'next-auth';
 
 // =============================================================================
 // SHARED CONSTANTS
@@ -50,27 +52,36 @@ export const TEST_CONSTANTS = {
 /**
  * Configure Next.js authentication mocks with consistent setup
  */
-export const setupAuthMocks = () => {
-  vi.mock('next-auth/react', () => ({
-    signIn: vi.fn().mockResolvedValue({
-      ok: true,
-      error: null,
-      status: 200,
-      url: null,
-    }),
-    signOut: vi.fn().mockResolvedValue(undefined),
-    getSession: vi.fn().mockResolvedValue(TEST_CONSTANTS.MOCK_SESSION),
-    useSession: vi.fn(() => ({
-      data: TEST_CONSTANTS.MOCK_SESSION,
-      status: 'authenticated',
-    })),
+export const setupAuthMocks = (): {
+  mockSignIn: Mock;
+  mockSignOut: Mock;
+  mockUseSession: Mock;
+} => {
+  const mockSignIn = vi.fn();
+  const mockSignOut = vi.fn();
+  const mockUseSession = vi.fn(() => ({
+    data: TEST_CONSTANTS.MOCK_SESSION,
+    status: 'authenticated',
   }));
+
+  vi.mock('next-auth/react', () => ({
+    signIn: mockSignIn,
+    signOut: mockSignOut,
+    getSession: mockUseSession,
+    useSession: mockUseSession,
+  }));
+
+  return { mockSignIn, mockSignOut, mockUseSession };
 };
 
 /**
  * Configure Next.js router mocks with consistent setup
  */
-export const setupRouterMocks = () => {
+export const setupRouterMocks = (): {
+  mockPush: Mock;
+  mockReplace: Mock;
+  mockRefresh: Mock;
+} => {
   const mockPush = vi.fn();
   const mockReplace = vi.fn();
   const mockRefresh = vi.fn();
@@ -88,15 +99,16 @@ export const setupRouterMocks = () => {
     useSearchParams: vi.fn(() => new URLSearchParams()),
   }));
 
-  vi.mock('next/link', () => {
-    return function MockLink({ children, href, ...props }: any) {
-      return (
-        <a href={href} {...props}>
-          {children}
-        </a>
-      );
-    };
-  });
+  vi.mock('next/link', () => ({
+    __esModule: true,
+    default: ({
+      children,
+      href,
+      ...props
+    }: React.PropsWithChildren<{ href: string, }>) => {
+      return React.createElement('a', { href, ...props }, children);
+    },
+  }));
 
   return { mockPush, mockReplace, mockRefresh };
 };
@@ -239,14 +251,15 @@ export const assertModelSerialization = (
  */
 export const renderWithProviders = (
   ui: ReactElement,
-  options: RenderOptions & { initialSession?: any } = {}
+  options: RenderOptions & { initialSession?: Partial<Session> } = {}
 ) => {
   const { initialSession, ...renderOptions } = options;
 
   if (initialSession) {
-    vi.mocked(require('next-auth/react').useSession).mockReturnValue({
-      data: initialSession,
+    vi.mocked(useSession).mockReturnValue({
+      data: initialSession as Session,
       status: 'authenticated',
+      update: vi.fn(),
     });
   }
 
