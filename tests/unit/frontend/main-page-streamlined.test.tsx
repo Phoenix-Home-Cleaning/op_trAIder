@@ -1,26 +1,26 @@
 /**
  * @fileoverview Streamlined Main Dashboard Page Tests - Zero Duplication
  * @module tests.unit.frontend.main-page-streamlined
- * 
+ *
  * @description
  * Streamlined integration tests for the TRAIDER V1 main dashboard page.
  * Eliminates code duplication through shared utilities and focused test logic.
- * 
+ *
  * @performance
  * - Test execution target: <50ms per test
  * - Memory usage: <5MB per test suite
  * - Coverage requirement: >95%
- * 
+ *
  * @risk
  * - Failure impact: HIGH - Main dashboard is critical for user experience
  * - Recovery strategy: Automated test retry with component isolation
- * 
+ *
  * @since 1.0.0
  * @author TRAIDER Team
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import DashboardPage from '../../../app/page';
 
 // Import shared test utilities (even though they have linter issues, the concept is sound)
@@ -38,7 +38,7 @@ const setupTestEnvironment = () => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date(TEST_CONSTANTS.MOCK_TIMESTAMP));
   vi.stubEnv('NODE_ENV', 'test');
-  
+
   return {
     cleanup: () => {
       vi.restoreAllMocks();
@@ -78,9 +78,9 @@ describe('Main Dashboard Page - Streamlined Tests', () => {
       // Core title and description
       assertElementExists('Dashboard', 'heading');
       assertElementExists('Welcome to TRAIDER V1 - Institutional Crypto Trading Platform');
-      
+
       // Key metric cards
-      ['Portfolio Value', 'Total P&L', 'Active Positions', 'Win Rate'].forEach(metric => {
+      ['Portfolio Value', 'Total P&L', 'Active Positions', 'Win Rate'].forEach((metric) => {
         assertElementExists(metric);
       });
     });
@@ -101,14 +101,14 @@ describe('Main Dashboard Page - Streamlined Tests', () => {
       render(<DashboardPage />);
 
       assertElementExists('Portfolio Overview');
-      
+
       // Asset holdings
-      ['BTC-USD', 'ETH-USD', '0.15 BTC', '2.5 ETH'].forEach(item => {
+      ['BTC-USD', 'ETH-USD', '0.15 BTC', '2.5 ETH'].forEach((item) => {
         assertElementExists(item);
       });
-      
+
       // Asset values
-      ['~$6,750.00', '~$3,250.00', '+$250.00 (2.5%)'].forEach(value => {
+      ['~$6,750.00', '~$3,250.00', '+$250.00 (2.5%)'].forEach((value) => {
         assertElementExists(value);
       });
     });
@@ -119,18 +119,18 @@ describe('Main Dashboard Page - Streamlined Tests', () => {
       render(<DashboardPage />);
 
       assertElementExists('Recent Activity');
-      
+
       // Trade entries
       assertMultipleElements('BUY BTC-USD', 2);
       assertElementExists('SELL ETH-USD');
-      
+
       // Trade details
-      ['0.05 BTC', '0.5 ETH', '0.1 BTC'].forEach(amount => {
+      ['0.05 BTC', '0.5 ETH', '0.1 BTC'].forEach((amount) => {
         assertElementExists(amount);
       });
-      
+
       // Timestamps
-      ['2 hours ago', '4 hours ago', '1 day ago'].forEach(time => {
+      ['2 hours ago', '4 hours ago', '1 day ago'].forEach((time) => {
         assertElementExists(time);
       });
     });
@@ -141,17 +141,14 @@ describe('Main Dashboard Page - Streamlined Tests', () => {
       render(<DashboardPage />);
 
       assertElementExists('System Status');
-      
+
       // Status indicators
-      [
-        'Market Data Feed',
-        'Trading Engine', 
-        'Risk Management',
-        'ML Signals (Phase 1)'
-      ].forEach(indicator => {
-        assertElementExists(indicator);
-      });
-      
+      ['Market Data Feed', 'Trading Engine', 'Risk Management', 'ML Signals (Phase 1)'].forEach(
+        (indicator) => {
+          assertElementExists(indicator);
+        }
+      );
+
       // Timestamp
       assertElementExists('Last Updated');
       assertElementExists('12:00:00 PM'); // Mocked time
@@ -164,8 +161,9 @@ describe('Main Dashboard Page - Streamlined Tests', () => {
 
       // Look for development-related text (adjust based on actual implementation)
       // This test would need to be updated based on the actual Phase 0 notice content
-      const pageContent = screen.getByRole('main') || document.body;
+      const pageContent = screen.getByTestId('dashboard-main');
       expect(pageContent).toBeInTheDocument();
+      expect(within(pageContent).getByText(/Phase 0: Setup & Foundation/i)).toBeInTheDocument();
     });
   });
-}); 
+});
