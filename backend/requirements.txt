@@ -72,7 +72,7 @@ ccxt==4.5.21  # Unified exchange API
 requests==2.32.4
 
 # Technical analysis
-TA-Lib==0.4.32  # Note: Requires separate C library installation
+TA-Lib==0.6.4  # Note: Requires separate C library installation
 
 # =============================================================================
 # API & NETWORKING
