@@ -90,7 +90,7 @@ jobs:
           # Find and validate all YAML files
           find infrastructure/k8s/${{ matrix.environment }}/ -name "*.yaml" -o -name "*.yml" | while read file; do
             echo "Validating: $file"
-            kubeval --kubernetes-version ${{ matrix.kubernetes-version }} --strict "$file"
+            kubeval --kubernetes-version ${{ matrix.kubernetes-version }} --strict --schema-location https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/ "$file"
           done
           
           echo "✅ All manifests are valid for Kubernetes ${{ matrix.kubernetes-version }}"
