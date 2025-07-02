@@ -162,7 +162,7 @@ class TestTimescaleDBIntegration:
                 spread=Decimal('0.02'),
                 trade_count=1,
                 vwap=price,
-                metadata={"exchange": "coinbase", "sequence": i}
+                extra_data={"exchange": "coinbase", "sequence": i}
             )
             data.append(market_data)
         

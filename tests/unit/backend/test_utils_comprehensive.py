@@ -165,14 +165,14 @@ class TestUtilityModuleStructure:
     
     def test_logging_module_exports(self):
         """Test logging module exports required functions"""
-        import backend.utils.logging as logging_module
+        import utils.logging as logging_module
         
         assert hasattr(logging_module, 'get_logger')
         assert callable(logging_module.get_logger)
     
     def test_exceptions_module_exports(self):
         """Test exceptions module exports required classes"""
-        import backend.utils.exceptions as exceptions_module
+        import utils.exceptions as exceptions_module
         
         assert hasattr(exceptions_module, 'TradingError')
         assert hasattr(exceptions_module, 'ValidationError')
@@ -181,16 +181,16 @@ class TestUtilityModuleStructure:
     
     def test_monitoring_module_exports(self):
         """Test monitoring module exports required classes"""
-        import backend.utils.monitoring as monitoring_module
+        import utils.monitoring as monitoring_module
         
         assert hasattr(monitoring_module, 'MetricsCollector')
         assert callable(monitoring_module.MetricsCollector)
     
     def test_module_docstrings_exist(self):
         """Test that utility modules have docstrings"""
-        import backend.utils.logging as logging_module
-        import backend.utils.exceptions as exceptions_module
-        import backend.utils.monitoring as monitoring_module
+        import utils.logging as logging_module
+        import utils.exceptions as exceptions_module
+        import utils.monitoring as monitoring_module
         
         # Modules should have docstrings (or at least not be None)
         assert logging_module.__doc__ is not None or True  # Allow None docstrings
