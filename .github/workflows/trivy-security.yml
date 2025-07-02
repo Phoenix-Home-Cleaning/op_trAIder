@@ -154,7 +154,7 @@ jobs:
         if: contains(steps.scan-config.outputs.scanners, 'vuln')
         id: trivy-vuln-scan
         continue-on-error: true
-        uses: aquasecurity/trivy-action@0.30.0
+        uses: aquasecurity/trivy-action@0.31.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -216,7 +216,7 @@ jobs:
           
       - name: 🔍 Run Trivy vulnerability scan (JSON)
         if: contains(steps.scan-config.outputs.scanners, 'vuln')
-        uses: aquasecurity/trivy-action@0.30.0
+        uses: aquasecurity/trivy-action@0.31.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -232,7 +232,7 @@ jobs:
         if: contains(steps.scan-config.outputs.scanners, 'secret')
         id: trivy-secrets-scan
         continue-on-error: true
-        uses: aquasecurity/trivy-action@0.30.0
+        uses: aquasecurity/trivy-action@0.31.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -280,7 +280,7 @@ jobs:
           
       - name: 🔐 Run Trivy secrets scan (JSON)
         if: contains(steps.scan-config.outputs.scanners, 'secret')
-        uses: aquasecurity/trivy-action@0.30.0
+        uses: aquasecurity/trivy-action@0.31.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -292,7 +292,7 @@ jobs:
           
       - name: ⚙️ Run Trivy configuration scan
         if: contains(steps.scan-config.outputs.scanners, 'config')
-        uses: aquasecurity/trivy-action@0.30.0
+        uses: aquasecurity/trivy-action@0.31.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -305,7 +305,7 @@ jobs:
           
       - name: ⚙️ Run Trivy configuration scan (JSON)
         if: contains(steps.scan-config.outputs.scanners, 'config')
-        uses: aquasecurity/trivy-action@0.30.0
+        uses: aquasecurity/trivy-action@0.31.0
         with:
           scan-type: 'fs'
           scan-ref: '.'

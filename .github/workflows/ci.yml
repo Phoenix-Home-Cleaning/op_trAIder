@@ -468,7 +468,7 @@ jobs:
           echo "::endgroup::"
           
       - name: 🛡️ Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.30.0
+        uses: aquasecurity/trivy-action@0.31.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
