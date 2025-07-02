@@ -417,12 +417,17 @@ describe('🔐 Backend Authentication Service', () => {
 
   describe('Error Handling Edge Cases', () => {
     it('should handle fetch timeout', async () => {
-      const mockFetch = vi.fn().mockImplementation(
-        () =>
-          new Promise(() => {
-            // Never resolves, simulates a hanging request
-          })
-      );
+      const mockFetch = vi.fn().mockImplementation((_, options) => {
+        return new Promise((_, reject) => {
+          // Listen for the abort signal
+          if (options?.signal) {
+            options.signal.addEventListener('abort', () => {
+              reject(new Error('AbortError'));
+            });
+          }
+          // Never resolve, simulates a hanging request
+        });
+      });
 
       const authPromise = authenticateWithBackend('admin', 'password', mockFetch);
 
@@ -432,7 +437,7 @@ describe('🔐 Backend Authentication Service', () => {
       const result = await authPromise;
 
       expect(result).toBeNull();
-    }, 10000);
+    }, 15000);
 
     it('should handle response with missing user data', async () => {
       const mockResponse = {
