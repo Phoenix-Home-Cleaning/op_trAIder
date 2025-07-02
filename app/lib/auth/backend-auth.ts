@@ -150,6 +150,10 @@ export async function authenticateWithBackend(
       return null;
     }
   }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000); // 5-second timeout
+
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -163,6 +167,7 @@ export async function authenticateWithBackend(
         password,
         remember_me: false,
       }),
+      signal: controller.signal,
     });
 
     if (!response.ok) {
@@ -190,5 +195,7 @@ export async function authenticateWithBackend(
     // Log authentication error (production should use proper logging)
     // Error logged for debugging - production should use structured logging
     return null;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }

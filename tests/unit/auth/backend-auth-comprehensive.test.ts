@@ -413,16 +413,22 @@ describe('🔐 Backend Authentication Service', () => {
 
   describe('Error Handling Edge Cases', () => {
     it('should handle fetch timeout', async () => {
-      const mockFetch = vi.fn().mockImplementation(() => {
-        return new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Timeout')), 1);
-        });
-      });
+      const mockFetch = vi.fn().mockImplementation(
+        () =>
+          new Promise(() => {
+            // Never resolves, simulates a hanging request
+          })
+      );
 
-      const result = await authenticateWithBackend('admin', 'password', mockFetch);
+      const authPromise = authenticateWithBackend('admin', 'password', mockFetch);
+
+      // Advance timers to trigger the 5s timeout in authenticateWithBackend
+      await vi.advanceTimersByTimeAsync(5001);
+
+      const result = await authPromise;
 
       expect(result).toBeNull();
-    });
+    }, 10000);
 
     it('should handle response with missing user data', async () => {
       const mockResponse = {
