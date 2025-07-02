@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **🔧 CRITICAL CI/CD Fix**: GitHub Actions Output Format Sanitization (ADR-011) - 2025-01-27
+  - **Issue**: CI pipeline failing with "Error: Invalid format '0.0'" in coverage threshold enforcement
+  - **Root Cause**: Multi-line output from trading coverage calculator creating malformed GitHub Actions output files
+  - **Solution**: Implemented robust output sanitization with single-line extraction and numeric filtering
+  - **Implementation**:
+    - Replaced `|| echo "0.0"` fallback with `|| true` to prevent multi-line output
+    - Added `head -n1 | tr -cd '0-9.'` sanitization to guarantee single numeric values
+    - Maintained all business logic for 90% trading coverage threshold enforcement
+  - **Impact**: Eliminates false CI failures while preserving institutional-grade quality gates
+  - **Compliance**: Maintains 99.9% CI/CD pipeline availability target and audit requirements
+  - **Documentation**: Created ADR-011 and updated CI/CD pipeline documentation with sanitization patterns
+
 ### Security
 
 - **CRITICAL FIX**: Resolved Trivy security scanning pipeline failures (2024-12-29)

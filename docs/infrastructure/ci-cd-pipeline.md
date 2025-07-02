@@ -153,6 +153,28 @@ if (avgCriticalCoverage < 95) {
 }
 ```
 
+**Output Sanitization** (ADR-011):
+
+To prevent malformed GitHub Actions output files, all coverage values are sanitized:
+
+```bash
+# Robust output handling prevents CI failures
+RAW_TRADING_COVERAGE=$(python scripts/calculate-trading-coverage.py \
+                         --threshold 90.0 2>/dev/null || true)
+TRADING_COVERAGE=$(echo "${RAW_TRADING_COVERAGE}" | head -n1 | tr -cd '0-9.')
+if [ -z "${TRADING_COVERAGE}" ]; then
+  TRADING_COVERAGE="0.0"
+fi
+echo "trading-coverage=${TRADING_COVERAGE}" >> $GITHUB_OUTPUT
+```
+
+This ensures:
+
+- Single-line numeric values only
+- Graceful handling of script failures
+- Prevention of malformed output files
+- Maintained business logic for threshold enforcement
+
 ### 3. Integration Tests
 
 **Purpose**: Validate system integration and database connectivity
