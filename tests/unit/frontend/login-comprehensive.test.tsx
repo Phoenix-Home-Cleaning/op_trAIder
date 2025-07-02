@@ -87,7 +87,8 @@ describe('🔐 Login Page - Comprehensive Tests', () => {
       expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
 
       // Check form structure
-      expect(screen.getByRole('form')).toBeInTheDocument();
+      const form = screen.getByRole('button', { name: /sign in/i }).closest('form');
+      expect(form).toBeInTheDocument();
     });
 
     it('should have proper accessibility attributes', () => {
@@ -123,7 +124,8 @@ describe('🔐 Login Page - Comprehensive Tests', () => {
       );
 
       // Check trading card styling
-      const cardContent = screen.getByRole('form').closest('.trading-card-content');
+      const submitButton = screen.getByRole('button', { name: /sign in/i });
+      const cardContent = submitButton.closest('.trading-card-content');
       expect(cardContent).toBeInTheDocument();
     });
   });
@@ -156,7 +158,7 @@ describe('🔐 Login Page - Comprehensive Tests', () => {
     it('should clear error when user starts typing', async () => {
       render(<LoginPage />);
 
-      // Trigger an error first
+      // Trigger an error first by submitting empty form
       const submitButton = screen.getByRole('button', { name: /sign in/i });
       fireEvent.click(submitButton);
 
@@ -597,8 +599,8 @@ describe('🔐 Login Page - Comprehensive Tests', () => {
 
       const submitButton = screen.getByRole('button', { name: /sign in/i });
 
-      // Initial state
-      expect(submitButton).toHaveClass('btn-primary');
+      // Initial state - check for actual classes used in the component
+      expect(submitButton).toHaveClass('bg-primary');
       expect(submitButton).not.toBeDisabled();
     });
   });
