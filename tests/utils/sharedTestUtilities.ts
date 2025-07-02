@@ -27,7 +27,6 @@
 import { vi, type Mock } from 'vitest';
 import { render, type RenderOptions } from '@testing-library/react';
 import type { ReactElement } from 'react';
-import React from 'react';
 import type { Session } from 'next-auth';
 import { _setTestHook_forceAuthenticate } from '../../app/lib/auth/backend-auth';
 
@@ -160,14 +159,6 @@ export const setupAuthMocks = () => {
 
   const mockAuth = vi.fn();
 
-  // Mock NextAuth
-  vi.mock('next-auth/react', () => ({
-    signIn: mockSignIn,
-    signOut: mockSignOut,
-    useSession: mockUseSession,
-    getSession: mockUseSession,
-  }));
-
   // Setup test hook
   _setTestHook_forceAuthenticate(mockAuth);
 
@@ -188,30 +179,6 @@ export const setupRouterMocks = () => {
   const mockPush = vi.fn();
   const mockReplace = vi.fn();
   const mockRefresh = vi.fn();
-
-  vi.mock('next/navigation', () => ({
-    useRouter: vi.fn(() => ({
-      push: mockPush,
-      replace: mockReplace,
-      refresh: mockRefresh,
-      back: vi.fn(),
-      forward: vi.fn(),
-      prefetch: vi.fn(),
-    })),
-    usePathname: vi.fn(() => '/dashboard'),
-    useSearchParams: vi.fn(() => new URLSearchParams()),
-  }));
-
-  vi.mock('next/link', () => ({
-    __esModule: true,
-    default: ({
-      children,
-      href,
-      ...props
-    }: React.PropsWithChildren<{ href: string; [key: string]: unknown }>) => {
-      return React.createElement('a', { href, ...props }, children);
-    },
-  }));
 
   return { mockPush, mockReplace, mockRefresh };
 };

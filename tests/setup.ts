@@ -1,23 +1,23 @@
 /**
  * @fileoverview Test Setup Configuration
  * @module tests.setup
- * 
+ *
  * @description
  * Global test setup for TRAIDER V1 testing infrastructure including
  * DOM environment, mocks, and testing utilities configuration.
- * 
+ *
  * @performance
  * - Setup time target: <100ms
  * - Memory overhead: <50MB
- * 
+ *
  * @risk
  * - Failure impact: HIGH - Test setup affects all tests
  * - Recovery strategy: Fallback to minimal configuration
- * 
+ *
  * @author TRAIDER Team
  */
 
-import { expect, afterEach, beforeAll, afterAll } from 'vitest';
+import { expect, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import * as matchers from '@testing-library/jest-dom/matchers';
 
@@ -50,25 +50,7 @@ afterAll(() => {
   // Clean up any global resources
 });
 
-// Mock Next.js modules that are not available in test environment
-vi.mock('next/router', () => ({
-  useRouter: () => ({
-    push: vi.fn(),
-    pathname: '/dashboard',
-    query: {},
-    asPath: '/dashboard',
-  }),
-}));
-
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: vi.fn(),
-    pathname: '/dashboard',
-    query: {},
-  }),
-  usePathname: () => '/dashboard',
-  useSearchParams: () => new URLSearchParams(),
-}));
+// Next.js modules are mocked in individual test files to avoid conflicts
 
 // Mock WebSocket for real-time features
 global.WebSocket = vi.fn(() => ({
@@ -77,7 +59,7 @@ global.WebSocket = vi.fn(() => ({
   close: vi.fn(),
   send: vi.fn(),
   readyState: 1,
-})) as any;
+})) as unknown as typeof WebSocket;
 
 // Mock performance API with complete interface
 global.performance = {
@@ -93,10 +75,10 @@ global.performance = {
   timing: {
     navigationStart: Date.now(),
     loadEventEnd: Date.now(),
-  },
+  } as PerformanceTiming,
   timeOrigin: Date.now(),
   toJSON: vi.fn(() => ({})),
-} as any;
+} as unknown as Performance;
 
 // Mock crypto API for secure operations (if not available)
 if (typeof global.crypto === 'undefined') {
@@ -218,7 +200,7 @@ export const createMockSession = (userOverrides = {}) => ({
  * - Alert threshold: > 1ms
  */
 export const createMockPortfolio = (overrides = {}) => ({
-  totalValue: 125000.50,
+  totalValue: 125000.5,
   dailyPnL: 2350.75,
   dailyPnLPercent: 1.92,
   positions: [
@@ -464,10 +446,12 @@ export const generateMarketData = (count: number = 100) => {
  * - Alert threshold: > 5ms per 50 trades
  */
 export const generateTradeHistory = (count: number = 50) => {
-  return Array.from({ length: count }, (_, i) => createMockTrade({
-    id: `trade-${i}`,
-    timestamp: new Date(Date.now() - i * 60000).toISOString(),
-  }));
+  return Array.from({ length: count }, (_, i) =>
+    createMockTrade({
+      id: `trade-${i}`,
+      timestamp: new Date(Date.now() - i * 60000).toISOString(),
+    })
+  );
 };
 
 // Test environment validation
@@ -486,7 +470,7 @@ if (typeof window !== 'undefined') {
 }
 
 // TRAIDER V1 Test Environment Initialized
-// - DOM Testing Library configured  
+// - DOM Testing Library configured
 // - Next.js mocks configured
 // - Trading utilities available
 // - Performance testing enabled
