@@ -68,11 +68,11 @@ feature-engine==1.8.1
 # =============================================================================
 
 # Market data
-ccxt==4.5.21  # Unified exchange API
+ccxt==4.4.92  # Unified exchange API
 requests==2.32.4
 
 # Technical analysis
-TA-Lib==0.4.32  # Note: Requires separate C library installation
+pandas-ta==0.3.14b0  # Pure Python technical analysis library (no compilation required)
 
 # =============================================================================
 # API & NETWORKING

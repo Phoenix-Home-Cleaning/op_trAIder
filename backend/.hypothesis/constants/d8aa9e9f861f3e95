@@ -1,0 +1,4 @@
+# file: C:\Users\jesse\AppData\Roaming\Python\Python313\site-packages\prometheus_client\core.py
+# hypothesis_version: 6.135.14
+
+['BucketSpan', 'CollectorRegistry', 'Counter', 'CounterMetricFamily', 'Enum', 'Exemplar', 'Gauge', 'GaugeMetricFamily', 'Histogram', 'Info', 'InfoMetricFamily', 'Metric', 'NativeHistogram', 'REGISTRY', 'Sample', 'StateSetMetricFamily', 'Summary', 'SummaryMetricFamily', 'Timestamp', 'UnknownMetricFamily', 'UntypedMetricFamily']

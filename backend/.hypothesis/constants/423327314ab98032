@@ -1,0 +1,4 @@
+# file: C:\Users\jesse\AppData\Roaming\Python\Python313\site-packages\coverage\annotate.py
+# hypothesis_version: 6.135.14
+
+['! ', ',cover', '- ', '.py', '> ', '\\s*(#|$)', '\\s*else\\s*:\\s*(#|$)', '_py', 'utf-8', 'w']

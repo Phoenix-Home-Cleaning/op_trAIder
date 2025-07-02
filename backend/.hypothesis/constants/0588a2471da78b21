@@ -1,0 +1,4 @@
+# file: C:\Users\jesse\AppData\Roaming\Python\Python313\site-packages\_pytest\deprecated.py
+# hypothesis_version: 6.135.14
+
+['pytest_capturelog', 'pytest_catchlog', 'pytest_faulthandler']
