@@ -32,7 +32,7 @@ from typing import Optional
 from sqlalchemy import Column, String, DateTime, Numeric, Integer, Boolean, JSON
 from sqlalchemy.dialects.postgresql import JSONB
 
-from ..database import Base
+from backend.database import Base
 
 
 class Position(Base):

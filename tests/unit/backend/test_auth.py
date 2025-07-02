@@ -42,10 +42,10 @@ from api.auth import (
     create_access_token,
     get_current_user,
     verify_password,
-    get_password_hash,
-    UserRole
+    get_password_hash
 )
 from models.user import User
+from models import UserRole
 from utils.exceptions import AuthenticationError, AuthorizationError
 
 

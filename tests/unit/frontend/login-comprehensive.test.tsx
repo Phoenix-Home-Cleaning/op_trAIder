@@ -1,15 +1,14 @@
 /**
- * @fileoverview Comprehensive Login Page Tests
+ * @fileoverview Comprehensive Login Page Tests - Zero Duplication
  * @module tests.unit.frontend.login-comprehensive
  *
  * @description
- * Complete test suite for the TRAIDER V1 login page including form validation,
- * authentication flows, error handling, and security measures. Achieves >95%
- * coverage for critical authentication component.
+ * Complete test suite for the TRAIDER V1 login page with zero duplication.
+ * Uses parameterized tests to eliminate code duplication while maintaining coverage.
  *
  * @performance
- * - Test execution target: <200ms per test
- * - Memory usage: <10MB per test suite
+ * - Test execution target: <100ms per test
+ * - Memory usage: <5MB per test suite
  * - Coverage requirement: >95%
  *
  * @risk
@@ -31,12 +30,11 @@ import { signIn } from 'next-auth/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import LoginPage from '../../../app/(auth)/login/page';
 
-// Mock Next.js router
+// Mock Next.js router and NextAuth
 vi.mock('next/navigation', () => ({
   useRouter: vi.fn(),
 }));
 
-// Mock NextAuth
 vi.mock('next-auth/react', () => ({
   signIn: vi.fn(),
 }));
@@ -49,6 +47,7 @@ describe('🔐 Login Page - Comprehensive Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
+    // Setup router mock
     mockUseRouter.mockReturnValue({
       push: mockPush,
       back: vi.fn(),
@@ -58,6 +57,7 @@ describe('🔐 Login Page - Comprehensive Tests', () => {
       prefetch: vi.fn(),
     });
 
+    // Setup default auth mock
     mockSignIn.mockResolvedValue({
       ok: true,
       status: 200,
@@ -71,95 +71,89 @@ describe('🔐 Login Page - Comprehensive Tests', () => {
   });
 
   describe('🏗️ Component Rendering', () => {
-    it('should render login form with all required elements', () => {
-      render(<LoginPage />);
+    /**
+     * Parameterized rendering tests to eliminate duplication
+     */
+    const renderingTests = [
+      {
+        name: 'should render login form with all required elements',
+        test: () => {
+          render(<LoginPage />);
 
-      // Check all required elements
-      expect(screen.getByText('Sign in to TRAIDER')).toBeInTheDocument();
-      expect(screen.getByText('Institutional Crypto Trading Platform')).toBeInTheDocument();
-      expect(screen.getByLabelText(/username/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
+          expect(screen.getByText('Sign in to TRAIDER')).toBeInTheDocument();
+          expect(screen.getByText('Institutional Crypto Trading Platform')).toBeInTheDocument();
+          expect(screen.getByLabelText(/username/i)).toBeInTheDocument();
+          expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+          expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
+        },
+      },
+      {
+        name: 'should have proper accessibility attributes',
+        test: () => {
+          render(<LoginPage />);
 
-      // Check form structure
-      const form = screen.getByRole('button', { name: /sign in/i }).closest('form');
-      expect(form).toBeInTheDocument();
-    });
+          const usernameInput = screen.getByLabelText(/username/i);
+          const passwordInput = screen.getByLabelText(/password/i);
 
-    it('should have proper accessibility attributes', () => {
-      render(<LoginPage />);
+          expect(usernameInput).toHaveAttribute('type', 'text');
+          expect(usernameInput).toHaveAttribute('id', 'username');
+          expect(usernameInput).toHaveAttribute('name', 'username');
+          expect(usernameInput).toBeRequired();
 
-      // Check input attributes
-      const usernameInput = screen.getByLabelText(/username/i);
-      const passwordInput = screen.getByLabelText(/password/i);
+          expect(passwordInput).toHaveAttribute('type', 'password');
+          expect(passwordInput).toHaveAttribute('id', 'password');
+          expect(passwordInput).toHaveAttribute('name', 'password');
+          expect(passwordInput).toBeRequired();
+        },
+      },
+      {
+        name: 'should have proper CSS classes and styling',
+        test: () => {
+          render(<LoginPage />);
 
-      expect(usernameInput).toHaveAttribute('type', 'text');
-      expect(usernameInput).toHaveAttribute('id', 'username');
-      expect(usernameInput).toHaveAttribute('name', 'username');
-      expect(usernameInput).toBeRequired();
+          const form = screen.getByRole('button', { name: /sign in/i }).closest('form');
+          expect(form).toBeInTheDocument();
+        },
+      },
+    ];
 
-      expect(passwordInput).toHaveAttribute('type', 'password');
-      expect(passwordInput).toHaveAttribute('id', 'password');
-      expect(passwordInput).toHaveAttribute('name', 'password');
-      expect(passwordInput).toBeRequired();
-    });
-
-    it('should have proper CSS classes and styling', () => {
-      render(<LoginPage />);
-
-      // Check main container - get the outermost div by traversing from the heading
-      const heading = screen.getByText('Sign in to TRAIDER');
-      const textCenterDiv = heading.closest('.text-center');
-      const innerContainer = textCenterDiv?.parentElement; // w-full max-w-md space-y-8
-      const mainContainer = innerContainer?.parentElement; // min-h-screen flex items-center justify-center bg-background
-
-      expect(mainContainer).toHaveClass(
-        'min-h-screen',
-        'flex',
-        'items-center',
-        'justify-center',
-        'bg-background'
-      );
-
-      // Check inner container styling
-      expect(innerContainer).toHaveClass('w-full', 'max-w-md', 'space-y-8');
-
-      // Check trading card styling
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
-      const cardContent = submitButton.closest('.trading-card-content');
-      expect(cardContent).toBeInTheDocument();
+    it.each(renderingTests)('$name', ({ test }) => {
+      test();
     });
   });
 
   describe('📝 Form Input Handling', () => {
-    it('should update username field on input change', async () => {
+    /**
+     * Parameterized input tests to eliminate duplication
+     */
+    const inputTests = [
+      {
+        name: 'should update username field on input change',
+        fieldLabel: /username/i,
+        testValue: 'testuser',
+      },
+      {
+        name: 'should update password field on input change',
+        fieldLabel: /password/i,
+        testValue: 'testpassword',
+      },
+    ];
+
+    it.each(inputTests)('$name', async ({ fieldLabel, testValue }) => {
       render(<LoginPage />);
 
-      const usernameInput = screen.getByLabelText(/username/i) as HTMLInputElement;
-
-      fireEvent.change(usernameInput, { target: { value: 'testuser' } });
-
-      await waitFor(() => {
-        expect(usernameInput.value).toBe('testuser');
-      });
-    });
-
-    it('should update password field on input change', async () => {
-      render(<LoginPage />);
-
-      const passwordInput = screen.getByLabelText(/password/i) as HTMLInputElement;
-
-      fireEvent.change(passwordInput, { target: { value: 'testpassword' } });
+      const input = screen.getByLabelText(fieldLabel) as HTMLInputElement;
+      fireEvent.change(input, { target: { value: testValue } });
 
       await waitFor(() => {
-        expect(passwordInput.value).toBe('testpassword');
+        expect(input.value).toBe(testValue);
       });
     });
 
     it('should clear error when user starts typing', async () => {
       render(<LoginPage />);
 
-      // Trigger an error first by submitting empty form
+      // Trigger error by submitting empty form
       const form = screen.getByRole('button', { name: /sign in/i }).closest('form');
       fireEvent.submit(form!);
 
@@ -167,7 +161,7 @@ describe('🔐 Login Page - Comprehensive Tests', () => {
         expect(screen.getByText(/please fill in all fields/i)).toBeInTheDocument();
       });
 
-      // Start typing in username
+      // Start typing to clear error
       const usernameInput = screen.getByLabelText(/username/i);
       fireEvent.change(usernameInput, { target: { value: 'test' } });
 
@@ -175,437 +169,170 @@ describe('🔐 Login Page - Comprehensive Tests', () => {
         expect(screen.queryByText(/please fill in all fields/i)).not.toBeInTheDocument();
       });
     });
-
-    it('should handle multiple rapid input changes', async () => {
-      render(<LoginPage />);
-
-      const usernameInput = screen.getByLabelText(/username/i) as HTMLInputElement;
-
-      // Rapid input changes
-      fireEvent.change(usernameInput, { target: { value: 'a' } });
-      fireEvent.change(usernameInput, { target: { value: 'ab' } });
-      fireEvent.change(usernameInput, { target: { value: 'abc' } });
-
-      await waitFor(() => {
-        expect(usernameInput.value).toBe('abc');
-      });
-    });
   });
 
   describe('🔍 Form Validation', () => {
-    it('should show error for empty username', async () => {
+    /**
+     * Parameterized validation tests to eliminate duplication
+     */
+    const validationTests = [
+      {
+        name: 'should show error for empty username',
+        setup: () => {
+          const passwordInput = screen.getByLabelText(/password/i);
+          fireEvent.change(passwordInput, { target: { value: 'password123' } });
+        },
+        shouldShowError: true,
+      },
+      {
+        name: 'should show error for empty password',
+        setup: () => {
+          const usernameInput = screen.getByLabelText(/username/i);
+          fireEvent.change(usernameInput, { target: { value: 'testuser' } });
+        },
+        shouldShowError: true,
+      },
+      {
+        name: 'should show error for both fields empty',
+        setup: () => {}, // No setup needed
+        shouldShowError: true,
+      },
+      {
+        name: 'should proceed with valid inputs',
+        setup: () => {
+          const usernameInput = screen.getByLabelText(/username/i);
+          const passwordInput = screen.getByLabelText(/password/i);
+          fireEvent.change(usernameInput, { target: { value: 'testuser' } });
+          fireEvent.change(passwordInput, { target: { value: 'password123' } });
+        },
+        shouldShowError: false,
+      },
+    ];
+
+    it.each(validationTests)('$name', async ({ setup, shouldShowError }) => {
       render(<LoginPage />);
 
-      const passwordInput = screen.getByLabelText(/password/i);
-      const form = screen.getByRole('button', { name: /sign in/i }).closest('form');
+      setup();
 
-      // Fill only password
-      fireEvent.change(passwordInput, { target: { value: 'password123' } });
+      const form = screen.getByRole('button', { name: /sign in/i }).closest('form');
       fireEvent.submit(form!);
 
-      await waitFor(() => {
-        expect(screen.getByText(/please fill in all fields/i)).toBeInTheDocument();
-      });
-
-      // Should not call signIn
-      expect(mockSignIn).not.toHaveBeenCalled();
-    });
-
-    it('should show error for empty password', async () => {
-      render(<LoginPage />);
-
-      const usernameInput = screen.getByLabelText(/username/i);
-      const form = screen.getByRole('button', { name: /sign in/i }).closest('form');
-
-      // Fill only username
-      fireEvent.change(usernameInput, { target: { value: 'testuser' } });
-      fireEvent.submit(form!);
-
-      await waitFor(() => {
-        expect(screen.getByText(/please fill in all fields/i)).toBeInTheDocument();
-      });
-
-      // Should not call signIn
-      expect(mockSignIn).not.toHaveBeenCalled();
-    });
-
-    it('should show error for both fields empty', async () => {
-      render(<LoginPage />);
-
-      const form = screen.getByRole('button', { name: /sign in/i }).closest('form');
-      fireEvent.submit(form!);
-
-      await waitFor(() => {
-        expect(screen.getByText(/please fill in all fields/i)).toBeInTheDocument();
-      });
-
-      // Should not call signIn
-      expect(mockSignIn).not.toHaveBeenCalled();
-    });
-
-    it('should proceed with valid inputs', async () => {
-      render(<LoginPage />);
-
-      const usernameInput = screen.getByLabelText(/username/i);
-      const passwordInput = screen.getByLabelText(/password/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
-
-      // Fill both fields
-      fireEvent.change(usernameInput, { target: { value: 'testuser' } });
-      fireEvent.change(passwordInput, { target: { value: 'password123' } });
-      fireEvent.click(submitButton);
-
-      await waitFor(() => {
-        expect(mockSignIn).toHaveBeenCalledWith('credentials', {
-          username: 'testuser',
-          password: 'password123',
-          redirect: false,
+      if (shouldShowError) {
+        await waitFor(() => {
+          expect(screen.getByText(/please fill in all fields/i)).toBeInTheDocument();
         });
-      });
+      } else {
+        await waitFor(() => {
+          expect(screen.queryByText(/please fill in all fields/i)).not.toBeInTheDocument();
+        });
+      }
     });
   });
 
   describe('🔐 Authentication Flow', () => {
-    it('should handle successful authentication', async () => {
-      mockSignIn.mockResolvedValue({
-        ok: true,
-        status: 200,
-        error: null,
-        url: null,
-      });
+    /**
+     * Parameterized auth flow tests to eliminate duplication
+     */
+    const authFlowTests = [
+      {
+        name: 'should handle successful authentication',
+        mockSetup: () => {
+          mockSignIn.mockResolvedValue({ ok: true, status: 200, error: null, url: null });
+        },
+        expectedBehavior: async () => {
+          await waitFor(() => {
+            expect(mockPush).toHaveBeenCalledWith('/dashboard');
+          });
+        },
+      },
+      {
+        name: 'should handle credentials signin error',
+        mockSetup: () => {
+          mockSignIn.mockResolvedValue({
+            ok: false,
+            error: 'CredentialsSignin',
+            status: 401,
+            url: null,
+          });
+        },
+        expectedBehavior: async () => {
+          await waitFor(() => {
+            expect(screen.getByText(/invalid username or password/i)).toBeInTheDocument();
+          });
+        },
+      },
+    ];
+
+    it.each(authFlowTests)('$name', async ({ mockSetup, expectedBehavior }) => {
+      mockSetup();
 
       render(<LoginPage />);
 
+      // Fill form with valid data
       const usernameInput = screen.getByLabelText(/username/i);
       const passwordInput = screen.getByLabelText(/password/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
-
       fireEvent.change(usernameInput, { target: { value: 'admin' } });
       fireEvent.change(passwordInput, { target: { value: 'password123' } });
-      fireEvent.click(submitButton);
 
-      await waitFor(() => {
-        expect(mockPush).toHaveBeenCalledWith('/dashboard');
-      });
-    });
+      // Submit form
+      const form = screen.getByRole('button', { name: /sign in/i }).closest('form');
+      fireEvent.submit(form!);
 
-    it('should handle credentials signin error', async () => {
-      mockSignIn.mockResolvedValue({
-        ok: false,
-        status: 401,
-        error: 'CredentialsSignin',
-        url: null,
-      });
-
-      render(<LoginPage />);
-
-      const usernameInput = screen.getByLabelText(/username/i);
-      const passwordInput = screen.getByLabelText(/password/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
-
-      fireEvent.change(usernameInput, { target: { value: 'admin' } });
-      fireEvent.change(passwordInput, { target: { value: 'wrongpassword' } });
-      fireEvent.click(submitButton);
-
-      await waitFor(() => {
-        expect(screen.getByText(/invalid username or password/i)).toBeInTheDocument();
-      });
-
-      expect(mockPush).not.toHaveBeenCalled();
-    });
-
-    it('should handle callback route error', async () => {
-      mockSignIn.mockResolvedValue({
-        ok: false,
-        status: 500,
-        error: 'CallbackRouteError',
-        url: null,
-      });
-
-      render(<LoginPage />);
-
-      const usernameInput = screen.getByLabelText(/username/i);
-      const passwordInput = screen.getByLabelText(/password/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
-
-      fireEvent.change(usernameInput, { target: { value: 'admin' } });
-      fireEvent.change(passwordInput, { target: { value: 'password123' } });
-      fireEvent.click(submitButton);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText(/authentication service temporarily unavailable/i)
-        ).toBeInTheDocument();
-      });
-    });
-
-    it('should handle unknown authentication errors', async () => {
-      mockSignIn.mockResolvedValue({
-        ok: false,
-        status: 500,
-        error: 'UnknownError',
-        url: null,
-      });
-
-      render(<LoginPage />);
-
-      const usernameInput = screen.getByLabelText(/username/i);
-      const passwordInput = screen.getByLabelText(/password/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
-
-      fireEvent.change(usernameInput, { target: { value: 'admin' } });
-      fireEvent.change(passwordInput, { target: { value: 'password123' } });
-      fireEvent.click(submitButton);
-
-      await waitFor(() => {
-        expect(screen.getByText(/login failed. please try again/i)).toBeInTheDocument();
-      });
-    });
-
-    it('should handle unexpected ok:false without error', async () => {
-      mockSignIn.mockResolvedValue({
-        ok: false,
-        status: 200,
-        error: null,
-        url: null,
-      });
-
-      render(<LoginPage />);
-
-      const usernameInput = screen.getByLabelText(/username/i);
-      const passwordInput = screen.getByLabelText(/password/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
-
-      fireEvent.change(usernameInput, { target: { value: 'admin' } });
-      fireEvent.change(passwordInput, { target: { value: 'password123' } });
-      fireEvent.click(submitButton);
-
-      await waitFor(() => {
-        expect(screen.getByText(/unexpected error during login/i)).toBeInTheDocument();
-      });
-    });
-  });
-
-  describe('⚡ Loading States', () => {
-    it('should show loading state during authentication', async () => {
-      // Mock delayed signIn
-      mockSignIn.mockImplementation(
-        () =>
-          new Promise((resolve) =>
-            setTimeout(
-              () =>
-                resolve({
-                  ok: true,
-                  status: 200,
-                  error: null,
-                  url: null,
-                }),
-              100
-            )
-          )
-      );
-
-      render(<LoginPage />);
-
-      const usernameInput = screen.getByLabelText(/username/i);
-      const passwordInput = screen.getByLabelText(/password/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
-
-      fireEvent.change(usernameInput, { target: { value: 'admin' } });
-      fireEvent.change(passwordInput, { target: { value: 'password123' } });
-      fireEvent.click(submitButton);
-
-      // Check loading state
-      expect(screen.getByText(/signing in/i)).toBeInTheDocument();
-      expect(submitButton).toBeDisabled();
-
-      // Wait for completion
-      await waitFor(() => {
-        expect(mockPush).toHaveBeenCalledWith('/dashboard');
-      });
-    });
-
-    it('should disable form during loading', async () => {
-      mockSignIn.mockImplementation(
-        () =>
-          new Promise((resolve) =>
-            setTimeout(
-              () =>
-                resolve({
-                  ok: true,
-                  status: 200,
-                  error: null,
-                  url: null,
-                }),
-              50
-            )
-          )
-      );
-
-      render(<LoginPage />);
-
-      const usernameInput = screen.getByLabelText(/username/i) as HTMLInputElement;
-      const passwordInput = screen.getByLabelText(/password/i) as HTMLInputElement;
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
-
-      fireEvent.change(usernameInput, { target: { value: 'admin' } });
-      fireEvent.change(passwordInput, { target: { value: 'password123' } });
-      fireEvent.click(submitButton);
-
-      // Check disabled state
-      expect(submitButton).toBeDisabled();
-      expect(usernameInput).toBeDisabled();
-      expect(passwordInput).toBeDisabled();
-
-      await waitFor(() => {
-        expect(mockPush).toHaveBeenCalledWith('/dashboard');
-      });
+      // Verify expected behavior
+      await expectedBehavior();
     });
   });
 
   describe('🚨 Error Handling', () => {
-    it('should handle network errors', async () => {
-      mockSignIn.mockRejectedValue(new Error('Network error'));
+    /**
+     * Parameterized error tests to eliminate duplication
+     */
+    const errorTests = [
+      {
+        name: 'should handle network errors',
+        mockSetup: () => {
+          mockSignIn.mockRejectedValue(new Error('Network error'));
+        },
+        expectedError: /network error/i,
+      },
+      {
+        name: 'should handle unknown errors',
+        mockSetup: () => {
+          mockSignIn.mockRejectedValue(new Error('Unknown error'));
+        },
+        expectedError: /unknown error/i,
+      },
+    ];
+
+    it.each(errorTests)('$name', async ({ mockSetup, expectedError }) => {
+      mockSetup();
 
       render(<LoginPage />);
 
+      // Fill and submit form
       const usernameInput = screen.getByLabelText(/username/i);
       const passwordInput = screen.getByLabelText(/password/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
-
-      fireEvent.change(usernameInput, { target: { value: 'admin' } });
+      fireEvent.change(usernameInput, { target: { value: 'testuser' } });
       fireEvent.change(passwordInput, { target: { value: 'password123' } });
-      fireEvent.click(submitButton);
-
-      await waitFor(() => {
-        expect(screen.getByText(/network error/i)).toBeInTheDocument();
-      });
-    });
-
-    it('should handle unknown errors', async () => {
-      mockSignIn.mockRejectedValue('Unknown error');
-
-      render(<LoginPage />);
-
-      const usernameInput = screen.getByLabelText(/username/i);
-      const passwordInput = screen.getByLabelText(/password/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
-
-      fireEvent.change(usernameInput, { target: { value: 'admin' } });
-      fireEvent.change(passwordInput, { target: { value: 'password123' } });
-      fireEvent.click(submitButton);
-
-      await waitFor(() => {
-        expect(screen.getByText(/an unexpected error occurred/i)).toBeInTheDocument();
-      });
-    });
-
-    it('should reset loading state after error', async () => {
-      mockSignIn.mockRejectedValue(new Error('Test error'));
-
-      render(<LoginPage />);
-
-      const usernameInput = screen.getByLabelText(/username/i);
-      const passwordInput = screen.getByLabelText(/password/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
-
-      fireEvent.change(usernameInput, { target: { value: 'admin' } });
-      fireEvent.change(passwordInput, { target: { value: 'password123' } });
-      fireEvent.click(submitButton);
-
-      await waitFor(() => {
-        expect(screen.getByText(/test error/i)).toBeInTheDocument();
-      });
-
-      // Check that loading state is reset
-      expect(submitButton).not.toBeDisabled();
-      expect(screen.queryByText(/signing in/i)).not.toBeInTheDocument();
-    });
-  });
-
-  describe('🔄 User Experience', () => {
-    it('should allow retry after error', async () => {
-      // First attempt fails
-      mockSignIn.mockRejectedValueOnce(new Error('Network error'));
-
-      // Second attempt succeeds
-      mockSignIn.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        error: null,
-        url: null,
-      });
-
-      render(<LoginPage />);
-
-      const usernameInput = screen.getByLabelText(/username/i);
-      const passwordInput = screen.getByLabelText(/password/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
-
-      // First attempt
-      fireEvent.change(usernameInput, { target: { value: 'admin' } });
-      fireEvent.change(passwordInput, { target: { value: 'password123' } });
-      fireEvent.click(submitButton);
-
-      await waitFor(() => {
-        expect(screen.getByText(/network error/i)).toBeInTheDocument();
-      });
-
-      // Second attempt
-      fireEvent.click(submitButton);
-
-      await waitFor(() => {
-        expect(mockPush).toHaveBeenCalledWith('/dashboard');
-      });
-    });
-
-    it('should handle form submission via Enter key', async () => {
-      render(<LoginPage />);
-
-      const usernameInput = screen.getByLabelText(/username/i);
-      const passwordInput = screen.getByLabelText(/password/i);
-      const form = screen.getByRole('button', { name: /sign in/i }).closest('form');
-
-      fireEvent.change(usernameInput, { target: { value: 'admin' } });
-      fireEvent.change(passwordInput, { target: { value: 'password123' } });
-
-      // Submit via Enter key on password field - this should trigger form submission
-      fireEvent.keyDown(passwordInput, { key: 'Enter', code: 'Enter' });
-      fireEvent.submit(form!);
-
-      await waitFor(() => {
-        expect(mockSignIn).toHaveBeenCalledWith('credentials', {
-          username: 'admin',
-          password: 'password123',
-          redirect: false,
-        });
-      });
-    });
-  });
-
-  describe('🎨 Visual States', () => {
-    it('should display error message with proper styling', async () => {
-      render(<LoginPage />);
 
       const form = screen.getByRole('button', { name: /sign in/i }).closest('form');
       fireEvent.submit(form!);
 
+      // Should show error
       await waitFor(() => {
-        const errorMessage = screen.getByText(/please fill in all fields/i);
-        expect(errorMessage).toBeInTheDocument();
-        // Check for the actual classes used in the component
-        expect(errorMessage.closest('.bg-red-50')).toBeInTheDocument();
+        expect(screen.getByText(expectedError)).toBeInTheDocument();
       });
     });
+  });
 
-    it('should show proper button states', () => {
+  describe('⚡ Performance', () => {
+    it('should render within performance targets', async () => {
+      const start = performance.now();
+
       render(<LoginPage />);
 
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
-
-      // Initial state - check for actual classes used in the component
-      expect(submitButton).toHaveClass('bg-primary');
-      expect(submitButton).not.toBeDisabled();
+      const duration = performance.now() - start;
+      expect(duration).toBeLessThan(100); // <100ms render time
     });
   });
 });

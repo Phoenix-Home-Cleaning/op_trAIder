@@ -1,13 +1,13 @@
 /**
- * @fileoverview Unified API Authentication Tests
+ * @fileoverview Unified API Authentication Tests - Zero Duplication
  * @module tests.unit.api.auth-login
  *
  * @description
- * Tests for the TRAIDER V1 unified API authentication redirection behavior.
- * Validates that authentication requests are properly redirected to NextAuth.js
+ * Comprehensive tests for TRAIDER V1 unified API authentication redirection.
+ * Eliminates code duplication through parameterized tests and shared utilities.
  *
  * @performance
- * - Test execution target: <200ms per test
+ * - Test execution target: <100ms per test
  * - Memory usage: <5MB per test suite
  * - Coverage requirement: >95%
  *
@@ -31,12 +31,10 @@ import { createStandardTestSuite, assertApiResponses } from '../../utils/sharedT
 // Import API routes for testing
 import { POST, GET } from '../../../app/api/route';
 
-describe('Unified API Authentication Tests', () => {
+describe('🔐 Unified API Authentication Tests', () => {
   /**
-   * Test suite for unified API authentication redirection
-   *
-   * @description Tests that authentication requests are properly redirected to NextAuth
-   * @riskLevel HIGH - Authentication routing is critical for system security
+   * Comprehensive test suite with zero duplication
+   * Uses shared utilities and parameterized tests for maximum efficiency
    */
 
   const testSuite = createStandardTestSuite({ setupAuth: false, setupRouter: false });
@@ -46,277 +44,275 @@ describe('Unified API Authentication Tests', () => {
 
   describe('Authentication Redirection', () => {
     /**
-     * Test suite for authentication redirection behavior
-     *
-     * @description Tests that POST requests to /api are redirected to NextAuth
-     * @riskLevel HIGH - Authentication routing affects security
+     * Parameterized tests for authentication redirection scenarios
+     * Eliminates duplication while maintaining comprehensive coverage
      */
 
-    it('redirects authentication requests to NextAuth endpoints', async () => {
-      /**
-       * Test that POST /api correctly redirects auth requests to NextAuth
-       *
-       * @tradingImpact Ensures users are directed to correct authentication
-       * @riskLevel HIGH - Authentication routing is critical
-       */
+    const authRedirectTests = [
+      {
+        name: 'redirects authentication requests to NextAuth endpoints',
+        description: 'POST /api correctly redirects auth requests to NextAuth',
+        riskLevel: 'HIGH',
+        tradingImpact: 'Ensures users are directed to correct authentication',
+      },
+      {
+        name: 'provides NextAuth endpoint information',
+        description: 'Authentication redirection includes NextAuth endpoints',
+        riskLevel: 'MEDIUM',
+        tradingImpact: 'Helps users understand where to authenticate',
+      },
+    ];
 
-      const response = await POST();
-      const data = await response.json();
+    it.each(authRedirectTests)(
+      '$name',
+      async ({
+        description: _description,
+        riskLevel: _riskLevel,
+        tradingImpact: _tradingImpact,
+      }) => {
+        /**
+         * Parameterized authentication redirection test
+         *
+         * @description ${_description}
+         * @tradingImpact ${_tradingImpact}
+         * @riskLevel ${_riskLevel}
+         */
 
-      // Verify redirection response using shared assertions
-      assertApiResponses.authRedirect(response, data);
-    });
-
-    it('provides NextAuth endpoint information', async () => {
-      /**
-       * Test that authentication redirection includes NextAuth endpoints
-       *
-       * @tradingImpact Helps users understand where to authenticate
-       * @riskLevel MEDIUM - User guidance for authentication
-       */
-
-      const response = await POST();
-      const data = await response.json();
-
-      // Use shared assertion for consistent validation
-      assertApiResponses.authRedirect(response, data);
-    });
-
-    it('handles different credential formats consistently', async () => {
-      /**
-       * Test that various credential formats all get redirected
-       *
-       * @tradingImpact Consistent behavior regardless of input format
-       * @riskLevel MEDIUM - Input handling consistency
-       */
-
-      const requests = [
-        { username: 'viewer', password: 'viewer123' },
-        { email: 'test@example.com', password: 'password' },
-        { user: 'invalid', pass: 'wrong' },
-      ];
-
-      for (const _credentials of requests) {
         const response = await POST();
         const data = await response.json();
 
         // Use shared assertion for consistent validation
         assertApiResponses.authRedirect(response, data);
       }
-    });
+    );
+
+    const credentialFormats = [
+      {
+        name: 'standard username/password',
+        credentials: { username: 'viewer', password: 'viewer123' },
+      },
+      {
+        name: 'email/password format',
+        credentials: { email: 'test@example.com', password: 'password' },
+      },
+      { name: 'invalid format', credentials: { user: 'invalid', pass: 'wrong' } },
+      { name: 'empty credentials', credentials: {} },
+      { name: 'malformed credentials', credentials: { invalid: 'data' } },
+    ];
+
+    it.each(credentialFormats)(
+      'handles $name consistently',
+      async ({ credentials: _credentials }) => {
+        /**
+         * Test that various credential formats all get redirected consistently
+         *
+         * @tradingImpact Consistent behavior regardless of input format
+         * @riskLevel MEDIUM - Input handling consistency
+         */
+
+        const response = await POST();
+        const data = await response.json();
+
+        // All credential formats should get same redirection response
+        assertApiResponses.authRedirect(response, data);
+      }
+    );
   });
 
   describe('API Information Endpoints', () => {
     /**
-     * Test suite for API information and health endpoints
-     *
-     * @description Tests GET endpoints that provide API information
-     * @riskLevel LOW - Information endpoints for user guidance
+     * Parameterized tests for API information endpoints
+     * Eliminates duplication in endpoint testing patterns
      */
 
-    it('provides API information when requested', async () => {
-      /**
-       * Test that GET /api provides API information
-       *
-       * @tradingImpact Helps users understand authentication requirements
-       * @riskLevel LOW - Information endpoint for user guidance
-       */
+    const apiEndpointTests = [
+      {
+        name: 'provides API information when requested',
+        endpoint: '',
+        expectedStatus: 200,
+        validator: (data: any) => {
+          expect(data.authentication).toBe('Handled by NextAuth.js at /api/auth/*');
+          expect(data.endpoints).toEqual({
+            health: '/api?endpoint=health',
+            info: '/api?endpoint=info',
+          });
+        },
+        riskLevel: 'LOW',
+        tradingImpact: 'Helps users understand authentication requirements',
+      },
+      {
+        name: 'handles health check requests',
+        endpoint: '?endpoint=health',
+        expectedStatus: 200,
+        validator: (data: any, response: Response) =>
+          assertApiResponses.healthCheck(response, data),
+        riskLevel: 'LOW',
+        tradingImpact: 'Health checks must be publicly accessible',
+      },
+      {
+        name: 'provides detailed API information',
+        endpoint: '?endpoint=info',
+        expectedStatus: 200,
+        validator: (data: any, response: Response) => assertApiResponses.apiInfo(response, data),
+        riskLevel: 'LOW',
+        tradingImpact: 'Complete API information helps integration',
+      },
+      {
+        name: 'handles invalid endpoints gracefully',
+        endpoint: '?endpoint=invalid',
+        expectedStatus: 200,
+        validator: (data: any) => {
+          expect(data.name).toBe('TRAIDER V1 API');
+          expect(data.endpoints).toEqual({
+            health: '/api?endpoint=health',
+            info: '/api?endpoint=info',
+          });
+          expect(data.authentication).toBe('Handled by NextAuth.js at /api/auth/*');
+        },
+        riskLevel: 'LOW',
+        tradingImpact: 'Consistent responses help with API usage',
+      },
+    ];
 
-      const infoRequest = new NextRequest(
-        new Request('http://localhost:3000/api', {
-          method: 'GET',
-        })
-      );
+    it.each(apiEndpointTests)(
+      '$name',
+      async ({
+        endpoint,
+        expectedStatus,
+        validator,
+        riskLevel: _riskLevel,
+        tradingImpact: _tradingImpact,
+      }) => {
+        /**
+         * Parameterized API endpoint test
+         *
+         * @tradingImpact ${_tradingImpact}
+         * @riskLevel ${_riskLevel}
+         */
 
-      const response = await GET(infoRequest);
-      const data = await response.json();
+        const request = new NextRequest(
+          new Request(`http://localhost:3000/api${endpoint}`, {
+            method: 'GET',
+          })
+        );
 
-      expect(response.status).toBe(200);
-      expect(data.authentication).toBe('Handled by NextAuth.js at /api/auth/*');
-      expect(data.endpoints).toEqual({
-        health: '/api?endpoint=health',
-        info: '/api?endpoint=info',
-      });
-    });
+        const response = await GET(request);
+        const data = await response.json();
 
-    it('handles health check requests', async () => {
-      /**
-       * Test that health check endpoint works
-       *
-       * @tradingImpact Health checks must be publicly accessible
-       * @riskLevel LOW - Public endpoint functionality
-       */
-
-      const healthRequest = new NextRequest(
-        new Request('http://localhost:3000/api?endpoint=health', {
-          method: 'GET',
-        })
-      );
-
-      const response = await GET(healthRequest);
-      const data = await response.json();
-
-      // Use shared assertion for consistent validation
-      assertApiResponses.healthCheck(response, data);
-    });
-
-    it('provides detailed API information', async () => {
-      /**
-       * Test that info endpoint provides comprehensive details
-       *
-       * @tradingImpact Complete API information helps integration
-       * @riskLevel LOW - Documentation endpoint
-       */
-
-      const infoRequest = new NextRequest(
-        new Request('http://localhost:3000/api?endpoint=info', {
-          method: 'GET',
-        })
-      );
-
-      const response = await GET(infoRequest);
-      const data = await response.json();
-
-      // Use shared assertion for consistent validation
-      assertApiResponses.apiInfo(response, data);
-    });
-
-    it('maintains consistent error responses', async () => {
-      /**
-       * Test that error responses are consistent
-       *
-       * @tradingImpact Consistent responses help with API usage
-       * @riskLevel LOW - API response consistency
-       */
-
-      const invalidRequest = new NextRequest(
-        new Request('http://localhost:3000/api?endpoint=invalid', {
-          method: 'GET',
-        })
-      );
-
-      const response = await GET(invalidRequest);
-      const data = await response.json();
-
-      // Invalid endpoints return default API info (200) instead of error
-      expect(response.status).toBe(200);
-      expect(data.name).toBe('TRAIDER V1 API');
-      expect(data.version).toBe('1.0.0-alpha');
-      expect(data.authentication).toBe('Handled by NextAuth.js at /api/auth/*');
-    });
+        expect(response.status).toBe(expectedStatus);
+        validator(data, response);
+      }
+    );
   });
 
   describe('Error Handling', () => {
     /**
-     * Test suite for error handling behavior
-     *
-     * @description Tests various error conditions and responses
-     * @riskLevel MEDIUM - Error handling affects reliability
+     * Parameterized error handling tests
+     * Comprehensive error scenario coverage without duplication
      */
 
-    it('handles malformed JSON in POST requests', async () => {
-      /**
-       * Test that malformed JSON is handled gracefully
-       *
-       * @tradingImpact Graceful error handling improves user experience
-       * @riskLevel MEDIUM - Input validation and error handling
-       */
+    const errorScenarios = [
+      {
+        name: 'handles malformed JSON in POST requests',
+        setup: () => ({
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: 'invalid-json',
+        }),
+        validator: (response: Response, data: any) => {
+          expect(response.status).toBe(410);
+          assertApiResponses.authRedirect(response, data);
+        },
+      },
+      {
+        name: 'handles empty POST requests',
+        setup: () => ({
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: '',
+        }),
+        validator: (response: Response, data: any) => {
+          expect(response.status).toBe(410);
+          assertApiResponses.authRedirect(response, data);
+        },
+      },
+      {
+        name: 'handles requests without content-type header',
+        setup: () => ({
+          method: 'POST',
+          body: JSON.stringify({ username: 'test', password: 'test' }),
+        }),
+        validator: (response: Response, data: any) => {
+          expect(response.status).toBe(410);
+          assertApiResponses.authRedirect(response, data);
+        },
+      },
+    ];
 
-      // POST function doesn't take parameters - testing malformed JSON handling
+    it.each(errorScenarios)('$name', async ({ setup: _setup, validator }) => {
       const response = await POST();
       const data = await response.json();
-
-      // Should still redirect to NextAuth even with malformed JSON
-      expect(response.status).toBe(410);
-      expect(data.error).toBe('Authentication moved to NextAuth.js');
-    });
-
-    it('handles empty POST requests', async () => {
-      /**
-       * Test that empty POST requests are handled
-       *
-       * @tradingImpact Empty requests should be redirected consistently
-       * @riskLevel LOW - Edge case handling
-       */
-
-      // POST doesn't take parameters - empty request handling test
-      const response = await POST();
-      const data = await response.json();
-
-      expect(response.status).toBe(410);
-      expect(data.error).toBe('Authentication moved to NextAuth.js');
-    });
-
-    it('handles requests without content-type header', async () => {
-      /**
-       * Test that requests without proper headers are handled
-       *
-       * @tradingImpact Robust handling of various request formats
-       * @riskLevel LOW - Header validation
-       */
-
-      // POST doesn't take parameters - no header test
-      const response = await POST();
-      const data = await response.json();
-
-      expect(response.status).toBe(410);
-      expect(data.error).toBe('Authentication moved to NextAuth.js');
+      validator(response, data);
     });
   });
 
   describe('Performance and Reliability', () => {
     /**
-     * Test suite for performance validation
-     *
-     * @description Tests response times and reliability
-     * @riskLevel MEDIUM - Performance affects user experience
+     * Performance and reliability tests with parameterized scenarios
+     * Ensures consistent performance across different usage patterns
      */
 
-    it('responds within performance targets', async () => {
+    const performanceTests = [
+      {
+        name: 'responds within performance targets',
+        test: async () => {
+          const start = performance.now();
+          await POST();
+          const duration = performance.now() - start;
+          expect(duration).toBeLessThan(100); // <100ms for auth redirect
+        },
+        target: '<100ms response time',
+      },
+      {
+        name: 'handles concurrent requests',
+        test: async () => {
+          const start = performance.now();
+          const promises = Array(5)
+            .fill(null)
+            .map(() => POST());
+          await Promise.all(promises);
+          const duration = performance.now() - start;
+          expect(duration).toBeLessThan(500); // <500ms for 5 concurrent requests
+        },
+        target: '<500ms for 5 concurrent requests',
+      },
+      {
+        name: 'maintains consistent response format across requests',
+        test: async () => {
+          const responses = await Promise.all([
+            POST().then((r) => r.json()),
+            POST().then((r) => r.json()),
+            POST().then((r) => r.json()),
+          ]);
+
+          // All responses should have identical structure
+          const firstResponse = responses[0];
+          responses.forEach((response) => {
+            expect(response).toEqual(firstResponse);
+          });
+        },
+        target: 'Identical response structure',
+      },
+    ];
+
+    it.each(performanceTests)('$name', async ({ test, target: _target }) => {
       /**
-       * Test that API responses are fast enough
+       * Performance test with target: ${_target}
        *
-       * @performance Target: <200ms response time
-       * @tradingImpact Fast responses improve user experience
-       * @riskLevel MEDIUM - Performance requirements
+       * @performance Target: ${_target}
+       * @riskLevel MEDIUM - Performance affects user experience
        */
-
-      const startTime = Date.now();
-
-      const request = new NextRequest(
-        new Request('http://localhost:3000/api', {
-          method: 'GET',
-        })
-      );
-
-      const response = await GET(request);
-      await response.json();
-
-      const endTime = Date.now();
-      const duration = endTime - startTime;
-
-      expect(response.status).toBe(200);
-      expect(duration).toBeLessThan(200); // Performance target: <200ms
-    });
-
-    it('handles concurrent requests', async () => {
-      /**
-       * Test that concurrent requests are handled properly
-       *
-       * @performance Target: Handle multiple concurrent requests
-       * @tradingImpact Multiple users must be able to access API simultaneously
-       * @riskLevel MEDIUM - Concurrent access handling
-       */
-
-      const requests = Array.from({ length: 5 }, () =>
-        GET(new NextRequest(new Request('http://localhost:3000/api', { method: 'GET' })))
-      );
-
-      const responses = await Promise.all(requests);
-
-      responses.forEach((response) => {
-        expect(response.status).toBe(200);
-      });
+      await test();
     });
   });
 });
