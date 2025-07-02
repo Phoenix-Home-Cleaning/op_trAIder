@@ -29,6 +29,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { createStandardTestSuite, assertFormElements } from '../../utils/sharedTestUtilities';
 import LoginPage from '../../../app/(auth)/login/page';
 
 // Mock Next.js router
@@ -42,73 +43,52 @@ vi.mock('next-auth/react', () => ({
 }));
 
 describe('🔐 Login Page - Comprehensive Tests', () => {
-  const mockPush = vi.fn();
+  const testSuite = createStandardTestSuite();
   const mockSignIn = vi.mocked(signIn);
   const mockUseRouter = vi.mocked(useRouter);
+  let mockPush: any;
 
   beforeEach(() => {
-    // Reset all mocks
-    vi.clearAllMocks();
+    testSuite.beforeEach();
 
-    // Setup router mock
-    mockUseRouter.mockReturnValue({
-      push: mockPush,
-      back: vi.fn(),
-      forward: vi.fn(),
-      refresh: vi.fn(),
-      replace: vi.fn(),
-      prefetch: vi.fn(),
-    });
+    const mocks = testSuite.getMocks();
+    if (mocks) {
+      mockPush = mocks.mockPush;
+      // Override with specific login page setup
+      mockUseRouter.mockReturnValue({
+        push: mockPush,
+        back: vi.fn(),
+        forward: vi.fn(),
+        refresh: vi.fn(),
+        replace: vi.fn(),
+        prefetch: vi.fn(),
+      });
 
-    // Setup default signIn mock
-    mockSignIn.mockResolvedValue({
-      ok: true,
-      status: 200,
-      error: null,
-      url: null,
-    });
+      mockSignIn.mockResolvedValue({
+        ok: true,
+        status: 200,
+        error: null,
+        url: null,
+      });
+    }
   });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
+  afterEach(testSuite.afterEach);
 
   describe('🏗️ Component Rendering', () => {
     it('should render login form with all required elements', () => {
       render(<LoginPage />);
 
-      // Check header elements
-      expect(screen.getByText('Sign in to TRAIDER')).toBeInTheDocument();
-      expect(screen.getByText('Institutional Crypto Trading Platform')).toBeInTheDocument();
-
-      // Check form elements
-      expect(screen.getByLabelText(/username/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
-
-      // Check form structure
-      const form = screen.getByRole('button', { name: /sign in/i }).closest('form');
-      expect(form).toBeInTheDocument();
+      // Use shared assertions for consistent validation
+      assertFormElements.loginForm(screen);
+      assertFormElements.formStructure(screen);
     });
 
     it('should have proper accessibility attributes', () => {
       render(<LoginPage />);
 
-      const usernameInput = screen.getByLabelText(/username/i);
-      const passwordInput = screen.getByLabelText(/password/i);
-
-      // Check input attributes
-      expect(usernameInput).toHaveAttribute('type', 'text');
-      expect(usernameInput).toHaveAttribute('id', 'username');
-      expect(usernameInput).toHaveAttribute('name', 'username');
-
-      expect(passwordInput).toHaveAttribute('type', 'password');
-      expect(passwordInput).toHaveAttribute('id', 'password');
-      expect(passwordInput).toHaveAttribute('name', 'password');
-
-      // Check required attributes
-      expect(usernameInput).toBeRequired();
-      expect(passwordInput).toBeRequired();
+      // Use shared assertions for consistent validation
+      assertFormElements.inputAttributes(screen);
     });
 
     it('should have proper CSS classes and styling', () => {

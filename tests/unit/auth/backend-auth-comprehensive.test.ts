@@ -19,6 +19,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { createStandardTestSuite } from '../../utils/sharedTestUtilities';
 import {
   authenticateWithBackend,
   mapBackendRole,
@@ -26,13 +27,16 @@ import {
 } from '../../../app/lib/auth/backend-auth';
 
 describe('🔐 Backend Authentication Service', () => {
+  const testSuite = createStandardTestSuite({ setupRouter: false });
+
   beforeEach(() => {
-    vi.clearAllMocks();
-    // Reset test hooks
+    testSuite.beforeEach();
+    // Reset test hooks after standard setup
     _setTestHook_forceAuthenticate(undefined);
   });
 
   afterEach(() => {
+    testSuite.afterEach();
     // Clean up test hooks
     _setTestHook_forceAuthenticate(undefined);
   });
