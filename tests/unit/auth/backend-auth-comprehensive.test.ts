@@ -117,6 +117,7 @@ describe('🔐 Backend Authentication Service', () => {
           password: 'password',
           remember_me: false,
         }),
+        signal: expect.any(Object),
       });
 
       expect(result).toEqual({
@@ -191,7 +192,10 @@ describe('🔐 Backend Authentication Service', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         'https://api.traider.com/auth/login',
-        expect.any(Object)
+        expect.objectContaining({
+          method: 'POST',
+          signal: expect.any(Object),
+        })
       );
 
       // Restore original environment
@@ -500,6 +504,7 @@ describe('🔐 Backend Authentication Service', () => {
         expect.objectContaining({
           method: 'POST',
           body: expect.stringContaining('sensitive-user'),
+          signal: expect.any(Object),
         })
       );
     });
@@ -536,8 +541,23 @@ describe('🔐 Backend Authentication Service', () => {
         expect.objectContaining({
           method: 'POST',
           body: expect.stringContaining(specialUsername),
+          signal: expect.any(Object),
         })
       );
+    });
+
+    it('should handle server-side errors gracefully', async () => {
+      const mockResponse = {
+        ok: false,
+        status: 500,
+        json: vi.fn().mockResolvedValue({ error: 'Server error' }),
+      };
+
+      const mockFetch = vi.fn().mockResolvedValue(mockResponse);
+
+      const result = await authenticateWithBackend('admin', 'password', mockFetch);
+
+      expect(result).toBeNull();
     });
   });
 });
