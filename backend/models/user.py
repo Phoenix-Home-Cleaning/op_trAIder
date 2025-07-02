@@ -31,7 +31,7 @@ from typing import List, Optional
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, JSON, Text
 from sqlalchemy.orm import relationship
 
-from backend.database import Base
+from database import Base
 
 
 class User(Base):

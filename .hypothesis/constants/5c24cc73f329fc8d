@@ -1,0 +1,4 @@
+# file: C:\Users\jesse\AppData\Roaming\Python\Python313\site-packages\coverage\bytecode.py
+# hypothesis_version: 6.135.14
+
+['JUMP_BACKWARD', 'JUMP_FORWARD', 'RETURN_GENERATOR', 'RETURN_VALUE']

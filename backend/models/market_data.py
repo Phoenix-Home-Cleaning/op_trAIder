@@ -32,7 +32,7 @@ from typing import Optional
 from sqlalchemy import Column, String, DateTime, Numeric, Integer, Index, BigInteger
 from sqlalchemy.dialects.postgresql import JSONB
 
-from backend.database import Base
+from database import Base
 
 
 class MarketData(Base):
@@ -79,7 +79,7 @@ class MarketData(Base):
     vwap = Column(Numeric(20, 8), nullable=True)
     
     # Additional metadata
-    metadata = Column(JSONB, nullable=False, default=dict)
+    extra_data = Column(JSONB, nullable=False, default=dict)
     
     # Indexes for performance
     __table_args__ = (
@@ -115,7 +115,7 @@ class MarketData(Base):
             "spread": float(self.spread) if self.spread else None,
             "trade_count": self.trade_count,
             "vwap": float(self.vwap) if self.vwap else None,
-            "metadata": self.metadata,
+            "extra_data": self.extra_data,
         }
     
     @property

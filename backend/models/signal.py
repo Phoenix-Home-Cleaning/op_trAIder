@@ -32,7 +32,7 @@ from typing import Optional
 from sqlalchemy import Column, String, DateTime, Numeric, Integer, Boolean, Text, Index
 from sqlalchemy.dialects.postgresql import JSONB
 
-from backend.database import Base
+from database import Base
 
 
 class Signal(Base):
@@ -105,7 +105,7 @@ class Signal(Base):
     # Status and metadata
     status = Column(String(20), nullable=False, default="GENERATED")  # GENERATED, EXECUTED, EXPIRED, CANCELLED
     notes = Column(Text, nullable=True)
-    metadata = Column(JSONB, nullable=False, default=dict)
+    extra_data = Column(JSONB, nullable=False, default=dict)
     
     # Indexes for performance
     __table_args__ = (
@@ -155,7 +155,7 @@ class Signal(Base):
             "max_adverse": float(self.max_adverse) if self.max_adverse else None,
             "status": self.status,
             "notes": self.notes,
-            "metadata": self.metadata,
+            "extra_data": self.extra_data,
         }
     
     @property
@@ -303,7 +303,9 @@ class Signal(Base):
         if self.direction.upper() not in ["LONG", "SHORT", "FLAT"]:
             return False
         
-        if self.signal_type not in ["entry", "exit", "rebalance"]:
+        # Handle signal_type with default value
+        signal_type = self.signal_type or "entry"  # Use default if None
+        if signal_type not in ["entry", "exit", "rebalance"]:
             return False
         
         return True 

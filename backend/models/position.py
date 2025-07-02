@@ -32,7 +32,7 @@ from typing import Optional
 from sqlalchemy import Column, String, DateTime, Numeric, Integer, Boolean, JSON
 from sqlalchemy.dialects.postgresql import JSONB
 
-from backend.database import Base
+from database import Base
 
 
 class Position(Base):
@@ -81,7 +81,7 @@ class Position(Base):
     
     # Risk and analytics
     risk_metrics = Column(JSONB, nullable=False, default=dict)
-    metadata = Column(JSONB, nullable=False, default=dict)
+    extra_data = Column(JSONB, nullable=False, default=dict)
     
     def __repr__(self) -> str:
         """String representation of position."""
@@ -111,7 +111,7 @@ class Position(Base):
             "first_trade_at": self.first_trade_at.isoformat() if self.first_trade_at else None,
             "last_updated": self.last_updated.isoformat() if self.last_updated else None,
             "risk_metrics": self.risk_metrics,
-            "metadata": self.metadata,
+            "extra_data": self.extra_data,
         }
     
     @property
@@ -128,7 +128,7 @@ class Position(Base):
         @riskLevel LOW - Simple calculation
         """
         
-        return self.quantity and self.quantity > 0
+        return bool(self.quantity and self.quantity > 0)
     
     @property
     def is_short(self) -> bool:
@@ -144,7 +144,7 @@ class Position(Base):
         @riskLevel LOW - Simple calculation
         """
         
-        return self.quantity and self.quantity < 0
+        return bool(self.quantity and self.quantity < 0)
     
     @property
     def is_flat(self) -> bool:
@@ -187,8 +187,10 @@ class Position(Base):
                 else:  # Short position
                     self.unrealized_pnl = cost_basis - self.market_value
             
-            # Update total P&L
-            self.total_pnl = self.realized_pnl + self.unrealized_pnl
+            # Update total P&L (handle None values)
+            realized = self.realized_pnl or Decimal(0)
+            unrealized = self.unrealized_pnl or Decimal(0)
+            self.total_pnl = realized + unrealized
             
             # Update timestamp
             self.last_updated = datetime.now(timezone.utc)
@@ -227,8 +229,9 @@ class Position(Base):
                     else:  # Closing short position
                         realized_pnl = close_quantity * (self.avg_cost - price)
                 
-                # Update realized P&L
-                self.realized_pnl += realized_pnl
+                # Update realized P&L (handle None values)
+                current_realized = self.realized_pnl or Decimal(0)
+                self.realized_pnl = current_realized + realized_pnl
                 
                 # Update position quantity
                 if abs(quantity) >= abs(self.quantity):
@@ -251,8 +254,10 @@ class Position(Base):
                 self.quantity += quantity
                 self.avg_cost = total_cost / abs(self.quantity)
         
-        # Update total P&L
-        self.total_pnl = self.realized_pnl + self.unrealized_pnl
+        # Update total P&L (handle None values)
+        realized = self.realized_pnl or Decimal(0)
+        unrealized = self.unrealized_pnl or Decimal(0)
+        self.total_pnl = realized + unrealized
         
         # Update timestamp
         self.last_updated = datetime.now(timezone.utc)

@@ -192,8 +192,9 @@ class TestUserAuthentication:
     def setup_method(self):
         """Set up authentication test environment"""
         self.mock_user = User(
-            email="trader@traider.com",
-            hashed_password=get_password_hash("TestPassword123!"),
+            username="testuser",
+            email="test@traider.com",
+            password_hash=get_password_hash("TestPassword123!"),
             role=UserRole.TRADER,
             is_active=True
         )
@@ -211,12 +212,12 @@ class TestUserAuthentication:
             mock_get_user.return_value = self.mock_user
             
             authenticated_user = await authenticate_user(
-                "trader@traider.com",
+                "test@traider.com",
                 "TestPassword123!"
             )
             
             assert authenticated_user is not None
-            assert authenticated_user.email == "trader@traider.com"
+            assert authenticated_user.email == "test@traider.com"
             assert authenticated_user.role == UserRole.TRADER
             
     @pytest.mark.asyncio
@@ -232,7 +233,7 @@ class TestUserAuthentication:
             
             # Wrong password
             result = await authenticate_user(
-                "trader@traider.com",
+                "test@traider.com",
                 "WrongPassword"
             )
             assert result is None
@@ -254,8 +255,9 @@ class TestUserAuthentication:
         @riskLevel HIGH - Inactive accounts must not gain access
         """
         inactive_user = User(
-            email="inactive@traider.com",
-            hashed_password=get_password_hash("TestPassword123!"),
+            username="testuser",
+            email="test@traider.com",
+            password_hash=get_password_hash("TestPassword123!"),
             role=UserRole.TRADER,
             is_active=False
         )
@@ -264,7 +266,7 @@ class TestUserAuthentication:
             mock_get_user.return_value = inactive_user
             
             result = await authenticate_user(
-                "inactive@traider.com",
+                "test@traider.com",
                 "TestPassword123!"
             )
             assert result is None
@@ -287,7 +289,9 @@ class TestRoleBasedAccessControl:
         @riskLevel HIGH - Admin access must be properly controlled
         """
         admin_user = User(
+            username="testuser",
             email="admin@traider.com",
+            password_hash=get_password_hash("TestPassword123!"),
             role=UserRole.ADMIN,
             is_active=True
         )
@@ -304,7 +308,9 @@ class TestRoleBasedAccessControl:
         @riskLevel MEDIUM - Trader permissions must be appropriately scoped
         """
         trader_user = User(
+            username="testuser",
             email="trader@traider.com",
+            password_hash=get_password_hash("TestPassword123!"),
             role=UserRole.TRADER,
             is_active=True
         )
@@ -320,7 +326,9 @@ class TestRoleBasedAccessControl:
         @riskLevel LOW - Viewers have minimal system impact
         """
         viewer_user = User(
+            username="testuser",
             email="viewer@traider.com",
+            password_hash=get_password_hash("TestPassword123!"),
             role=UserRole.VIEWER,
             is_active=True
         )

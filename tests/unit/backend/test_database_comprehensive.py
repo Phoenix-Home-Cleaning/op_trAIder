@@ -12,9 +12,7 @@ from sqlalchemy.exc import OperationalError
 import os
 
 # Import database module
-import sys
-sys.path.append('backend')
-from backend.database import (
+from database import (
     DATABASE_URL,
     DB_HOST,
     DB_PORT,
@@ -118,7 +116,7 @@ class TestAsyncDatabaseFunctions:
     def test_database_module_functions_available(self):
         """Test that database module functions are available for import"""
         # We can test that the module has these functions without importing them directly
-        import backend.database as db_module
+        import database as db_module
         assert hasattr(db_module, 'test_database_connectivity')
         assert callable(db_module.test_database_connectivity)
     

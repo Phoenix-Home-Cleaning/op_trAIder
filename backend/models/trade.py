@@ -32,7 +32,7 @@ from typing import Optional
 from sqlalchemy import Column, String, DateTime, Numeric, Integer, Boolean, Text, Index
 from sqlalchemy.dialects.postgresql import JSONB
 
-from backend.database import Base
+from database import Base
 
 
 class Trade(Base):
@@ -100,7 +100,7 @@ class Trade(Base):
     # Status and metadata
     status = Column(String(20), nullable=False, default="FILLED")
     notes = Column(Text, nullable=True)
-    metadata = Column(JSONB, nullable=False, default=dict)
+    extra_data = Column(JSONB, nullable=False, default=dict)
     
     # Indexes for performance
     __table_args__ = (
@@ -145,7 +145,7 @@ class Trade(Base):
             "pnl": float(self.pnl) if self.pnl else None,
             "status": self.status,
             "notes": self.notes,
-            "metadata": self.metadata,
+            "extra_data": self.extra_data,
         }
     
     @property

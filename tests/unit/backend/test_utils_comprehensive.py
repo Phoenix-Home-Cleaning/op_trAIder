@@ -13,8 +13,8 @@ import os
 # Import utilities
 import sys
 sys.path.append('backend')
-from backend.utils.logging import get_logger
-from backend.utils.exceptions import (
+from utils.logging import get_logger
+from utils.exceptions import (
     TradingError, 
     ValidationError, 
     DatabaseError,
@@ -23,7 +23,7 @@ from backend.utils.exceptions import (
     AuthenticationError,
     ErrorSeverity
 )
-from backend.utils.monitoring import MetricsCollector
+from utils.monitoring import MetricsCollector
 
 
 class TestLoggingUtilities:
@@ -155,9 +155,9 @@ class TestUtilityModuleStructure:
     def test_utils_module_imports(self):
         """Test that utility modules can be imported"""
         # These imports should not raise exceptions
-        from backend.utils import logging as utils_logging
-        from backend.utils import exceptions as utils_exceptions
-        from backend.utils import monitoring as utils_monitoring
+        from utils import logging as utils_logging
+        from utils import exceptions as utils_exceptions
+        from utils import monitoring as utils_monitoring
         
         assert utils_logging is not None
         assert utils_exceptions is not None

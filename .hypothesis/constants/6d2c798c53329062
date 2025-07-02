@@ -1,0 +1,4 @@
+# file: C:\Users\jesse\AppData\Roaming\Python\Python313\site-packages\structlog\types.py
+# hypothesis_version: 6.135.14
+
+['BindableLogger', 'Context', 'EventDict', 'ExcInfo', 'ExceptionRenderer', 'ExceptionTransformer', 'FilteringBoundLogger', 'Processor', 'WrappedLogger']
