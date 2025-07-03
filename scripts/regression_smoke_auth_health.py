@@ -14,12 +14,10 @@ import httpx
 from fastapi import status
 from fastapi.testclient import TestClient
 
-# Lazy import of the FastAPI app
-sys.path.insert(0, "backend")
+# Ensure project root is on sys.path (already true when running from repo root)
 
 from api.auth import create_access_token  # noqa: E402
-from api.health import router as health_router  # noqa: E402
-from backend.main import app  # noqa: E402 – main application instance
+from backend.main import app  # noqa: E402 – FastAPI application instance
 
 # ---------------------------------------------------------------------------
 # Helper utilities

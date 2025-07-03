@@ -24,7 +24,7 @@ jobs:
       SECRET_KEY: regression_dummy_secret
       DASHBOARD_PASSWORD: regression_dashboard_pw
       GUEST_PASSWORD: regression_guest_pw
-      PYTHONPATH: backend
+      PYTHONPATH: ""
 
     steps:
       - name: 📥 Checkout code
