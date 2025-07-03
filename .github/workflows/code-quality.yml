@@ -104,6 +104,20 @@ jobs:
           if [ -f "backend/requirements.txt" ]; then
             pip install -r backend/requirements.txt
           fi
+      
+      - name: 🔍 Run Ruff code quality checks
+        run: |
+          echo "::group::Ruff Code Quality Analysis"
+          echo "🔍 Running Ruff linter on backend code..."
+          
+          # Run Ruff check with institutional-grade standards
+          # Use --exit-zero to not block pipeline, but capture issues
+          ruff check backend/ --output-format=github --exit-zero
+          
+          echo "🎯 Running Ruff formatter check..."
+          ruff format backend/ --check --diff || echo "⚠️ Code formatting issues detected"
+          
+          echo "::endgroup::"
         
       - name: 🧪 Run comprehensive tests with coverage
         run: |
@@ -113,7 +127,14 @@ jobs:
           
           echo "::group::Backend Coverage"
           # Generate Python backend coverage for trading logic analysis
-          PYTHONPATH=. python -m pytest tests/unit/backend/ --cov=. --cov-report=json:coverage-fresh.json --cov-report=term-missing -v || true
+          # Disable pytest-ruff plugin to prevent lint errors from blocking test execution
+          PYTHONPATH=. python -m pytest \
+            -p no:pytest_ruff \
+            tests/unit/backend/ \
+            --cov=. \
+            --cov-report=json:coverage-fresh.json \
+            --cov-report=term-missing \
+            -v
           
           echo "📊 Coverage files generated:"
           ls -la coverage/ || true
@@ -287,7 +308,14 @@ jobs:
           
           # Generate Python backend coverage for trading logic analysis
           echo "🐍 Generating Python backend coverage..."
-          PYTHONPATH=. python -m pytest tests/unit/backend/ --cov=. --cov-report=json:coverage-fresh.json --cov-report=term-missing -v || true
+          # Disable pytest-ruff plugin to prevent lint errors from blocking test execution
+          PYTHONPATH=. python -m pytest \
+            -p no:pytest_ruff \
+            tests/unit/backend/ \
+            --cov=. \
+            --cov-report=json:coverage-fresh.json \
+            --cov-report=term-missing \
+            -v
           
           echo "📊 Coverage files generated:"
           ls -la coverage/ || true
