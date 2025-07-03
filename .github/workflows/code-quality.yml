@@ -677,33 +677,64 @@ jobs:
         run: |
           echo "::group::Installing Qlty CLI"
           
-          # Elite-level installation with GitHub API discovery and validation
+          # Ensure script doesn't exit on intermediate failures - only final verification matters
+          set +e
+          
+          # Elite-level installation with enhanced error handling and validation
           QLTY_VERSION="${QLTY_VERSION:-latest}"
           CACHE_DIR="${HOME}/.cache/qlty"
           INSTALL_DIR="/usr/local/bin"
           BINARY_NAME="qlty"
           
-          # Create cache directory
+          # Create cache directory with proper permissions
           mkdir -p "${CACHE_DIR}"
+          chmod 755 "${CACHE_DIR}"
           
-          # Function to get latest release info from GitHub API
+          # Enhanced function to get latest release info from GitHub API
           get_release_info() {
             local api_url="https://api.github.com/repos/qltysh/qlty/releases/latest"
             echo "🔍 Discovering latest Qlty release from GitHub API..."
             
-            # Get release information with retry logic
+            # Verify network connectivity first
+            if ! curl -sSL --connect-timeout 5 --max-time 10 https://api.github.com >/dev/null 2>&1; then
+              echo "❌ GitHub API connectivity test failed"
+              return 1
+            fi
+            
+            # Get release information with enhanced retry logic and rate limiting protection
             local release_info
-            for attempt in 1 2 3; do
-              if release_info=$(curl -sSL --fail --connect-timeout 10 --max-time 30 "${api_url}"); then
-                break
+            for attempt in 1 2 3 4 5; do
+              echo "🔄 API attempt ${attempt}/5..."
+              
+              # Add exponential backoff to avoid rate limiting
+              if [ $attempt -gt 1 ]; then
+                local delay=$((attempt * 2))
+                echo "⏳ Waiting ${delay} seconds before retry..."
+                sleep $delay
+              fi
+              
+              # Make API call with enhanced error handling
+              if release_info=$(curl -sSL --fail --connect-timeout 15 --max-time 45 \
+                                     -H "Accept: application/vnd.github.v3+json" \
+                                     -H "User-Agent: TRAIDER-CI/1.0" \
+                                     "${api_url}" 2>/dev/null); then
+                # Validate JSON response
+                if echo "${release_info}" | jq -e '.tag_name' >/dev/null 2>&1; then
+                  echo "✅ Successfully retrieved release information"
+                  break
+                else
+                  echo "⚠️ Invalid JSON response received"
+                  release_info=""
+                fi
               else
-                echo "⚠️ Attempt ${attempt}/3 failed, retrying in 2 seconds..."
-                sleep 2
+                local curl_exit_code=$?
+                echo "⚠️ API call failed with exit code: ${curl_exit_code}"
+                release_info=""
               fi
             done
             
             if [ -z "${release_info}" ]; then
-              echo "❌ Failed to fetch release information from GitHub API"
+              echo "❌ Failed to fetch valid release information from GitHub API after 5 attempts"
               return 1
             fi
             
@@ -749,18 +780,92 @@ jobs:
             return 0
           }
           
-          # Function to verify binary functionality
+          # Enhanced function to verify binary functionality
           verify_binary() {
             local binary_path="$1"
-            if ! "${binary_path}" --version >/dev/null 2>&1; then
-              echo "❌ Binary verification failed - qlty --version command failed"
+            
+            # Check if file exists and is executable
+            if [ ! -f "${binary_path}" ]; then
+              echo "❌ Binary file not found: ${binary_path}"
               return 1
             fi
             
+            if [ ! -x "${binary_path}" ]; then
+              echo "❌ Binary file is not executable: ${binary_path}"
+              return 1
+            fi
+            
+            # Check file type and architecture
+            local file_info
+            file_info=$(file "${binary_path}" 2>/dev/null || echo "unknown")
+            echo "📁 Binary file info: ${file_info}"
+            
+            # Verify it's a Linux ELF binary
+            if ! echo "${file_info}" | grep -q "ELF.*executable"; then
+              echo "❌ Binary is not a valid Linux ELF executable"
+              return 1
+            fi
+            
+            # Test version command with timeout and proper error handling
             local version_output
-            version_output=$("${binary_path}" --version 2>&1)
-            echo "✅ Binary verified successfully: ${version_output}"
-            return 0
+            local version_exit_code
+            
+            echo "🔍 Testing binary functionality..."
+            if timeout 10s "${binary_path}" --version >/dev/null 2>&1; then
+              version_output=$("${binary_path}" --version 2>&1)
+              version_exit_code=$?
+            else
+              version_exit_code=$?
+              echo "❌ Binary version command timed out or failed (exit code: ${version_exit_code})"
+              return 1
+            fi
+            
+            if [ ${version_exit_code} -eq 0 ]; then
+              echo "✅ Binary verified successfully: ${version_output}"
+              return 0
+            else
+              echo "❌ Binary verification failed - qlty --version command failed with exit code: ${version_exit_code}"
+              return 1
+            fi
+          }
+          
+          # Enhanced pip installation function
+          install_via_pip() {
+            echo "🐍 Installing Qlty via pip with enhanced error handling..."
+            
+            # Upgrade pip first
+            if ! python -m pip install --upgrade pip --quiet; then
+              echo "❌ Failed to upgrade pip"
+              return 1
+            fi
+            
+            # Install qlty with retry logic
+            for attempt in 1 2 3; do
+              echo "🔄 Pip installation attempt ${attempt}/3..."
+              
+              if pip install qlty --quiet --no-cache-dir; then
+                echo "✅ Qlty package installed successfully via pip"
+                break
+              else
+                echo "⚠️ Pip installation attempt ${attempt} failed"
+                if [ $attempt -eq 3 ]; then
+                  echo "❌ All pip installation attempts failed"
+                  return 1
+                fi
+                sleep 2
+              fi
+            done
+            
+            # Verify pip installation
+            if command -v qlty >/dev/null 2>&1; then
+              local pip_version
+              pip_version=$(qlty --version 2>&1)
+              echo "✅ Qlty installed successfully via pip: ${pip_version}"
+              return 0
+            else
+              echo "❌ Qlty command not found after pip installation"
+              return 1
+            fi
           }
           
           # Main installation logic
@@ -768,16 +873,12 @@ jobs:
           
           # Get release information
           if ! release_info=$(get_release_info); then
-            echo "🔄 Falling back to pip installation..."
-            python -m pip install --upgrade pip
-            pip install qlty
-            
-            if command -v qlty >/dev/null 2>&1; then
-              echo "✅ Qlty installed successfully via pip"
-              qlty --version
+            echo "🔄 GitHub API failed, falling back to pip installation..."
+            if install_via_pip; then
+              echo "✅ Pip installation successful"
             else
-              echo "❌ Pip installation failed"
-              exit 1
+              echo "❌ Both GitHub binary and pip installation failed"
+              exit 5
             fi
           else
             # Extract version and find asset
@@ -788,15 +889,11 @@ jobs:
             
             if ! download_url=$(find_linux_asset "${release_info}"); then
               echo "🔄 No binary asset found, falling back to pip installation..."
-              python -m pip install --upgrade pip
-              pip install qlty
-              
-              if command -v qlty >/dev/null 2>&1; then
-                echo "✅ Qlty installed successfully via pip"
-                qlty --version
+              if install_via_pip; then
+                echo "✅ Pip installation successful"
               else
-                echo "❌ Pip installation failed"
-                exit 1
+                echo "❌ Binary asset not found and pip installation failed"
+                exit 5
               fi
             else
               # Generate cache key based on URL and release tag
@@ -818,29 +915,21 @@ jobs:
                      --retry 3 --retry-delay 2 --retry-max-time 300 \
                      -o "${TEMP_ARCHIVE}" "${download_url}"; then
                   echo "❌ Download failed, falling back to pip installation..."
-                  python -m pip install --upgrade pip
-                  pip install qlty
-                  
-                  if command -v qlty >/dev/null 2>&1; then
-                    echo "✅ Qlty installed successfully via pip"
-                    qlty --version
+                  if install_via_pip; then
+                    echo "✅ Pip installation successful"
                   else
-                    echo "❌ Pip installation failed"
-                    exit 1
+                    echo "❌ Download failed and pip installation failed"
+                    exit 5
                   fi
                 else
                   # Validate downloaded file
                   if ! validate_gzip "${TEMP_ARCHIVE}"; then
                     echo "🔄 Invalid archive format, falling back to pip installation..."
-                    python -m pip install --upgrade pip
-                    pip install qlty
-                    
-                    if command -v qlty >/dev/null 2>&1; then
-                      echo "✅ Qlty installed successfully via pip"
-                      qlty --version
+                    if install_via_pip; then
+                      echo "✅ Pip installation successful"
                     else
-                      echo "❌ Pip installation failed"
-                      exit 1
+                      echo "❌ Invalid archive and pip installation failed"
+                      exit 5
                     fi
                   else
                     # Extract and install
@@ -865,29 +954,21 @@ jobs:
                         echo "❌ Binary not found or verification failed in extracted files"
                         ls -la "${TEMP_EXTRACT_DIR}"
                         echo "🔄 Falling back to pip installation..."
-                        python -m pip install --upgrade pip
-                        pip install qlty
-                        
-                        if command -v qlty >/dev/null 2>&1; then
-                          echo "✅ Qlty installed successfully via pip"
-                          qlty --version
+                        if install_via_pip; then
+                          echo "✅ Pip installation successful"
                         else
-                          echo "❌ Pip installation failed"
-                          exit 1
+                          echo "❌ Binary verification failed and pip installation failed"
+                          exit 5
                         fi
                       fi
                     else
                       echo "❌ Archive extraction failed"
                       echo "🔄 Falling back to pip installation..."
-                      python -m pip install --upgrade pip
-                      pip install qlty
-                      
-                      if command -v qlty >/dev/null 2>&1; then
-                        echo "✅ Qlty installed successfully via pip"
-                        qlty --version
+                      if install_via_pip; then
+                        echo "✅ Pip installation successful"
                       else
-                        echo "❌ Pip installation failed"
-                        exit 1
+                        echo "❌ Archive extraction failed and pip installation failed"
+                        exit 5
                       fi
                     fi
                     
@@ -899,10 +980,17 @@ jobs:
             fi
           fi
           
-          # Final verification
+          # Final verification with enhanced error reporting
           if ! command -v qlty >/dev/null 2>&1; then
-            echo "❌ Qlty installation failed - binary not found in PATH"
-            exit 1
+            echo "❌ CRITICAL: Qlty installation failed - binary not found in PATH"
+            echo "🔍 Debugging information:"
+            echo "  PATH: ${PATH}"
+            echo "  Available binaries in /usr/local/bin:"
+            ls -la /usr/local/bin/ | grep -E "(qlty|python)" || echo "  No relevant binaries found"
+            echo "  Python packages:"
+            pip list | grep -i qlty || echo "  No qlty package found"
+            echo "💡 This indicates a complete installation failure"
+            exit 5
           fi
           
           # Security verification - ensure binary is in expected location
@@ -913,6 +1001,9 @@ jobs:
           fi
           
           # Display final status
+          # Re-enable exit on error for final verification
+          set -e
+          
           echo "🎉 Qlty CLI installation completed successfully!"
           echo "📍 Location: $(which qlty)"
           echo "🏷️ Version: $(qlty --version)"
