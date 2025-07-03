@@ -37,6 +37,7 @@ jobs:
       TESTING: true
       SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
       SONAR_TOKEN:      ${{ secrets.SONAR_TOKEN }}
+      SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
       
     steps:
     - name: Checkout code
@@ -205,14 +206,14 @@ jobs:
     - name: SonarQube Quality Gate
       id: quality-gate
       if: ${{ env.SONAR_HOST_URL != '' && env.SONAR_TOKEN != '' }}
-      uses: sonarsource/sonarqube-quality-gate-action@v1.2.0
+      uses: phwt/sonarqube-quality-gate-action@v1.5.1
       with:
-        scanMetadataReportFile: ${{ steps.sonar_scan.outputs.scanMetadataReportFile }}
-        pollingTimeoutSec: 600
+        sonar-project-key: ${{ env.SONAR_PROJECT_KEY }}
+        sonar-host-url:    ${{ env.SONAR_HOST_URL }}
+        sonar-token:       ${{ env.SONAR_TOKEN }}
+        fail-on-quality-gate-error: true
+        branch: main
       timeout-minutes: 10
-      env:
-        SONAR_HOST_URL: ${{ env.SONAR_HOST_URL }}
-        SONAR_TOKEN:    ${{ env.SONAR_TOKEN }}
 
     # ------------------------------------------------------------------------
 
