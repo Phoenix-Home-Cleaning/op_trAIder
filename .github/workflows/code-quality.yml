@@ -35,6 +35,8 @@ jobs:
       BCRYPT_ROUNDS: "10"
       PYTHON_ENV: testing
       TESTING: true
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      SONAR_TOKEN:      ${{ secrets.SONAR_TOKEN }}
       
     steps:
     - name: Checkout code
@@ -191,24 +193,24 @@ jobs:
           sonar-${{ runner.os }}-
 
     - name: SonarQube Scan
-      if: ${{ secrets.SONAR_HOST_URL != '' && secrets.SONAR_TOKEN != '' }}
+      if: ${{ env.SONAR_HOST_URL != '' && env.SONAR_TOKEN != '' }}
       id: sonar_scan
       uses: sonarsource/sonarqube-scan-action@v2
       with:
         projectBaseDir: .
       env:
-        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: ${{ env.SONAR_HOST_URL }}
+        SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
 
     - name: SonarQube Quality Gate
-      if: ${{ secrets.SONAR_HOST_URL != '' && secrets.SONAR_TOKEN != '' }}
+      if: ${{ env.SONAR_HOST_URL != '' && env.SONAR_TOKEN != '' }}
       uses: sonarsource/sonarqube-quality-gate-action@v1
       with:
         scanMetadataReportFile: ${{ steps.sonar_scan.outputs.scanMetadataReportFile }}
       timeout-minutes: 10
       env:
-        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: ${{ env.SONAR_HOST_URL }}
+        SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
     # ------------------------------------------------------------------------
 
     - name: Deployment Readiness Check
