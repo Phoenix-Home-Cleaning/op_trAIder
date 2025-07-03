@@ -118,6 +118,16 @@ jobs:
           ruff format backend/ --check --diff || echo "⚠️ Code formatting issues detected"
           
           echo "::endgroup::"
+      
+      - name: 🔧 Validate Dependencies
+        run: |
+          echo "::group::Dependency Validation"
+          echo "🔧 Validating backend dependencies..."
+          
+          # Run dependency validation with institutional-grade checks
+          python scripts/validate-dependencies.py
+          
+          echo "::endgroup::"
         
       - name: 🧪 Run comprehensive tests with coverage
         run: |

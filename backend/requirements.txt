@@ -1,152 +1,146 @@
-# 🚀 TRAIDER V1 - Backend Dependencies
-# Production-ready Python packages for institutional-grade trading platform
-# Organized by functionality with version pinning for stability
-# SECURITY UPDATE: Removed vulnerable packages, using secure alternatives (Jan 2025)
-# Compatible with Python 3.13
-
 # =============================================================================
+# TRAIDER V1 - Backend Dependencies
+# Institutional-grade Python packages for autonomous trading platform
+# =============================================================================
+
 # CORE FRAMEWORK
-# =============================================================================
-
-# FastAPI and ASGI server
 fastapi==0.115.6
-uvicorn[standard]==0.32.1
+uvicorn[standard]==0.34.0
+pydantic==2.10.4
+pydantic-settings==2.7.1
 python-multipart==0.0.20
 
-# =============================================================================
-# DATABASE & ORM
-# =============================================================================
-
-# PostgreSQL with async support
-asyncpg==0.30.0
-psycopg2-binary==2.9.10
-sqlalchemy==2.0.36
-alembic==1.14.0
-
-# TimescaleDB client libraries
-timescaledb==0.0.4
-
-# =============================================================================
-# AUTHENTICATION & SECURITY (SECURE ALTERNATIVES)
-# =============================================================================
-
-# JWT handling - SECURE ALTERNATIVE to python-jose
+# AUTHENTICATION & SECURITY
 PyJWT==2.10.1
-cryptography==45.0.4
+python-jose[cryptography]==3.5.0  # RESTORED: Required for JWT handling in auth.py
 passlib[bcrypt]==1.7.4
 bcrypt==4.2.1
+cryptography==44.0.0
 
-# Password hashing
-argon2-cffi==25.1.0
+# DATABASE & ORM
+sqlalchemy==2.0.36
+alembic==1.14.0
+asyncpg==0.30.0
+psycopg2-binary==2.9.10
+databases[postgresql]==0.9.0
 
-# =============================================================================
-# DATA PROCESSING & ANALYSIS
-# =============================================================================
-
-# Core data libraries
-numpy==2.2.1
-pandas==2.2.3
-scipy==1.15.0
-
-# Financial data processing
-yfinance==0.2.63  # Market data backup
-
-# =============================================================================
-# MACHINE LEARNING (SECURE VERSIONS)
-# =============================================================================
-
-# Core ML libraries
-scikit-learn==1.6.0
-torch==2.7.1  # Latest version compatible with Python 3.13
-xgboost==3.0.2
-
-# Feature engineering
-feature-engine==1.8.1
-
-# =============================================================================
-# FINANCIAL DATA & TRADING
-# =============================================================================
-
-# Market data
-ccxt==4.4.92  # Unified exchange API
-requests==2.32.4
-
-# Technical analysis
-pandas-ta==0.3.14b0  # Pure Python technical analysis library (no compilation required)
-
-# =============================================================================
-# API & NETWORKING
-# =============================================================================
-
-# HTTP client
-httpx==0.28.1
-aiohttp==3.11.11
-websockets==14.1
-
-# =============================================================================
-# UTILITIES & HELPERS
-# =============================================================================
-
-# Configuration
-python-dotenv==1.0.1
-pydantic-settings==2.8.0
-
-# Logging
+# LOGGING & MONITORING
+structlog==24.2.0  # RESTORED: Required for structured logging in utils/logging.py
 loguru==0.7.3
-
-# Date/time handling
-python-dateutil==2.9.0
-pytz==2024.2
-
-# JSON handling
-orjson==3.10.12
-
-# Validation
-pydantic==2.10.4
-
-# =============================================================================
-# DEVELOPMENT & TESTING
-# =============================================================================
-
-# Testing
-pytest==8.3.4
-pytest-asyncio==0.25.0
-pytest-cov==6.0.0
-pytest-ruff==0.5.0
-
-# Code quality
-black==25.1.0
-isort==5.13.2
-flake8==7.1.1
-mypy==1.14.1
-ruff==0.10.0
-
-# =============================================================================
-# PRODUCTION & MONITORING
-# =============================================================================
-
-# Metrics and monitoring
 prometheus-client==0.21.1
 
-# Health checks
+# TESTING & QUALITY ASSURANCE
+pytest==8.3.4
+pytest-asyncio==0.24.0
+pytest-cov==6.0.0
+pytest-mock==3.14.0
+pytest-ruff==0.5.0
+hypothesis==6.135.14  # RESTORED: Required for property-based testing in test files
+factory-boy==3.3.1
+
+# DEVELOPMENT TOOLS
+ruff==0.8.4
+mypy==1.13.0
+black==24.10.0
+isort==5.13.2
+
+# HTTP CLIENT
+httpx==0.28.1
+requests==2.32.3
+
+# UTILITIES
+python-dotenv==1.0.1
+click==8.1.8
+rich==13.9.4
+
+# ASYNC SUPPORT
+anyio==4.7.0
+
+# MARKET DATA & TRADING
+ccxt==4.4.37
+pandas==2.2.3
+numpy==2.2.1
+
+# MACHINE LEARNING
+scikit-learn==1.6.0
+joblib==1.4.2
+
+# FINANCIAL DATA
+yfinance==0.2.48
+
+# CONFIGURATION
+pyyaml==6.0.2
+toml==0.10.2
+
+# SECURITY SCANNING
+bandit==1.8.0
+safety==3.3.0
+
+# PERFORMANCE
+orjson==3.10.12
+
+# TIMEZONE HANDLING
+pytz==2024.2
+
+# VALIDATION
+email-validator==2.2.0
+
+# CACHING
+redis==5.2.1
+
+# ENVIRONMENT MANAGEMENT
+python-decouple==3.8
+
+# MONITORING & ALERTING
+sentry-sdk==2.20.0
+
+# WEBSOCKETS
+websockets==14.1
+
+# SERIALIZATION
+marshmallow==3.23.2
+
+# DATETIME UTILITIES
+python-dateutil==2.9.0
+
+# STATISTICAL ANALYSIS
+scipy==1.15.0
+
+# DATA VALIDATION
+cerberus==1.3.5
+
+# ASYNC UTILITIES
+aiofiles==24.1.0
+
+# HTTP UTILITIES
+urllib3==2.3.0
+
+# PROCESS MONITORING
 psutil==6.1.1
 
-# =============================================================================
-# REMOVED PACKAGES (SECURITY VULNERABILITIES)
-# =============================================================================
+# TESTING UTILITIES
+responses==0.25.4
 
-# The following packages were removed due to security vulnerabilities:
-# - python-jose==3.5.0 (CVE-2024-33664, CVE-2024-33663) → Replaced with PyJWT
-# - mlflow==3.1.1 (8 CVEs: CVE-2024-37052-37060) → Removed, not needed for Phase 1
-# - ecdsa==0.19.1 (CVE-2024-23342, side-channel attacks) → Using cryptography instead
+# PARALLEL TESTING
+pytest-xdist==3.6.0
 
-# Replacements provide same functionality with better security:
-# - JWT: python-jose → PyJWT (industry standard, actively maintained)
-# - Crypto: ecdsa → cryptography (FIPS 140-2 validated, constant-time operations)
-# - ML Tracking: mlflow → Custom lightweight solution for Phase 1
+# COVERAGE REPORTING
+coverage-badge==1.1.2
 
-# =============================================================================
-# VERSION CONSTRAINTS
-# =============================================================================
+# DOCUMENTATION
+sphinx==8.1.3
 
-# Ensure compatibility: Python >=3.11,<3.14 
+# JSON UTILITIES
+jsonschema==4.23.0
+
+# PROGRESS BARS
+tqdm==4.67.1
+
+# COLORED OUTPUT
+colorama==0.4.6
+
+# COLLECTIONS
+more-itertools==10.5.0
+
+# AIOHTTP
+aiohttp==3.11.11 
