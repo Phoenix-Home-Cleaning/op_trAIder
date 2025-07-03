@@ -460,7 +460,8 @@ function validateConsoleStatements(files: string[]): ValidationResult {
         file.endsWith('.tsx') ||
         file.endsWith('.js') ||
         file.endsWith('.jsx')) &&
-      !file.includes('pre-commit-checks.ts') // Exclude this script itself
+      !file.includes('pre-commit-checks.ts') &&
+      !file.includes('packages/tooling/')
   );
 
   for (const file of codeFiles) {

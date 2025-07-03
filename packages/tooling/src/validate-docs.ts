@@ -5,12 +5,12 @@
 /**
  * @fileoverview Documentation validation system for TRAIDER V1
  * @module scripts/validate-docs
- * 
+ *
  * @description
  * Validates that all public functions have JSDoc comments, API routes are
  * documented, README files exist for modules, example code compiles, and
  * checks for broken links throughout the documentation.
- * 
+ *
  * @author TRAIDER Team
  * @since 2025-06-29
  */
@@ -48,7 +48,7 @@ class DocumentationValidator {
       passed: true,
       errors: [],
       warnings: [],
-      score: 100
+      score: 100,
     };
   }
 
@@ -91,7 +91,6 @@ class DocumentationValidator {
       this.printResults();
 
       return this.results;
-
     } catch (error) {
       console.error('❌ Documentation validation failed:', error);
       this.results.passed = false;
@@ -114,8 +113,8 @@ class DocumentationValidator {
         'dist/**',
         '**/*.test.{ts,tsx}',
         '**/*.spec.{ts,tsx}',
-        ...this.config.excludePatterns
-      ]
+        ...this.config.excludePatterns,
+      ],
     });
 
     let totalFunctions = 0;
@@ -125,10 +124,10 @@ class DocumentationValidator {
     for (const file of tsFiles) {
       const content = readFileSync(join(this.projectRoot, file), 'utf-8');
       const functions = this.extractFunctions(content);
-      
+
       for (const func of functions) {
         totalFunctions++;
-        
+
         if (this.hasJSDocComment(content, func)) {
           documentedFunctions++;
         } else {
@@ -138,7 +137,7 @@ class DocumentationValidator {
     }
 
     const coverage = totalFunctions > 0 ? (documentedFunctions / totalFunctions) * 100 : 100;
-    
+
     if (coverage < 90) {
       this.results.errors.push(
         `JSDoc coverage is ${coverage.toFixed(1)}% (${documentedFunctions}/${totalFunctions}). Required: 90%`
@@ -152,7 +151,7 @@ class DocumentationValidator {
 
     if (undocumentedFunctions.length > 0) {
       console.log(`⚠️  Undocumented functions (${undocumentedFunctions.length}):`);
-      undocumentedFunctions.slice(0, 10).forEach(func => {
+      undocumentedFunctions.slice(0, 10).forEach((func) => {
         console.log(`   - ${func}`);
       });
       if (undocumentedFunctions.length > 10) {
@@ -171,7 +170,7 @@ class DocumentationValidator {
 
     const apiFiles = await glob('**/route.{ts,js}', {
       cwd: join(this.projectRoot, 'app/api'),
-      ignore: ['node_modules/**']
+      ignore: ['node_modules/**'],
     });
 
     const undocumentedRoutes: string[] = [];
@@ -179,7 +178,7 @@ class DocumentationValidator {
     for (const file of apiFiles) {
       const content = readFileSync(join(this.projectRoot, 'app/api', file), 'utf-8');
       const httpMethods = this.extractHTTPMethods(content);
-      
+
       for (const method of httpMethods) {
         if (!this.hasAPIDocumentation(content, method)) {
           undocumentedRoutes.push(`${file}:${method}`);
@@ -188,18 +187,18 @@ class DocumentationValidator {
     }
 
     if (undocumentedRoutes.length > 0) {
-      this.results.errors.push(
-        `${undocumentedRoutes.length} API routes lack proper documentation`
-      );
+      this.results.errors.push(`${undocumentedRoutes.length} API routes lack proper documentation`);
       this.results.passed = false;
-      
+
       console.log('⚠️  Undocumented API routes:');
-      undocumentedRoutes.forEach(route => {
+      undocumentedRoutes.forEach((route) => {
         console.log(`   - ${route}`);
       });
     }
 
-    console.log(`✅ API documentation: ${apiFiles.length - undocumentedRoutes.length}/${apiFiles.length} routes documented`);
+    console.log(
+      `✅ API documentation: ${apiFiles.length - undocumentedRoutes.length}/${apiFiles.length} routes documented`
+    );
   }
 
   /**
@@ -219,17 +218,17 @@ class DocumentationValidator {
     }
 
     if (missingREADMEs.length > 0) {
-      this.results.warnings.push(
-        `${missingREADMEs.length} directories missing README.md files`
-      );
-      
+      this.results.warnings.push(`${missingREADMEs.length} directories missing README.md files`);
+
       console.log('⚠️  Missing README files:');
-      missingREADMEs.forEach(dir => {
+      missingREADMEs.forEach((dir) => {
         console.log(`   - ${dir}/README.md`);
       });
     }
 
-    console.log(`✅ Module READMEs: ${directories.length - missingREADMEs.length}/${directories.length} present`);
+    console.log(
+      `✅ Module READMEs: ${directories.length - missingREADMEs.length}/${directories.length} present`
+    );
   }
 
   /**
@@ -240,7 +239,7 @@ class DocumentationValidator {
 
     const mdFiles = await glob('**/*.md', {
       cwd: this.projectRoot,
-      ignore: ['node_modules/**', '.next/**']
+      ignore: ['node_modules/**', '.next/**'],
     });
 
     const failedExamples: string[] = [];
@@ -248,7 +247,7 @@ class DocumentationValidator {
     for (const file of mdFiles) {
       const content = readFileSync(join(this.projectRoot, file), 'utf-8');
       const codeBlocks = this.extractCodeBlocks(content);
-      
+
       for (const block of codeBlocks) {
         if (block.language === 'typescript' || block.language === 'javascript') {
           // Skip examples that are clearly for illustration purposes
@@ -261,12 +260,12 @@ class DocumentationValidator {
             const tempFile = `/tmp/example-${Date.now()}.ts`;
             const fs = await import('fs');
             fs.writeFileSync(tempFile, block.code);
-            
-            execSync(`npx tsc --noEmit --skipLibCheck ${tempFile}`, { 
+
+            execSync(`npx tsc --noEmit --skipLibCheck ${tempFile}`, {
               stdio: 'pipe',
-              timeout: 5000 
+              timeout: 5000,
             });
-            
+
             // Clean up
             fs.unlinkSync(tempFile);
           } catch {
@@ -280,9 +279,9 @@ class DocumentationValidator {
       this.results.warnings.push(
         `${failedExamples.length} code examples may have compilation issues`
       );
-      
+
       console.log('⚠️  Failed code examples:');
-      failedExamples.forEach(example => {
+      failedExamples.forEach((example) => {
         console.log(`   - ${example}`);
       });
     }
@@ -301,36 +300,36 @@ class DocumentationValidator {
       /import.*TradingError/,
       /import.*createLogger/,
       /import.*getConfig/,
-      
+
       // Comments indicating examples
       /\/\/.*example/i,
       /\/\/.*illustration/i,
       /\/\/.*placeholder/i,
       /\/\/.*TODO/i,
-      
+
       // Configuration examples
       /process\.env\./,
       /config\./,
-      
+
       // Partial code snippets
       /\.\.\./,
       /\/\/ Implementation/i,
       /\/\/ Your implementation/i,
-      
+
       // Shell commands and non-TypeScript code
       /npm run/,
       /npx/,
       /yarn/,
       /bash/,
       /curl/,
-      
+
       // Environment variables
       /export\s+\w+=/,
       /DATABASE_URL=/,
       /API_KEY=/,
     ];
 
-    return illustrationPatterns.some(pattern => pattern.test(code));
+    return illustrationPatterns.some((pattern) => pattern.test(code));
   }
 
   /**
@@ -341,7 +340,7 @@ class DocumentationValidator {
 
     const mdFiles = await glob('**/*.md', {
       cwd: this.projectRoot,
-      ignore: ['node_modules/**', '.next/**']
+      ignore: ['node_modules/**', '.next/**'],
     });
 
     const brokenLinks: string[] = [];
@@ -349,7 +348,7 @@ class DocumentationValidator {
     for (const file of mdFiles) {
       const content = readFileSync(join(this.projectRoot, file), 'utf-8');
       const links = this.extractLinks(content);
-      
+
       for (const link of links) {
         if (link.startsWith('./') || link.startsWith('../')) {
           // Relative link - check if file exists
@@ -363,12 +362,10 @@ class DocumentationValidator {
     }
 
     if (brokenLinks.length > 0) {
-      this.results.warnings.push(
-        `${brokenLinks.length} potentially broken internal links found`
-      );
-      
+      this.results.warnings.push(`${brokenLinks.length} potentially broken internal links found`);
+
       console.log('⚠️  Potentially broken links:');
-      brokenLinks.slice(0, 10).forEach(link => {
+      brokenLinks.slice(0, 10).forEach((link) => {
         console.log(`   - ${link}`);
       });
       if (brokenLinks.length > 10) {
@@ -384,13 +381,13 @@ class DocumentationValidator {
    */
   private calculateScore(): void {
     let score = 100;
-    
+
     // Deduct points for errors (major issues)
     score -= this.results.errors.length * 10;
-    
+
     // Deduct points for warnings (minor issues)
     score -= this.results.warnings.length * 2;
-    
+
     // Ensure score doesn't go below 0
     this.results.score = Math.max(0, score);
   }
@@ -400,25 +397,25 @@ class DocumentationValidator {
    */
   private printResults(): void {
     console.log('\n📊 Documentation Validation Results');
-    console.log('=' .repeat(50));
-    
+    console.log('='.repeat(50));
+
     console.log(`Overall Score: ${this.results.score}/100`);
     console.log(`Status: ${this.results.passed ? '✅ PASSED' : '❌ FAILED'}`);
-    
+
     if (this.results.errors.length > 0) {
       console.log(`\n❌ Errors (${this.results.errors.length}):`);
-      this.results.errors.forEach(error => {
+      this.results.errors.forEach((error) => {
         console.log(`   - ${error}`);
       });
     }
-    
+
     if (this.results.warnings.length > 0) {
       console.log(`\n⚠️  Warnings (${this.results.warnings.length}):`);
-      this.results.warnings.forEach(warning => {
+      this.results.warnings.forEach((warning) => {
         console.log(`   - ${warning}`);
       });
     }
-    
+
     if (this.results.passed) {
       console.log('\n🎉 All documentation validation checks passed!');
     } else {
@@ -432,36 +429,42 @@ class DocumentationValidator {
   private extractFunctions(content: string): Array<{ name: string; line: number }> {
     const functions: Array<{ name: string; line: number }> = [];
     const lines = content.split('\n');
-    
+
     // Improved regex to better detect actual functions and exclude variables
-    const functionRegex = /(?:export\s+)?(?:async\s+)?function\s+(\w+)|(?:export\s+)?const\s+(\w+)\s*=\s*(?:async\s+)?\(|(?:export\s+default\s+)?(?:async\s+)?function\s+(\w+)/;
-    
+    const functionRegex =
+      /(?:export\s+)?(?:async\s+)?function\s+(\w+)|(?:export\s+)?const\s+(\w+)\s*=\s*(?:async\s+)?\(|(?:export\s+default\s+)?(?:async\s+)?function\s+(\w+)/;
+
     lines.forEach((line, index) => {
       const match = line.match(functionRegex);
       if (match) {
         const functionName = match[1] || match[2] || match[3];
-        
+
         // Skip if line is commented out
         if (line.includes('//') || line.includes('/*')) {
           return;
         }
-        
+
         // Skip if it's just a variable assignment (not a function)
         if (match[2] && !line.includes('(') && !line.includes('=>')) {
           return;
         }
-        
+
         // Skip if it's a simple variable assignment like "const x = 5"
-        if (match[2] && /=\s*[^(]*;/.test(line) && !line.includes('function') && !line.includes('=>')) {
+        if (
+          match[2] &&
+          /=\s*[^(]*;/.test(line) &&
+          !line.includes('function') &&
+          !line.includes('=>')
+        ) {
           return;
         }
-        
+
         if (functionName && functionName.length > 0) {
           functions.push({ name: functionName, line: index + 1 });
         }
       }
     });
-    
+
     return functions;
   }
 
@@ -471,40 +474,40 @@ class DocumentationValidator {
   private hasJSDocComment(content: string, func: { name: string; line: number }): boolean {
     const lines = content.split('\n');
     const funcLine = func.line - 1;
-    
+
     // Look for JSDoc comment above the function
     for (let i = funcLine - 1; i >= 0; i--) {
       const line = lines[i]?.trim();
-      
+
       // Skip empty lines
       if (!line || line === '') {
         continue;
       }
-      
+
       // If we found the end of a JSDoc comment, look for the start
       if (line === '*/') {
         continue;
       }
-      
+
       // If this is the start of a JSDoc comment
       if (line.startsWith('/**')) {
         return true;
       }
-      
+
       // If this is a JSDoc line (starts with *)
       if (line.startsWith('*') && !line.startsWith('*/')) {
         continue;
       }
-      
+
       // If this is a single-line comment, continue looking
       if (line.startsWith('//')) {
         continue;
       }
-      
+
       // If we hit any other non-empty line, stop looking
       break;
     }
-    
+
     return false;
   }
 
@@ -514,13 +517,13 @@ class DocumentationValidator {
   private extractHTTPMethods(content: string): string[] {
     const methods: string[] = [];
     const httpMethods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
-    
-    httpMethods.forEach(method => {
+
+    httpMethods.forEach((method) => {
       if (content.includes(`export async function ${method}`)) {
         methods.push(method);
       }
     });
-    
+
     return methods;
   }
 
@@ -530,12 +533,12 @@ class DocumentationValidator {
   private hasAPIDocumentation(content: string, method: string): boolean {
     // Simplified check for a comment block above the method
     const lines = content.split('\n');
-    const methodLine = lines.findIndex(line => line.includes(`export async function ${method}`));
+    const methodLine = lines.findIndex((line) => line.includes(`export async function ${method}`));
 
     if (methodLine === -1) {
       return false;
     }
-    
+
     for (let i = methodLine - 1; i >= 0 && i > methodLine - 5; i--) {
       if (lines[i]?.trim().startsWith('/**')) {
         return true;
@@ -551,11 +554,11 @@ class DocumentationValidator {
   private async getDirectories(basePath: string): Promise<string[]> {
     const entries = readdirSync(join(this.projectRoot, basePath), { withFileTypes: true });
     const dirs = entries
-      .filter(dirent => dirent.isDirectory())
-      .map(dirent => join(basePath, dirent.name));
+      .filter((dirent) => dirent.isDirectory())
+      .map((dirent) => join(basePath, dirent.name));
 
     for (const dir of dirs) {
-      if (!this.config.excludePatterns.some(p => dir.includes(p))) {
+      if (!this.config.excludePatterns.some((p) => dir.includes(p))) {
         dirs.push(...(await this.getDirectories(dir)));
       }
     }
@@ -566,13 +569,15 @@ class DocumentationValidator {
   /**
    * Extract code blocks from markdown
    */
-  private extractCodeBlocks(content: string): Array<{ language: string; code: string; line: number }> {
+  private extractCodeBlocks(
+    content: string
+  ): Array<{ language: string; code: string; line: number }> {
     const blocks: Array<{ language: string; code: string; line: number }> = [];
     const lines = content.split('\n');
-    
+
     let inCodeBlock = false;
     let currentBlock = { language: '', code: '', line: 0 };
-    
+
     lines.forEach((line, index) => {
       if (line.startsWith('```')) {
         if (inCodeBlock) {
@@ -584,7 +589,7 @@ class DocumentationValidator {
           currentBlock = {
             language: line.substring(3).trim(),
             code: '',
-            line: index + 1
+            line: index + 1,
           };
           inCodeBlock = true;
         }
@@ -592,7 +597,7 @@ class DocumentationValidator {
         currentBlock.code += line + '\n';
       }
     });
-    
+
     return blocks;
   }
 
@@ -603,13 +608,13 @@ class DocumentationValidator {
     const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
     const links: string[] = [];
     let match;
-    
+
     while ((match = linkRegex.exec(content)) !== null) {
       if (match[2]) {
         links.push(match[2]);
       }
     }
-    
+
     return links;
   }
 }
@@ -617,18 +622,14 @@ class DocumentationValidator {
 async function main() {
   // Check for --coverage-only flag
   const coverageOnly = process.argv.includes('--coverage-only');
-  
+
   const config: ValidationConfig = {
     requireJSDoc: true,
     requireAPIDocumentation: !coverageOnly,
     requireModuleREADMEs: !coverageOnly,
     validateExamples: !coverageOnly,
     checkBrokenLinks: !coverageOnly,
-    excludePatterns: [
-      '**/*.d.ts',
-      '**/generated/**',
-      '**/build/**'
-    ]
+    excludePatterns: ['**/*.d.ts', '**/generated/**', '**/build/**'],
   };
 
   const validator = new DocumentationValidator(config);
@@ -653,4 +654,4 @@ main()
   });
 
 export type { ValidationConfig, ValidationResult };
-export { DocumentationValidator }; 
+export { DocumentationValidator };

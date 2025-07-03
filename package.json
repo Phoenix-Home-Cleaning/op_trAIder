@@ -3,6 +3,9 @@
   "version": "1.0.0-alpha",
   "description": "Institutional-Grade Autonomous Crypto Trading Platform",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "type": "module",
   "scripts": {
     "dev": "next dev",
@@ -23,7 +26,7 @@
     "test:ci": "vitest run --coverage --reporter=json --reporter=html",
     "test:coverage:enforce": "vitest run --coverage --reporter=json && node scripts/enforce-coverage.js",
     "docs:generate": "typedoc",
-    "docs:validate": "tsx scripts/validate-docs.ts",
+    "docs:validate": "tsx packages/tooling/src/validate-docs.ts",
     "docs:deploy": "npm run docs:generate && npm run docs:validate",
     "security:scan": "npm audit --audit-level moderate",
     "security:fix": "npm audit fix",
@@ -58,7 +61,7 @@
     "docs:api": "typedoc",
     "docs:serve": "cd docs && python -m http.server 8080",
     "docs:build": "npm run docs:generate && npm run docs:api",
-    "docs:coverage": "tsx scripts/validate-docs.ts --coverage-only",
+    "docs:coverage": "tsx packages/tooling/src/validate-docs.ts --coverage-only",
     "docs:watch": "nodemon --watch app --ext ts,tsx --exec 'npm run docs:generate'",
     "adr:new": "tsx scripts/create-adr.ts",
     "adr:list": "ls -la docs/adr/",

@@ -1,0 +1,15 @@
+{
+  "name": "@traider/tooling",
+  "version": "1.0.0-alpha",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "validate-docs": "src/validate-docs.ts"
+  },
+  "dependencies": {
+    "glob": "^10.4.5"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.3"
+  }
+}
