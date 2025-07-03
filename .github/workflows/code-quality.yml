@@ -1039,7 +1039,7 @@ jobs:
           mkdir -p quality-reports/qlty
           
           # Validate configuration
-          qualytics show-config --file "${QLTY_CONFIG_FILE}"
+          qualytics show-config
           echo "✅ Qlty configuration validated"
           echo "::endgroup::"
           
@@ -1050,7 +1050,6 @@ jobs:
           
           # Run Qlty analysis with comprehensive reporting
           qualytics run scan \
-            --config ${{ env.QLTY_CONFIG_FILE }} \
             --output-dir quality-reports/qlty \
             --format json \
             --format sarif \
