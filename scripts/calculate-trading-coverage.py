@@ -173,7 +173,7 @@ class TradingCoverageCalculator:
         @performance O(1) - checks predefined locations
         """
         possible_paths = [
-            'coverage-fixed.json',
+            'coverage-fresh.json',
             'coverage/coverage.json', 
             'backend/coverage.json',
             'coverage.json'
@@ -341,6 +341,12 @@ class TradingCoverageCalculator:
         @compliance Generates audit-ready coverage report
         @performance O(n) where n = number of trading files
         """
+        # Ensure data is loaded before generating report
+        if not hasattr(self, 'coverage_data') or not self.coverage_data:
+            self.load_coverage_data()
+        if not self.trading_files:
+            self.identify_trading_files()
+            
         coverage_pct, file_coverages, issues = self.calculate_coverage()
         
         # Sort files by coverage (lowest first for attention)

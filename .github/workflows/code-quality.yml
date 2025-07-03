@@ -163,10 +163,10 @@ jobs:
               echo "🔍 Calculating trading logic coverage using institutional-grade analyzer..."
               
               # -------------------------------------------------------------------------
-              # 1. Run the calculator; never let a non-zero exit code stop the pipeline
+              # 1. Run the calculator with fresh coverage file; never let a non-zero exit code stop the pipeline
               # -------------------------------------------------------------------------
               RAW_TRADING_COVERAGE=$(python scripts/calculate-trading-coverage.py \
-                                       --threshold 90.0 2>/dev/null || true)
+                                       --threshold 90.0 --file coverage-fresh.json 2>/dev/null || true)
               
               # -------------------------------------------------------------------------
               # 2. Pick the first line, trim whitespace, keep only 0-9 and dot
@@ -290,12 +290,12 @@ jobs:
           # Generate Python backend coverage for trading logic analysis
           echo "🐍 Generating Python backend coverage..."
           cd backend
-          PYTHONPATH=. python -m pytest tests/unit/backend/ --cov=backend --cov-report=json:../coverage-fixed.json --cov-report=term-missing -v || true
+          PYTHONPATH=. python -m pytest tests/unit/backend/ --cov=backend --cov-report=json:../coverage-fresh.json --cov-report=term-missing -v || true
           cd ..
           
           echo "📊 Coverage files generated:"
           ls -la coverage/ || true
-          ls -la coverage-fixed.json || true
+          ls -la coverage-fresh.json || true
           
           # Verify coverage files exist
           if [ ! -f "coverage/lcov.info" ]; then
