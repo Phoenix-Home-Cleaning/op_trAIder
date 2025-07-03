@@ -1,6 +1,6 @@
 # 📈 TRAIDER V1 – Institutional-Grade Autonomous Crypto Trading Platform
 
-### Comprehensive Project Overview *(June 28 2025)*
+### Comprehensive Project Overview _(June 28 2025)_
 
 ---
 
@@ -19,19 +19,19 @@ TRAIDER exists to build a **fully autonomous, risk-controlled, machine-learning-
 
 ### 2.1 · ✅ In Scope (V1)
 
-| Domain                | Key Deliverables |
-| --------------------- | ---------------- |
-| **Market Data**       | • Coinbase Advanced **Level-2 order-book** & trade stream via WebSocket<br>• Persistent **TimescaleDB** tick & depth store with hourly WAL ship → S3<br>• Off-box read replica for research |
-| **Feature Store**     | **Kafka / Redpanda** topic → feature-engineering container → unified **Parquet** store shared by research & live paths |
+| Domain                | Key Deliverables                                                                                                                                                                                                                                                                                           |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Market Data**       | • Coinbase Advanced **Level-2 order-book** & trade stream via WebSocket<br>• Persistent **TimescaleDB** tick & depth store with hourly WAL ship → S3<br>• Off-box read replica for research                                                                                                                |
+| **Feature Store**     | **Kafka / Redpanda** topic → feature-engineering container → unified **Parquet** store shared by research & live paths                                                                                                                                                                                     |
 | **Signal Generation** | • Ensemble library:<br>  – Momentum (MA5/MA20, RSI, ADX)<br>  – Mean-reversion (price-VWAP Z-score)<br>  – Volatility filters (realised σ, ATR)<br>  – Order-flow imbalance (L2 queue-depth)<br>  – Seasonal funding-rate drift<br>• Baseline logistic-reg classifier<br>• Walk-forward validation harness |
-| **Risk Management**   | • External pre-trade risk microservice<br>• **Vol-target position sizing**<br>• **VaR / ES** calculations<br>• Dynamic circuit breakers (PnL & model confidence) |
-| **Execution**         | • Latency-aware async order executor<br>• P99 latency monitoring & adaptive offsets<br>• Post-only / limit-widen fail-over logic |
-| **Portfolio**         | Real-time positions, NAV, P&L, VaR dashboard |
-| **ML Infrastructure** | • Feature-engineering module<br>• **MLflow** registry with gated approval workflow<br>• **FastAPI** inference microservice (≤ 50 ms) |
-| **Observability**     | **Prometheus + Grafana**, **OpenTelemetry** traces, JSON Loguru logs, **Sentry** error tracking |
-| **Testing & QA**      | Unit, integration, walk-forward back-test regression, E2E (paper), load, **chaos tests**, security scans (Bandit, TruffleHog) |
-| **Deployment**        | GitHub Actions CI/CD → Staging → Prod<br>Docker Compose (dev) / **Active-Standby SystemD** nodes (prod) provisioned with Terraform |
-| **Safety Controls**   | Paper-mode toggle, global kill switch, immutable audit logging |
+| **Risk Management**   | • External pre-trade risk microservice<br>• **Vol-target position sizing**<br>• **VaR / ES** calculations<br>• Dynamic circuit breakers (PnL & model confidence)                                                                                                                                           |
+| **Execution**         | • Latency-aware async order executor<br>• P99 latency monitoring & adaptive offsets<br>• Post-only / limit-widen fail-over logic                                                                                                                                                                           |
+| **Portfolio**         | Real-time positions, NAV, P&L, VaR dashboard                                                                                                                                                                                                                                                               |
+| **ML Infrastructure** | • Feature-engineering module<br>• **MLflow** registry with gated approval workflow<br>• **FastAPI** inference microservice (≤ 50 ms)                                                                                                                                                                       |
+| **Observability**     | **Prometheus + Grafana**, **OpenTelemetry** traces, JSON Loguru logs, **Sentry** error tracking                                                                                                                                                                                                            |
+| **Testing & QA**      | Unit, integration, walk-forward back-test regression, E2E (paper), load, **chaos tests**, security scans (Bandit, TruffleHog)                                                                                                                                                                              |
+| **Deployment**        | GitHub Actions CI/CD → Staging → Prod<br>Docker Compose (dev) / **Active-Standby SystemD** nodes (prod) provisioned with Terraform                                                                                                                                                                         |
+| **Safety Controls**   | Paper-mode toggle, global kill switch, immutable audit logging                                                                                                                                                                                                                                             |
 
 ### 2.2 · ❌ Out of Scope (V1)
 
@@ -45,19 +45,19 @@ TRAIDER exists to build a **fully autonomous, risk-controlled, machine-learning-
 
 ## 3 · 🏆 SMART Goals
 
-| Category              | KPI / Target                    | Success Condition                              |
-| --------------------- | ------------------------------- | ---------------------------------------------- |
-| **Autonomy**          | 24 × 7 daemon uptime            | ≥ 30 consecutive days without manual restart   |
-| **Execution Latency** | Signal → Exchange order         | **P95 ≤ 500 ms & P99 ≤ 1 s**                   |
+| Category              | KPI / Target                    | Success Condition                             |
+| --------------------- | ------------------------------- | --------------------------------------------- |
+| **Autonomy**          | 24 × 7 daemon uptime            | ≥ 30 consecutive days without manual restart  |
+| **Execution Latency** | Signal → Exchange order         | **P95 ≤ 500 ms & P99 ≤ 1 s**                  |
 | **Risk Compliance**   | Pre-trade validation pass-rate  | 100% of orders pass risk engine               |
-| **Profitability**     | Live **Sharpe ≥ 1.0**           | After 90-day live run                          |
-| **Capital at Risk**   | Daily draw-down limit           | < 3 × 30-day PnL σ                             |
+| **Profitability**     | Live **Sharpe ≥ 1.0**           | After 90-day live run                         |
+| **Capital at Risk**   | Daily draw-down limit           | < 3 × 30-day PnL σ                            |
 | **Test Coverage**     | Code coverage                   | ≥ 90% lines, 100% critical paths              |
-| **Type Safety**       | `mypy --strict`                 | 0 errors                                       |
+| **Type Safety**       | `mypy --strict`                 | 0 errors                                      |
 | **Model Governance**  | Models gated via MLflow         | 100% require human approval before deploy     |
-| **Observability**     | Critical alert **MTTR < 5 min** | Automated alerts to PagerDuty                  |
+| **Observability**     | Critical alert **MTTR < 5 min** | Automated alerts to PagerDuty                 |
 | **Deployment**        | CI/CD success rate              | 100% green pipelines; zero manual prod pushes |
-| **Auditability**      | Trade decision traceability     | Full feature vector & logs retained ≥ 5 yrs    |
+| **Auditability**      | Trade decision traceability     | Full feature vector & logs retained ≥ 5 yrs   |
 
 ---
 
@@ -155,4 +155,4 @@ TRAIDER exists to build a **fully autonomous, risk-controlled, machine-learning-
 
 ---
 
-> **Final Thought:** A simpler system that *never* loses data, mis-sizes positions, or leaves orphaned orders will beat a feature-rich prototype that blows up on day 17. Tighten the plumbing, add microstructure awareness, and instrument everything—then layer on alpha.
+> **Final Thought:** A simpler system that _never_ loses data, mis-sizes positions, or leaves orphaned orders will beat a feature-rich prototype that blows up on day 17. Tighten the plumbing, add microstructure awareness, and instrument everything—then layer on alpha.

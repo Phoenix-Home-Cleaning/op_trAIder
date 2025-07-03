@@ -29,6 +29,7 @@ TRAIDER is a comprehensive autonomous trading platform that combines machine lea
 ## 🏗️ Architecture & Tech Stack
 
 ### Frontend Stack
+
 - **Framework**: Next.js 14 with App Router
 - **Language**: TypeScript (strict mode)
 - **Styling**: Tailwind CSS with custom design system
@@ -38,6 +39,7 @@ TRAIDER is a comprehensive autonomous trading platform that combines machine lea
 - **Authentication**: NextAuth.js with JWT
 
 ### Backend Stack
+
 - **API**: FastAPI with async/await patterns
 - **Database**: PostgreSQL with TimescaleDB for time-series data
 - **Message Queue**: Kafka/Redpanda for real-time data processing
@@ -46,6 +48,7 @@ TRAIDER is a comprehensive autonomous trading platform that combines machine lea
 - **Deployment**: Docker + SystemD with active-standby architecture
 
 ### Infrastructure
+
 - **Frontend Hosting**: Vercel with edge optimization
 - **Backend**: DigitalOcean droplets with automated failover
 - **Database**: DigitalOcean Managed PostgreSQL with read replicas
@@ -78,7 +81,7 @@ traider/
 │   ├── ml/                # Machine learning pipeline
 │   ├── shared/            # Common utilities and models
 │   └── data/              # Data management and storage
-├── _docs/                 # Project documentation
+├── docs/                  # Project documentation
 │   ├── phases/            # Development phases
 │   └── resources/         # Technical specifications
 ├── infrastructure/        # Deployment and DevOps
@@ -93,12 +96,14 @@ traider/
 TRAIDER follows a structured 4-phase development approach:
 
 ### Phase 0: Setup & Foundation (1-2 weeks)
+
 - Basic Next.js frontend with authentication
 - FastAPI backend with health checks
 - PostgreSQL integration and CI/CD pipeline
 - **Success Criteria**: Local development environment functional
 
 ### Phase 1: MVP (3-4 weeks)
+
 - Real-time Coinbase market data integration
 - Feature engineering with technical indicators
 - Basic ensemble trading strategies
@@ -106,12 +111,14 @@ TRAIDER follows a structured 4-phase development approach:
 - **Success Criteria**: 24-hour autonomous paper trading
 
 ### Phase 2: Enhanced Features (4-5 weeks)
+
 - Live trading with real capital ($1K-$5K)
 - Advanced ML models and Level-2 order book data
 - Production deployment with monitoring
 - **Success Criteria**: Sharpe ratio >1.0 over 30 days
 
 ### Phase 3: Institutional Grade (6-8 weeks)
+
 - Multi-exchange connectivity
 - Advanced portfolio optimization
 - Regulatory compliance and reporting
@@ -133,27 +140,23 @@ TRAIDER follows a structured 4-phase development approach:
 ```typescript
 /**
  * @fileoverview Real-time P&L chart component for trading dashboard
- * 
+ *
  * Displays live profit/loss data using Chart.js with real-time updates
  * via Socket.IO. Includes error boundaries and performance optimization.
- * 
+ *
  * @author TRAIDER Team
  * @since 2025-06-28
  */
 
 /**
  * Calculates position size based on volatility targeting
- * 
+ *
  * @param signal - Trading signal strength (-1 to 1)
  * @param volatility - Historical volatility (annualized)
  * @param riskBudget - Available risk budget in USD
  * @returns Position size in USD, clamped to risk limits
  */
-function calculatePositionSize(
-  signal: number,
-  volatility: number,
-  riskBudget: number
-): number {
+function calculatePositionSize(signal: number, volatility: number, riskBudget: number): number {
   // Implementation with proper error handling
 }
 ```
@@ -170,12 +173,14 @@ function calculatePositionSize(
 ## 🛡️ Security & Safety
 
 ### Trading Safety Measures
+
 - **Emergency Stop**: Immediate position closure and trading halt
 - **Circuit Breakers**: Automatic trading suspension on losses or anomalies
 - **Risk Limits**: Dynamic position sizing with VaR-based limits
 - **Audit Trail**: Complete logging of all trading decisions and actions
 
 ### Security Implementation
+
 - **Authentication**: Multi-factor authentication with role-based access
 - **Data Protection**: Encrypted sensitive data with secure key management
 - **API Security**: Rate limiting, input validation, and CORS protection
@@ -186,18 +191,21 @@ function calculatePositionSize(
 ## 📊 Performance & Monitoring
 
 ### Key Performance Indicators
+
 - **Latency**: P95 ≤ 500ms signal-to-order execution
 - **Uptime**: 99.9% system availability target
 - **Profitability**: Sharpe ratio ≥ 1.0 with maximum 3% drawdown
 - **Risk Compliance**: 100% of orders pass pre-trade risk checks
 
 ### Monitoring Stack
+
 - **System Metrics**: Prometheus + Grafana dashboards
 - **Application Tracing**: OpenTelemetry with distributed tracing
 - **Error Tracking**: Sentry with real-time alerts
 - **Performance**: Custom trading metrics and SLA monitoring
 
 ### Disaster Recovery & Backup
+
 - **Recovery Objectives**: ≤5 min RTO, zero data loss RPO
 - **Backup Strategy**: Multi-layered with 90-day retention
 - **Automation**: PowerShell scripts with health validation
@@ -208,6 +216,7 @@ function calculatePositionSize(
 ## 🧪 Testing Strategy
 
 ### Comprehensive Test Coverage
+
 - **Unit Tests**: 90%+ coverage for critical trading logic
 - **Integration Tests**: End-to-end trading flow validation
 - **E2E Tests**: Complete user journey automation with Playwright
@@ -215,6 +224,7 @@ function calculatePositionSize(
 - **Chaos Engineering**: Fault injection and disaster recovery testing
 
 ### Testing Tools
+
 - **Frontend**: Vitest + React Testing Library
 - **Backend**: pytest with comprehensive fixtures
 - **E2E**: Playwright for browser automation
@@ -225,6 +235,7 @@ function calculatePositionSize(
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Node.js 18+ and npm
 - Python 3.11+ with pip
 - PostgreSQL 15+ (or use Docker/K3s)
@@ -234,6 +245,7 @@ function calculatePositionSize(
 ### Quick Start Options
 
 #### Option 1: Local Development (Recommended)
+
 ```bash
 # Clone the repository
 git clone https://github.com/your-org/traider.git
@@ -259,6 +271,7 @@ npm run test:e2e   # End-to-end tests
 ```
 
 #### Option 2: Docker Development Environment
+
 ```bash
 # Start all services with Docker Compose
 docker-compose -f docker-compose.dev.yml up -d
@@ -271,6 +284,7 @@ docker-compose -f docker-compose.dev.yml up -d
 ```
 
 #### Option 3: K3s Kubernetes Development
+
 ```bash
 # Install K3s (Linux/macOS/WSL2)
 curl -sfL https://get.k3s.io | sh -
@@ -292,18 +306,22 @@ kubectl apply -f infrastructure/k8s/dev/
 ```
 
 #### K3s Service Access
+
 After K3s deployment, services are available at:
+
 - **Frontend**: http://localhost:30000 - Trading dashboard
 - **Backend API**: http://localhost:30001 - REST API endpoints
 - **Grafana**: http://localhost:30002 - Monitoring dashboards (admin/admin)
 - **Prometheus**: `kubectl port-forward svc/prometheus-dev 9090:9090 -n traider-dev`
 
 For ingress access, add to `/etc/hosts`:
+
 ```
 127.0.0.1 traider.local api.traider.local grafana.traider.local prometheus.traider.local
 ```
 
 ### Environment Configuration
+
 ```bash
 # Trading Configuration
 COINBASE_API_KEY=your_api_key
@@ -326,11 +344,11 @@ GRAFANA_API_KEY=your_grafana_key
 
 ## 📚 Documentation
 
-- **[Project Overview](_docs/resources/project-overview.md)**: Comprehensive project goals and architecture
-- **[Development Phases](_docs/phases/README.md)**: Detailed implementation roadmap
-- **[Tech Stack Guide](_docs/resources/tech-stack.md)**: Technology choices and best practices
-- **[Project Rules](_docs/resources/project-rules.md)**: Development standards and conventions
-- **[User Flow](_docs/resources/user-flow.md)**: Interface design and user experience
+- **[Project Overview](docs/resources/project-overview.md)**: Comprehensive project goals and architecture
+- **[Development Phases](docs/phases/README.md)**: Detailed implementation roadmap
+- **[Tech Stack Guide](docs/resources/tech-stack.md)**: Technology choices and best practices
+- **[Project Rules](docs/resources/project-rules.md)**: Development standards and conventions
+- **[User Flow](docs/resources/user-flow.md)**: Interface design and user experience
 
 ---
 
@@ -341,12 +359,14 @@ GRAFANA_API_KEY=your_grafana_key
 **Version**: 1.0.0-alpha
 
 ### Recent Achievements
+
 - ✅ Comprehensive project architecture defined
 - ✅ Development phases and roadmap established
 - ✅ AI-first codebase standards implemented
 - ✅ Technology stack finalized with institutional focus
 
 ### Next Milestones
+
 - 🚧 Basic Next.js frontend with authentication
 - 🚧 FastAPI backend with market data integration
 - 🚧 PostgreSQL schema and TimescaleDB setup
@@ -359,6 +379,7 @@ GRAFANA_API_KEY=your_grafana_key
 This is a private institutional trading system. All development follows strict security protocols and requires approval for any changes to trading logic or risk management systems.
 
 ### Development Workflow
+
 1. Create feature branch from `main`
 2. Implement changes following project standards
 3. Comprehensive testing (unit, integration, E2E)
@@ -376,4 +397,4 @@ This software is designed for professional cryptocurrency trading and involves s
 
 ---
 
-> **Built for institutional standards, optimized for autonomous operation, designed for consistent profitability.** 
+> **Built for institutional standards, optimized for autonomous operation, designed for consistent profitability.**

@@ -1,18 +1,20 @@
 # 🔄 TRAIDER V1 User Flow & Journey Map
 
-### Comprehensive User Interface & Experience Design *(June 28 2025)*
+### Comprehensive User Interface & Experience Design _(June 28 2025)_
 
 ---
 
 ## 1 · 👤 User Personas & Access Levels
 
 ### 1.1 · Primary User (You)
+
 - **Role**: Owner/Operator
 - **Access**: Full system control, all dashboards, configuration
 - **Notifications**: Slack webhooks for all alerts
 - **Entry Points**: thegambler.co/ dashboard, direct system access
 
 ### 1.2 · Friends/Viewers
+
 - **Role**: Read-only observers
 - **Access**: Limited dashboard views on thegambler.co/
 - **Notifications**: None
@@ -23,7 +25,9 @@
 ## 2 · 🌐 External Dashboard Architecture (thegambler.co/)
 
 ### 2.1 · Public Landing Page
+
 **URL**: `thegambler.co/`
+
 ```
 ┌─────────────────────────────────────────┐
 │ 🎯 THE GAMBLER                          │
@@ -41,7 +45,9 @@
 ```
 
 ### 2.2 · Authentication Gate
+
 **URL**: `thegambler.co/login`
+
 ```
 ┌─────────────────────────────────────────┐
 │ 🔐 Access Dashboard                     │
@@ -61,7 +67,9 @@
 ## 3 · 📊 Main Dashboard Screens
 
 ### 3.1 · Portfolio Overview Dashboard
+
 **URL**: `thegambler.co/dashboard`
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ 🎯 TRAIDER LIVE | Status: 🟢 ACTIVE | Last Update: 14:23:45    │
@@ -92,7 +100,9 @@
 ```
 
 ### 3.2 · Performance Analytics Screen
+
 **URL**: `thegambler.co/performance`
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ 📈 PERFORMANCE ANALYTICS                                        │
@@ -121,7 +131,9 @@
 ```
 
 ### 3.3 · Risk Management Screen
+
 **URL**: `thegambler.co/risk`
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ ⚠️ RISK MANAGEMENT                                              │
@@ -156,7 +168,9 @@
 ```
 
 ### 3.4 · Signal Generation Screen
+
 **URL**: `thegambler.co/signals`
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ 🎯 SIGNAL GENERATION & ML MODELS                                │
@@ -200,7 +214,9 @@
 ```
 
 ### 3.5 · System Health Screen
+
 **URL**: `thegambler.co/system`
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ 🔧 SYSTEM HEALTH & MONITORING                                   │
@@ -242,7 +258,9 @@
 ## 4 · ⚙️ Settings & Configuration Screens
 
 ### 4.1 · Trading Settings (Owner Only)
+
 **URL**: `thegambler.co/settings/trading`
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ ⚙️ TRADING CONFIGURATION                                        │
@@ -282,7 +300,9 @@
 ```
 
 ### 4.2 · Notification Settings
+
 **URL**: `thegambler.co/settings/notifications`
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ 🔔 NOTIFICATION SETTINGS                                        │
@@ -321,6 +341,7 @@
 ## 5 · 📱 Slack Notification Flow
 
 ### 5.1 · Alert Types & Format
+
 ```
 🚨 TRAIDER ALERT - Risk Breach
 Daily loss limit reached: -$387 / -$400
@@ -350,6 +371,7 @@ Dashboard: thegambler.co/system
 ```
 
 ### 5.2 · Emergency Escalation
+
 ```
 🔴 TRAIDER EMERGENCY
 CRITICAL: Trading system offline
@@ -365,6 +387,7 @@ Immediate action required!
 ## 6 · 🔄 Key User Journeys
 
 ### 6.1 · Daily Check-in Journey
+
 1. **Slack notification** → Daily summary received
 2. **thegambler.co/** → Quick glance at landing page
 3. **Login** → Access full dashboard
@@ -374,6 +397,7 @@ Immediate action required!
 7. **Close** → Continue with day
 
 ### 6.2 · Alert Response Journey
+
 1. **Slack alert** → Risk breach notification
 2. **Click dashboard link** → Direct to risk page
 3. **Assess situation** → Review position sizes and VaR
@@ -382,6 +406,7 @@ Immediate action required!
 6. **Slack confirmation** → System back to normal
 
 ### 6.3 · Model Deployment Journey
+
 1. **Research phase** → Develop new model locally
 2. **MLflow registry** → Submit for approval
 3. **Approval workflow** → Manual review required
@@ -392,6 +417,7 @@ Immediate action required!
 8. **Dashboard monitoring** → Track new model performance
 
 ### 6.4 · System Maintenance Journey
+
 1. **Planned maintenance** → Schedule downtime window
 2. **Paper mode** → Switch to simulation
 3. **Failover test** → Validate standby node
@@ -405,6 +431,7 @@ Immediate action required!
 ## 7 · 📊 Mobile Responsiveness
 
 ### 7.1 · Mobile Dashboard (thegambler.co/ on phone)
+
 ```
 ┌─────────────────────┐
 │ 🎯 THE GAMBLER      │
@@ -434,11 +461,13 @@ Immediate action required!
 ## 8 · 🔐 Security & Access Control
 
 ### 8.1 · Authentication Levels
+
 - **Public**: Landing page with basic stats
 - **Guest**: Limited dashboard (no settings, no sensitive data)
 - **Owner**: Full access including trading controls and settings
 
 ### 8.2 · Critical Action Confirmations
+
 - Trading mode switches require password re-entry
 - Emergency stop requires two-factor confirmation
 - Risk limit changes require explicit approval
@@ -449,6 +478,7 @@ Immediate action required!
 ## 9 · 📈 Future Enhancement Hooks
 
 ### 9.1 · Planned V2 Features
+
 - Multi-venue comparison dashboard
 - Advanced ML model A/B testing interface
 - Real-time order book visualization
@@ -456,6 +486,7 @@ Immediate action required!
 - API access for third-party integrations
 
 ### 9.2 · UI Scalability
+
 - Component-based design for easy feature addition
 - Responsive grid system for new widgets
 - Plugin architecture for custom indicators
@@ -463,4 +494,4 @@ Immediate action required!
 
 ---
 
-> **Implementation Note**: This user flow serves as the blueprint for both the external dashboard at thegambler.co/ and the internal system interfaces. All screens should be implemented with real-time data updates, proper error handling, and mobile-responsive design patterns. 
+> **Implementation Note**: This user flow serves as the blueprint for both the external dashboard at thegambler.co/ and the internal system interfaces. All screens should be implemented with real-time data updates, proper error handling, and mobile-responsive design patterns.

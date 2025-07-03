@@ -474,19 +474,19 @@ _Phase 0.1 successfully establishes the foundation for TRAIDER V1's institutiona
   - Integration guides for other tools (SonarQube, Renovate, GitHub Actions)
 
 - **Comprehensive Iterative Development Plan** - Created detailed 4-phase development strategy for TRAIDER
-  - **Phase 0: Setup & Foundation** (`_docs/phases/phase-0-setup.md`) - Barebones infrastructure setup (1-2 weeks)
+  - **Phase 0: Setup & Foundation** (`docs/phases/phase-0-setup.md`) - Barebones infrastructure setup (1-2 weeks)
     - Next.js frontend with authentication and dashboard navigation
     - FastAPI backend with health checks and PostgreSQL integration
     - Basic CI/CD pipeline and error tracking
     - Success criteria: Local development environment functional
-  - **Phase 1: MVP** (`_docs/phases/phase-1-mvp.md`) - Core trading system (3-4 weeks)
+  - **Phase 1: MVP** (`docs/phases/phase-1-mvp.md`) - Core trading system (3-4 weeks)
     - Real-time Coinbase market data integration with TimescaleDB
     - Feature engineering pipeline with technical indicators
     - Basic ensemble trading strategies (momentum, mean-reversion)
     - Paper trading execution with risk management
     - Real-time dashboard updates with Socket.IO
     - Success criteria: 24-hour autonomous paper trading operation
-  - **Phase 2: Enhanced Features** (`_docs/phases/phase-2-enhanced.md`) - Live trading system (4-5 weeks)
+  - **Phase 2: Enhanced Features** (`docs/phases/phase-2-enhanced.md`) - Live trading system (4-5 weeks)
     - Live trading with real money ($1K-$5K capital)
     - Advanced ML models (XGBoost, LSTM, ensemble meta-learner)
     - Level-2 order book data and microstructure analysis
@@ -494,7 +494,7 @@ _Phase 0.1 successfully establishes the foundation for TRAIDER V1's institutiona
     - Production deployment with active-standby architecture
     - Slack/PagerDuty alerting and monitoring
     - Success criteria: Sharpe ratio >1.0 over 30-day live period
-  - **Phase 3: Institutional Grade** (`_docs/phases/phase-3-institutional.md`) - Enterprise platform (6-8 weeks)
+  - **Phase 3: Institutional Grade** (`docs/phases/phase-3-institutional.md`) - Enterprise platform (6-8 weeks)
     - Multi-exchange connectivity (Coinbase, Binance, Kraken)
     - Derivatives trading (futures, options) with Greeks calculation
     - Advanced portfolio optimization (Markowitz, Black-Litterman)
@@ -503,7 +503,7 @@ _Phase 0.1 successfully establishes the foundation for TRAIDER V1's institutiona
     - ML model marketplace and strategy framework
     - Success criteria: $100K+ capital management with 99.99% uptime
 
-- **Development Strategy Overview** (`_docs/phases/README.md`) - Comprehensive summary document
+- **Development Strategy Overview** (`docs/phases/README.md`) - Comprehensive summary document
   - Progressive feature development roadmap
   - Risk management evolution across phases
   - Performance targets and success metrics

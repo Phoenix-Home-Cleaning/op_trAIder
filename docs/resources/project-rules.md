@@ -1,6 +1,6 @@
 # 🏗️ TRAIDER V1 — Project Rules & Development Standards
 
-### AI-First Codebase Guidelines for Institutional-Grade Trading Platform *(June 28 2025)*
+### AI-First Codebase Guidelines for Institutional-Grade Trading Platform _(June 28 2025)_
 
 ---
 
@@ -18,6 +18,7 @@ TRAIDER is designed as an **AI-first codebase**, meaning every architectural dec
 ## 2 · 📁 Directory Structure & Organization
 
 ### 2.1 · Root Directory Structure
+
 ```
 traider/
 ├── app/                    # Next.js App Router (frontend)
@@ -31,6 +32,7 @@ traider/
 ```
 
 ### 2.2 · Frontend Structure (`app/`)
+
 ```
 app/
 ├── (auth)/               # Auth route group
@@ -73,6 +75,7 @@ app/
 ```
 
 ### 2.3 · Backend Structure (`backend/`)
+
 ```
 backend/
 ├── api/                  # FastAPI endpoints
@@ -99,6 +102,7 @@ backend/
 ## 3 · 📝 File Naming Conventions
 
 ### 3.1 · General Rules
+
 - **Use kebab-case** for directories: `market-data/`, `signal-generation/`
 - **Use PascalCase** for React components: `PnLChart.tsx`, `RiskDashboard.tsx`
 - **Use camelCase** for utility files: `tradingUtils.ts`, `chartHelpers.ts`
@@ -106,6 +110,7 @@ backend/
 - **Be descriptive**: File names should clearly indicate their purpose
 
 ### 3.2 · Frontend Naming Patterns
+
 ```
 components/
 ├── ui/
@@ -137,6 +142,7 @@ types/
 ```
 
 ### 3.3 · Backend Naming Patterns
+
 ```
 services/
 ├── market_data/
@@ -166,13 +172,14 @@ shared/
 ## 4 · 📄 File Structure & Documentation Standards
 
 ### 4.1 · File Header Requirements
+
 Every file must begin with a clear, structured header:
 
 ```typescript
 /**
  * @fileoverview Real-time P&L chart component for trading dashboard.
  * @module app/dashboard/components/PnLChart
- * 
+ *
  * @description
  * This component displays live profit/loss data using Chart.js with
  * real-time updates via Socket.IO. It handles both daily and historical
@@ -186,7 +193,7 @@ Every file must begin with a clear, structured header:
  * @risk
  * - Failure impact: MEDIUM - Degrades user experience on the main dashboard.
  * - Recovery strategy: Displays a static "data unavailable" message.
- * 
+ *
  * @author TRAIDER Team
  * @since 1.0.0-alpha
  */
@@ -216,21 +223,22 @@ exponential backoff and data validation to ensure data integrity.
 ```
 
 ### 4.2 · Function Documentation Standards
+
 All functions must have comprehensive JSDoc or docstrings:
 
 ```typescript
 /**
  * Calculates position size based on a volatility-targeting model.
- * 
+ *
  * @param {number} signal - Trading signal strength, from -1 (max short) to 1 (max long).
  * @param {number} volatility - Annualized historical volatility of the asset.
  * @param {number} riskBudget - The maximum capital to risk on this trade in USD.
  * @param {number} maxPosition - The maximum allowable position size in USD.
  * @returns {number} The calculated position size in USD, clamped to risk limits.
- * 
+ *
  * @performance O(1) complexity, executes in <1ms.
  * @riskLevel HIGH - Incorrect calculation can lead to significant losses.
- * 
+ *
  * @example
  * const size = calculatePositionSize({
  *   signal: 0.5,
@@ -260,22 +268,22 @@ def calculate_var(
     time_horizon_days: int = 1
 ) -> float:
     """Calculates Value at Risk (VaR) for the current portfolio.
-    
+
     This function uses a historical simulation method with a 252-day lookback
     period. It incorporates a correlation matrix for multi-asset portfolios
     to provide a more accurate risk assessment.
-    
+
     Args:
         positions: A list of current trading Position objects.
         confidence_level: The VaR confidence level (e.g., 0.95 for 95%).
         time_horizon_days: The time horizon in days.
-        
+
     Returns:
         The VaR estimate in USD. A positive value represents a potential loss.
-        
+
     Raises:
         ValueError: If `positions` is empty or `confidence_level` is invalid.
-        
+
     @performance O(n^2) due to correlation matrix, ~50ms for 10 assets.
     @riskLevel CRITICAL - Core input for pre-trade risk checks.
     """
@@ -284,6 +292,7 @@ def calculate_var(
 ```
 
 ### 4.3 · File Size Limits
+
 - **Maximum 500 lines per file** to ensure AI tool compatibility
 - **Break large files into logical modules** when approaching limit
 - **Use barrel exports** (`index.ts`) to maintain clean import paths
@@ -293,6 +302,7 @@ def calculate_var(
 ## 5 · 🏗️ Code Organization Principles
 
 ### 5.1 · Separation of Concerns
+
 ```typescript
 // ❌ Bad: Mixed concerns in single file
 export function TradingDashboard() {
@@ -303,7 +313,7 @@ export function TradingDashboard() {
 export function TradingDashboard() {
   const { positions, isLoading } = usePositions();  // Data layer
   const { pnl } = usePnL();                         // Data layer
-  
+
   return (
     <DashboardLayout>                               {/* Layout layer */}
       <PositionCards positions={positions} />       {/* UI layer */}
@@ -314,6 +324,7 @@ export function TradingDashboard() {
 ```
 
 ### 5.2 · Single Responsibility Principle
+
 Each file/function should have one clear purpose:
 
 ```typescript
@@ -326,13 +337,14 @@ function processTradeData(data: any) {
 }
 
 // ✅ Good: Single responsibility
-function validateTradeData(data: TradeData): ValidationResult { }
-function calculatePnL(trade: Trade): number { }
-function updateTradeDatabase(trade: Trade): Promise<void> { }
-function sendTradeNotification(trade: Trade): void { }
+function validateTradeData(data: TradeData): ValidationResult {}
+function calculatePnL(trade: Trade): number {}
+function updateTradeDatabase(trade: Trade): Promise<void> {}
+function sendTradeNotification(trade: Trade): void {}
 ```
 
 ### 5.3 · Dependency Direction
+
 - **UI components depend on hooks**
 - **Hooks depend on services**
 - **Services depend on utilities**
@@ -340,9 +352,9 @@ function sendTradeNotification(trade: Trade): void { }
 
 ```typescript
 // Dependency flow: Component → Hook → Service → Utility
-Component (PositionCard) 
-  → Hook (usePositions) 
-    → Service (tradingApi) 
+Component (PositionCard)
+  → Hook (usePositions)
+    → Service (tradingApi)
       → Utility (httpClient)
 ```
 
@@ -351,6 +363,7 @@ Component (PositionCard)
 ## 6 · 🎨 UI/UX Implementation Rules
 
 ### 6.1 · Component Architecture
+
 ```typescript
 // Component structure template
 interface ComponentProps {
@@ -365,7 +378,7 @@ export function ComponentName({ prop1, prop2 }: ComponentProps) {
   // 2. Event handlers
   // 3. Effects
   // 4. Render logic
-  
+
   return (
     // JSX with proper semantic structure
   );
@@ -373,6 +386,7 @@ export function ComponentName({ prop1, prop2 }: ComponentProps) {
 ```
 
 ### 6.2 · Styling Conventions
+
 - **Use Tailwind CSS classes** following the design system
 - **Create reusable component variants** for consistent styling
 - **Follow the color palette** defined in `theme-rules.md`
@@ -400,12 +414,14 @@ export function TradingCard({ variant = 'default', children }: Props) {
 ## 7 · 🔒 Security & Safety Rules
 
 ### 7.1 · Sensitive Data Handling
+
 - **Never log sensitive data** (API keys, trading positions, P&L)
 - **Use environment variables** for all configuration
 - **Implement proper input validation** on all API endpoints
 - **Sanitize all user inputs** to prevent XSS attacks
 
 ### 7.2 · Trading Safety
+
 - **Implement confirmation dialogs** for critical actions
 - **Use role-based access control** (Owner vs Guest)
 - **Log all trading decisions** with full audit trail
@@ -416,6 +432,7 @@ export function TradingCard({ variant = 'default', children }: Props) {
 ## 8 · 🧪 Testing Standards
 
 ### 8.1 · Test File Organization
+
 ```
 __tests__/
 ├── components/           # Component tests
@@ -432,6 +449,7 @@ __tests__/
 ```
 
 ### 8.2 · Test Requirements
+
 - **Unit tests** for all utilities and business logic
 - **Component tests** for UI components with user interactions
 - **Integration tests** for critical trading flows
@@ -443,12 +461,14 @@ __tests__/
 ## 9 · 📊 Performance & Monitoring Rules
 
 ### 9.1 · Performance Standards
+
 - **Bundle size monitoring** with `@next/bundle-analyzer`
 - **Lazy loading** for heavy components (charts, complex UI)
 - **Optimized data fetching** with SWR caching strategies
 - **Real-time update throttling** to prevent UI freezing
 
 ### 9.2 · Monitoring Implementation
+
 - **Instrument all critical functions** with OpenTelemetry traces
 - **Add performance metrics** for trading operations
 - **Implement error boundaries** for graceful failure handling
@@ -459,12 +479,14 @@ __tests__/
 ## 10 · 🔄 Development Workflow
 
 ### 10.1 · Git Workflow
+
 - **Feature branches** for all development work
 - **Descriptive commit messages** following conventional commits
 - **Pull request reviews** required for all changes
 - **Automated testing** in CI/CD pipeline
 
 ### 10.2 · Code Quality Gates
+
 - **TypeScript strict mode** with zero errors
 - **ESLint and Prettier** for consistent formatting
 - **Unit test coverage** above 90% for critical paths
@@ -475,12 +497,14 @@ __tests__/
 ## 11 · 📚 Documentation Requirements
 
 ### 11.1 · Code Documentation
+
 - **File headers** explaining purpose and context
 - **Function documentation** with parameters and examples
 - **Type definitions** with clear descriptions
 - **README files** for each major module
 
 ### 11.2 · Architecture Documentation
+
 - **Decision records** for major architectural choices
 - **API documentation** with OpenAPI specifications
 - **Deployment guides** with step-by-step instructions
@@ -488,4 +512,4 @@ __tests__/
 
 ---
 
-> **Remember**: These rules exist to support our core mission of building a reliable, institutional-grade trading platform. Every decision should prioritize **clarity, safety, and maintainability** over clever code or premature optimization. When in doubt, choose the approach that makes the code easier for both AI tools and human developers to understand and modify. 
+> **Remember**: These rules exist to support our core mission of building a reliable, institutional-grade trading platform. Every decision should prioritize **clarity, safety, and maintainability** over clever code or premature optimization. When in doubt, choose the approach that makes the code easier for both AI tools and human developers to understand and modify.
