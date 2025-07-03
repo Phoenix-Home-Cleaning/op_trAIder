@@ -113,7 +113,7 @@ jobs:
           
           echo "::group::Backend Coverage"
           # Generate Python backend coverage for trading logic analysis
-          PYTHONPATH=. python -m pytest tests/unit/backend/ --cov=backend --cov-report=json:coverage-fresh.json --cov-report=term-missing -v || true
+          PYTHONPATH=. python -m pytest tests/unit/backend/ --cov=. --cov-report=json:coverage-fresh.json --cov-report=term-missing -v || true
           
           echo "📊 Coverage files generated:"
           ls -la coverage/ || true
@@ -287,7 +287,7 @@ jobs:
           
           # Generate Python backend coverage for trading logic analysis
           echo "🐍 Generating Python backend coverage..."
-          PYTHONPATH=. python -m pytest tests/unit/backend/ --cov=backend --cov-report=json:coverage-fresh.json --cov-report=term-missing -v || true
+          PYTHONPATH=. python -m pytest tests/unit/backend/ --cov=. --cov-report=json:coverage-fresh.json --cov-report=term-missing -v || true
           
           echo "📊 Coverage files generated:"
           ls -la coverage/ || true
