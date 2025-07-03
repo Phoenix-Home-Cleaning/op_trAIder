@@ -162,5 +162,11 @@ docs/runbooks/
 test-results/
 *.lcov
 
+# Generated coverage reports and quality artifacts
+coverage*.json
+htmlcov/
+quality-reports/
+security-reports/
+
 # Kubernetes generated manifests (too large for GitHub)
 infrastructure/k8s/dev/combined-manifests.yaml
