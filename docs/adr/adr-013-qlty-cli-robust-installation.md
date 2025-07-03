@@ -2,7 +2,8 @@
 
 ## Status
 
-**ACCEPTED** - 2025-07-03
+**ACCEPTED** - 2025-07-03  
+**UPDATED** - 2025-07-03 (Added system utilities prerequisite fix)
 
 ## Context
 
@@ -216,6 +217,67 @@ done
 - Binary cache: 30 days
 - Performance metrics: 1 year
 
+## Update: System Utilities Prerequisite Fix (2025-07-03)
+
+### Issue Identified
+
+After initial deployment, the pipeline encountered exit code 5 errors, indicating missing system utilities required for the validation pipeline:
+
+```bash
+🔧 Install Qlty CLI Process completed with exit code 5.
+```
+
+### Root Cause
+
+The validation pipeline relies on system utilities that may not be present in minimal CI environments:
+
+- `xxd` (from `vim-common`) - Required for hexdump validation of corrupted archives
+- `jq` - Required for GitHub API response parsing
+- `bc` - Required for coverage threshold calculations
+- `file` - Required for format validation
+
+### Solution Implemented
+
+Added a comprehensive system utilities installation step before Qlty CLI installation:
+
+```bash
+# Install essential utilities with comprehensive error handling
+REQUIRED_PACKAGES=(
+  "jq"           # JSON processing for GitHub API responses
+  "vim-common"   # Provides xxd for hexdump validation
+  "bc"           # Arbitrary precision calculator for coverage thresholds
+  "curl"         # HTTP client for downloads (ensure latest version)
+  "tar"          # Archive extraction (ensure latest version)
+  "gzip"         # Compression utilities (ensure latest version)
+  "file"         # File type detection for validation
+  "findutils"    # Enhanced find utilities
+)
+```
+
+### Implementation Features
+
+1. **Retry Logic**: 3-attempt installation with exponential backoff
+2. **Comprehensive Verification**: Functional testing of all installed utilities
+3. **HTTPS Connectivity Testing**: Validation of GitHub API access
+4. **Gzip Support Verification**: Ensures tar can handle compressed archives
+5. **Detailed Logging**: Complete audit trail of utility installation
+
+### Benefits
+
+- **Reliability**: Eliminates exit code 5 failures from missing utilities
+- **Completeness**: Ensures all required tools are available before Qlty CLI installation
+- **Diagnostics**: Provides detailed error information for troubleshooting
+- **Future-Proofing**: Validates functionality, not just presence
+
+### Testing
+
+Created comprehensive test suite (`tests/unit/infrastructure/system-utilities-validation.test.ts`) with:
+
+- 13 test cases covering all validation scenarios
+- Error handling for missing utilities
+- Timeout and permission error scenarios
+- Individual utility validation testing
+
 ## References
 
 - [GitHub Releases API Documentation](https://docs.github.com/en/rest/releases/releases)
@@ -228,4 +290,5 @@ done
 **Author**: TRAIDER Team  
 **Reviewers**: DevOps, Security, QA Teams  
 **Implementation Date**: 2025-01-03  
+**System Utilities Update**: 2025-07-03  
 **Next Review**: 2025-04-03

@@ -730,19 +730,85 @@ class TestSignalComprehensive:
     
     def test_signal_validate_signal_none_signal_type(self):
         """
-        Test Signal.validate_signal method with None signal type (should use default).
+        Test Signal.validate_signal with None signal_type.
         
-        @tradingImpact HIGH - Data integrity check
+        @tradingImpact HIGH - Signal validation with default type
         @riskLevel MEDIUM - Default value handling
         """
+        # Create signal with None signal_type
         signal = Signal(
             symbol="BTC-USD",
-            strategy="momentum_v1",
-            signal_strength=Decimal("0.75"),
-            confidence=Decimal("0.85"),
+            strategy="test_strategy",
+            signal_strength=Decimal("0.5"),
+            confidence=Decimal("0.7"),
             direction="LONG",
-            signal_type=None
+            signal_type=None  # This should use default "entry"
         )
         
-        # Should use default value "entry"
-        assert signal.validate_signal() is True 
+        # Validation should pass with default signal_type
+        assert signal.validate_signal() is True
+        
+        # Verify the original value is unchanged
+        assert signal.signal_type is None
+    
+    def test_signal_validate_signal_with_empty_signal_type(self):
+        """
+        Test Signal.validate_signal with empty string signal_type.
+        
+        @tradingImpact HIGH - Signal validation edge case
+        @riskLevel MEDIUM - Empty value handling
+        """
+        # Create signal with empty signal_type
+        signal = Signal(
+            symbol="BTC-USD",
+            strategy="test_strategy",
+            signal_strength=Decimal("0.5"),
+            confidence=Decimal("0.7"),
+            direction="LONG",
+            signal_type=""  # Empty string
+        )
+        
+        # Validation should pass for empty string (treated as valid)
+        assert signal.validate_signal() is True
+    
+    def test_signal_validate_signal_comprehensive_edge_cases(self):
+        """
+        Test Signal.validate_signal with comprehensive edge cases.
+        
+        @tradingImpact HIGH - Complete validation testing
+        @riskLevel MEDIUM - Edge case handling
+        """
+        # Test all None values
+        signal_all_none = Signal(
+            symbol=None,
+            strategy=None,
+            signal_strength=None,
+            confidence=None,
+            direction=None,
+            signal_type=None
+        )
+        assert signal_all_none.validate_signal() is False
+        
+        # Test boundary values that should be valid
+        signal_boundary = Signal(
+            symbol="BTC-USD",
+            strategy="test",
+            signal_strength=Decimal("1.0"),  # Max valid
+            confidence=Decimal("1.0"),       # Max valid
+            direction="LONG",
+            signal_type="entry"
+        )
+        assert signal_boundary.validate_signal() is True
+        
+        # Test invalid signal types
+        invalid_types = ["invalid", "unknown", "bad_type", "ENTRY"]
+        for invalid_type in invalid_types:
+            signal_invalid = Signal(
+                symbol="BTC-USD",
+                strategy="test",
+                signal_strength=Decimal("0.5"),
+                confidence=Decimal("0.7"),
+                direction="LONG",
+                signal_type=invalid_type
+            )
+            assert signal_invalid.validate_signal() is False, f"Signal type '{invalid_type}' should be invalid" 

@@ -536,6 +536,143 @@ jobs:
           name: coverage-reports
           path: coverage/
           
+      - name: 🛠️ Install system utilities for Qlty CLI
+        run: |
+          echo "::group::Installing System Utilities"
+          
+          # Elite-level system utilities installation for institutional-grade reliability
+          echo "🔧 Installing critical system utilities for Qlty CLI validation pipeline..."
+          
+          # Update package lists with retry logic
+          for attempt in 1 2 3; do
+            if sudo apt-get update -qq; then
+              echo "✅ Package lists updated successfully"
+              break
+            else
+              echo "⚠️ Package update attempt ${attempt}/3 failed, retrying in 2 seconds..."
+              sleep 2
+            fi
+          done
+          
+          # Install essential utilities with comprehensive error handling
+          REQUIRED_PACKAGES=(
+            "jq"           # JSON processing for GitHub API responses
+            "vim-common"   # Provides xxd for hexdump validation
+            "bc"           # Arbitrary precision calculator for coverage thresholds
+            "curl"         # HTTP client for downloads (ensure latest version)
+            "tar"          # Archive extraction (ensure latest version)
+            "gzip"         # Compression utilities (ensure latest version)
+            "file"         # File type detection for validation
+            "findutils"    # Enhanced find utilities
+          )
+          
+          echo "📦 Installing packages: ${REQUIRED_PACKAGES[*]}"
+          
+          # Install with retry logic and comprehensive error handling
+          for attempt in 1 2 3; do
+            if sudo apt-get install -y --no-install-recommends "${REQUIRED_PACKAGES[@]}"; then
+              echo "✅ All system utilities installed successfully"
+              break
+            else
+              echo "⚠️ Installation attempt ${attempt}/3 failed"
+              if [ $attempt -eq 3 ]; then
+                echo "❌ Failed to install required system utilities after 3 attempts"
+                exit 1
+              fi
+              echo "Retrying in 3 seconds..."
+              sleep 3
+            fi
+          done
+          
+          # Verify all utilities are properly installed and functional
+          echo "🔍 Verifying system utilities installation..."
+          
+          VERIFICATION_FAILED=false
+          
+          # Verify jq (JSON processor)
+          if command -v jq >/dev/null 2>&1; then
+            JQ_VERSION=$(jq --version 2>/dev/null || echo "unknown")
+            echo "✅ jq: ${JQ_VERSION}"
+          else
+            echo "❌ jq not found or not functional"
+            VERIFICATION_FAILED=true
+          fi
+          
+          # Verify xxd (hex dump utility from vim-common)
+          if command -v xxd >/dev/null 2>&1; then
+            echo "✅ xxd: available for binary validation"
+          else
+            echo "❌ xxd not found - required for binary validation"
+            VERIFICATION_FAILED=true
+          fi
+          
+          # Verify bc (calculator)
+          if command -v bc >/dev/null 2>&1; then
+            BC_VERSION=$(bc --version 2>/dev/null | head -1 || echo "unknown")
+            echo "✅ bc: ${BC_VERSION}"
+          else
+            echo "❌ bc not found - required for coverage calculations"
+            VERIFICATION_FAILED=true
+          fi
+          
+          # Verify curl with SSL support
+          if command -v curl >/dev/null 2>&1; then
+            CURL_VERSION=$(curl --version 2>/dev/null | head -1 || echo "unknown")
+            echo "✅ curl: ${CURL_VERSION}"
+            
+            # Test HTTPS connectivity
+            if curl -sSL --connect-timeout 5 --max-time 10 https://api.github.com >/dev/null 2>&1; then
+              echo "✅ HTTPS connectivity verified"
+            else
+              echo "⚠️ HTTPS connectivity test failed - may impact GitHub API calls"
+            fi
+          else
+            echo "❌ curl not found or not functional"
+            VERIFICATION_FAILED=true
+          fi
+          
+          # Verify tar with gzip support
+          if command -v tar >/dev/null 2>&1; then
+            TAR_VERSION=$(tar --version 2>/dev/null | head -1 || echo "unknown")
+            echo "✅ tar: ${TAR_VERSION}"
+            
+            # Test gzip functionality
+            if tar --help 2>/dev/null | grep -q "gzip"; then
+              echo "✅ tar gzip support verified"
+            else
+              echo "⚠️ tar gzip support not detected"
+            fi
+          else
+            echo "❌ tar not found or not functional"
+            VERIFICATION_FAILED=true
+          fi
+          
+          # Verify file utility
+          if command -v file >/dev/null 2>&1; then
+            FILE_VERSION=$(file --version 2>/dev/null | head -1 || echo "unknown")
+            echo "✅ file: ${FILE_VERSION}"
+          else
+            echo "❌ file utility not found - required for format validation"
+            VERIFICATION_FAILED=true
+          fi
+          
+          # Final verification check
+          if [ "$VERIFICATION_FAILED" = true ]; then
+            echo "❌ System utilities verification failed - cannot proceed with Qlty CLI installation"
+            echo "💡 This is a critical failure that would prevent proper binary validation"
+            exit 1
+          fi
+          
+          echo "🎉 All system utilities verified and ready for Qlty CLI installation!"
+          echo "📊 Installation summary:"
+          echo "  - JSON processing: jq"
+          echo "  - Binary validation: xxd (vim-common)"
+          echo "  - Calculations: bc"
+          echo "  - Network: curl with HTTPS"
+          echo "  - Archives: tar with gzip"
+          echo "  - File detection: file"
+          echo "::endgroup::"
+          
       - name: 🔧 Install Qlty CLI
         run: |
           echo "::group::Installing Qlty CLI"
