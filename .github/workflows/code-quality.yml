@@ -191,6 +191,7 @@ jobs:
           sonar-${{ runner.os }}-
 
     - name: SonarQube Scan
+      id: sonar_scan
       uses: sonarsource/sonarqube-scan-action@v2
       env:
         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
@@ -198,6 +199,8 @@ jobs:
 
     - name: SonarQube Quality Gate
       uses: sonarsource/sonarqube-quality-gate-action@v1
+      with:
+        scanMetadataReportFile: ${{ steps.sonar_scan.outputs.scanMetadataReportFile }}
       timeout-minutes: 10
       env:
         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
