@@ -16,7 +16,7 @@ from fastapi.testclient import TestClient
 
 # Ensure project root is on sys.path (already true when running from repo root)
 
-from api.auth import create_access_token  # noqa: E402
+from backend.api.auth import create_access_token  # noqa: E402
 from backend.main import app  # noqa: E402 – FastAPI application instance
 
 # ---------------------------------------------------------------------------
