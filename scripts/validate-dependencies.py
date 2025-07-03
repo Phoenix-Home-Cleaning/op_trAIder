@@ -41,6 +41,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger('dependency-validator')
 
+# Log the Python path for diagnostics
+logger.info(f"Python executable: {sys.executable}")
+logger.info(f"Python version: {sys.version}")
+logger.info(f"sys.path: {json.dumps(sys.path, indent=2)}")
+
 class DependencyValidator:
     """
     World-class dependency validation for institutional-grade trading platform.
@@ -103,7 +108,10 @@ class DependencyValidator:
         'PyJWT': 'jwt',
         'pyyaml': 'yaml',
         'email-validator': 'email_validator',
-        'pytest-xdist': 'pytest_xdist',
+        'pytest-xdist': 'xdist',
+        'sentry-sdk': 'sentry_sdk',
+        'sarif-om': 'sarif_om',
+        'jschema-to-python': 'jschema_to_python',
         'coverage-badge': 'coverage_badge',
         'more-itertools': 'more_itertools',
     }
@@ -228,8 +236,8 @@ class DependencyValidator:
         @performance O(1) - single import attempt
         @sideEffects None - import attempt only
         """
-        # Use import mapping if available
-        import_name = self.IMPORT_MAPPINGS.get(package, package)
+        # Use import mapping if available, otherwise replace hyphens
+        import_name = self.IMPORT_MAPPINGS.get(package, package.replace('-', '_'))
         
         try:
             importlib.import_module(import_name)
