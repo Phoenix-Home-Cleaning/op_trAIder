@@ -1049,7 +1049,7 @@ jobs:
           echo "::group::Qlty Code Quality Analysis"
           
           # Run Qualytics analysis – configuration (output dir, formats, parallelism) is defined in .qlty.toml
-          qualytics run scan app/ middleware.ts shared/ || QLTY_EXIT_CODE=$?
+          qualytics check app/ middleware.ts shared/ || QLTY_EXIT_CODE=$?
           
           # Process results
           if [ -f "quality-reports/qlty/results.json" ]; then
