@@ -281,73 +281,57 @@ async def detailed_health_check() -> JSONResponse:
     
     start_time = time.time()
     
+    # Collect system information (non-fatal if it fails)
     try:
-        # Collect system information
         system_info = get_system_info()
-        
-        # Check database health
+        system_ok = True
+    except Exception as exc:  # pragma: no cover – safeguarded
+        logger.error(f"System info collection failed: {exc}", exc_info=True)
+        system_info = {"error": str(exc)}
+        system_ok = False
+
+    # Check database health (non-fatal if it fails)
+    try:
         db_health = await check_database_health()
-        
-        # Calculate overall health status
-        overall_status = "healthy"
-        if db_health.get("status") == "unhealthy":
-            overall_status = "unhealthy"
-        elif db_health.get("status") == "degraded":
-            overall_status = "degraded"
-        
-        # Check system resource thresholds
-        warnings = []
+        db_ok = db_health.get("status") == "healthy"
+    except Exception as exc:  # pragma: no cover – safeguarded
+        logger.error(f"Database health check failed: {exc}", exc_info=True)
+        db_health = {"status": "unhealthy", "error": str(exc)}
+        db_ok = False
+
+    # Determine overall status
+    overall_status = "healthy" if system_ok and db_ok else "degraded"
+
+    # Resource threshold warnings (only when system metrics available)
+    warnings = []
+    if system_ok and isinstance(system_info, dict):
         if system_info.get("cpu", {}).get("usage_percent", 0) > 80:
             warnings.append("High CPU usage")
         if system_info.get("memory", {}).get("usage_percent", 0) > 85:
             warnings.append("High memory usage")
         if system_info.get("disk", {}).get("usage_percent", 0) > 90:
             warnings.append("High disk usage")
-        
-        if warnings and overall_status == "healthy":
-            overall_status = "degraded"
-        
-        response_data = {
-            "status": overall_status,
-            "timestamp": time.time(),
-            "response_time_ms": round((time.time() - start_time) * 1000, 2),
-            "service": {
-                "name": "TRAIDER V1 API",
-                "version": "1.0.0-alpha",
-                "environment": os.getenv("PYTHON_ENV", "development"),
-                "uptime_seconds": round(time.time() - psutil.Process().create_time(), 2),
-            },
-            "system": system_info,
-            "dependencies": {
-                "database": db_health,
-            },
-            "warnings": warnings,
-        }
-        
-        # Add trading-specific status (Phase 1+)
-        trading_status = {
-            "market_data_connected": False,  # Will be implemented in Phase 1
-            "trading_enabled": False,        # Will be implemented in Phase 1
-            "risk_engine_active": False,     # Will be implemented in Phase 1
-        }
-        response_data["trading"] = trading_status
-        
-        return JSONResponse(
-            status_code=status.HTTP_200_OK,
-            content=response_data
-        )
-        
-    except Exception as exc:
-        logger.error(f"Detailed health check failed: {exc}", exc_info=True)
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={
-                "status": "unhealthy",
-                "error": str(exc),
-                "timestamp": time.time(),
-                "response_time_ms": round((time.time() - start_time) * 1000, 2),
-            }
-        )
+
+    response_data = {
+        "status": overall_status,
+        "timestamp": time.time(),
+        "response_time_ms": round((time.time() - start_time) * 1000, 2),
+        "service": {
+            "name": "TRAIDER V1 API",
+            "version": "1.0.0-alpha",
+            "environment": os.getenv("PYTHON_ENV", "development"),
+            "uptime_seconds": round(time.time() - psutil.Process().create_time(), 2),
+        },
+        "system": system_info,
+        "dependencies": {
+            "database": db_health,
+        },
+        "warnings": warnings,
+    }
+
+    status_code = status.HTTP_200_OK if overall_status == "healthy" else status.HTTP_503_SERVICE_UNAVAILABLE
+
+    return JSONResponse(status_code=status_code, content=response_data)
 
 @router.get("/metrics", summary="Prometheus Metrics")
 async def prometheus_metrics() -> str:
@@ -367,42 +351,57 @@ async def prometheus_metrics() -> str:
     @riskLevel LOW - Metrics collection only
     """
     
+    metrics = []
+
+    # ============================= HELP / TYPE LINES =============================
+    def _add_metric(name: str, value: float | int, help_text: str, metric_type: str = "gauge"):
+        metrics.append(f"# HELP {name} {help_text}")
+        metrics.append(f"# TYPE {name} {metric_type}")
+        metrics.append(f"{name} {value}")
+
+    # Safe collection blocks ------------------------------------------------------
+    system_ok = True
+    db_ok = True
+    db_health: Dict[str, Any] = {}
+
     try:
         system_info = get_system_info()
+    except Exception as exc:  # pragma: no cover – safeguarded
+        system_ok = False
+        system_info = {}
+        logger.error(f"System metrics collection failed: {exc}")
+
+    try:
         db_health = await check_database_health()
-        
-        # Generate Prometheus metrics
-        metrics = []
-        
-        # System metrics
-        if "cpu" in system_info:
-            metrics.append(f'traider_cpu_usage_percent {system_info["cpu"]["usage_percent"]}')
-            metrics.append(f'traider_cpu_count {system_info["cpu"]["count"]}')
-        
-        if "memory" in system_info:
-            metrics.append(f'traider_memory_usage_percent {system_info["memory"]["usage_percent"]}')
-            metrics.append(f'traider_memory_total_bytes {system_info["memory"]["total_gb"] * 1024**3}')
-            metrics.append(f'traider_memory_used_bytes {system_info["memory"]["used_gb"] * 1024**3}')
-        
-        if "disk" in system_info:
-            metrics.append(f'traider_disk_usage_percent {system_info["disk"]["usage_percent"]}')
-            metrics.append(f'traider_disk_total_bytes {system_info["disk"]["total_gb"] * 1024**3}')
-        
-        # Database metrics
-        if db_health.get("status") == "healthy":
-            metrics.append('traider_database_up 1')
-        else:
-            metrics.append('traider_database_up 0')
-        
-        # Service uptime
-        uptime = time.time() - psutil.Process().create_time()
-        metrics.append(f'traider_uptime_seconds {uptime}')
-        
-        return "\n".join(metrics) + "\n"
-        
-    except Exception as exc:
-        logger.error(f"Metrics endpoint failed: {exc}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Metrics collection failed"
-        ) 
+    except Exception as exc:  # pragma: no cover – safeguarded
+        db_ok = False
+        db_health = {"status": "unhealthy", "error": str(exc), "response_time_ms": 0}
+        logger.error(f"Database metrics collection failed: {exc}")
+
+    service_healthy = system_ok and db_ok and db_health.get("status") == "healthy"
+
+    # Overall health gauges -------------------------------------------------------
+    _add_metric("traider_health_status", 1 if service_healthy else 0, "Overall health status (1=healthy,0=unhealthy)")
+    _add_metric("traider_system_error", 0 if system_ok else 1, "System metrics collection error (1=error)")
+
+    # System metrics --------------------------------------------------------------
+    if system_ok and system_info:
+        cpu = system_info.get("cpu", {})
+        _add_metric("traider_cpu_usage_percent", cpu.get("usage_percent", 0), "CPU utilisation percentage")
+        _add_metric("traider_cpu_count", cpu.get("count", 0), "Logical CPU cores", "gauge")
+
+        mem = system_info.get("memory", {})
+        _add_metric("traider_memory_usage_percent", mem.get("usage_percent", 0), "Memory utilisation percentage")
+
+        disk = system_info.get("disk", {})
+        _add_metric("traider_disk_usage_percent", disk.get("usage_percent", 0), "Disk utilisation percentage")
+
+    # Database metrics ------------------------------------------------------------
+    _add_metric("traider_database_up", 1 if db_health.get("status") == "healthy" else 0, "Database up status (1=up,0=down)")
+    _add_metric("traider_database_response_time_ms", db_health.get("response_time_ms", 0), "Database health check latency (ms)")
+
+    # Service uptime --------------------------------------------------------------
+    uptime_seconds = time.time() - psutil.Process().create_time()
+    _add_metric("traider_uptime_seconds", round(uptime_seconds, 2), "Service uptime in seconds")
+
+    return "\n".join(metrics) + "\n" 

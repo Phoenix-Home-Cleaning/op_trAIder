@@ -130,7 +130,8 @@ class TestJWTTokenSecurity:
         # Create token
         token = create_access_token(
             data=self.test_user_data,
-            expires_delta=timedelta(minutes=30)
+            expires_delta=timedelta(minutes=30),
+            secret_key=self.secret_key
         )
         
         assert isinstance(token, str)
@@ -156,7 +157,8 @@ class TestJWTTokenSecurity:
         # Create expired token
         expired_token = create_access_token(
             data=self.test_user_data,
-            expires_delta=timedelta(seconds=-1)  # Already expired
+            expires_delta=timedelta(seconds=-1),  # Already expired
+            secret_key=self.secret_key
         )
         
         # Should raise exception when decoding expired token
@@ -170,7 +172,7 @@ class TestJWTTokenSecurity:
         @tradingImpact Prevents privilege escalation attacks
         @riskLevel CRITICAL - Tampered tokens could grant unauthorized access
         """
-        token = create_access_token(data=self.test_user_data)
+        token = create_access_token(data=self.test_user_data, secret_key=self.secret_key)
         
         # Tamper with token
         tampered_token = token[:-5] + "XXXXX"
@@ -408,7 +410,7 @@ class TestAuthenticationPerformance:
         test_data = {"sub": "test@traider.com", "role": "trader"}
         
         start_time = time.time()
-        create_access_token(data=test_data)
+        create_access_token(data=test_data, secret_key="performance_test_temp_key")
         token_time = (time.time() - start_time) * 1000  # Convert to ms
         
         # Should complete within 10ms

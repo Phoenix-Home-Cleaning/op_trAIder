@@ -166,7 +166,13 @@ def get_password_hash(password: str) -> str:
     
     return pwd_context.hash(password)
 
-def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(
+    data: Dict[str, Any],
+    expires_delta: Optional[timedelta] = None,
+    *,
+    secret_key: Optional[str] = None,
+    algorithm: Optional[str] = None,
+) -> str:
     """
     Create JWT access token.
     
@@ -194,10 +200,19 @@ def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta]
         "iss": "traider-v1",
     })
     
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    # Allow dependency injection of cryptographic parameters (useful for tests and multi-tenant deployments)
+    skey: str = secret_key or SECRET_KEY
+    algo: str = algorithm or ALGORITHM
+
+    encoded_jwt = jwt.encode(to_encode, skey, algorithm=algo)
     return encoded_jwt
 
-def verify_token(token: str) -> Dict[str, Any]:
+def verify_token(
+    token: str,
+    *,
+    secret_key: Optional[str] = None,
+    algorithms: Optional[list[str]] = None,
+) -> Dict[str, Any]:
     """
     Verify and decode JWT token.
     
@@ -213,7 +228,10 @@ def verify_token(token: str) -> Dict[str, Any]:
     """
     
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        skey: str = secret_key or SECRET_KEY
+        algos = algorithms or [ALGORITHM]
+
+        payload = jwt.decode(token, skey, algorithms=algos)
         
         # Validate required claims
         if "sub" not in payload or "exp" not in payload:

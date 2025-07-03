@@ -1,0 +1,48 @@
+name: 🚦 Auth & Health Regression Guard
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - 'tests/**'
+      - '.github/workflows/auth-health-regression.yml'
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  regression:
+    name: 🔄 Smoke Test Auth & Health Endpoints
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      SECRET_KEY: regression_dummy_secret
+      DASHBOARD_PASSWORD: regression_dashboard_pw
+      GUEST_PASSWORD: regression_guest_pw
+      PYTHONPATH: backend
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 📦 Install dependencies
+        run: |
+          pip install -r backend/requirements.txt
+          pip install pytest httpx
+
+      - name: ▶️ Run regression smoke tests
+        run: |
+          python scripts/regression_smoke_auth_health.py 
