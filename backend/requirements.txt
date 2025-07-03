@@ -42,7 +42,7 @@ factory-boy==3.3.1
 ruff==0.8.4
 mypy==1.13.0
 black==24.10.0
-isort==5.13.2
+isort==6.0.1
 
 # HTTP CLIENT
 httpx==0.28.1
