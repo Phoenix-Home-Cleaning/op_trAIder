@@ -164,7 +164,7 @@ jobs:
               # 1. Run the calculator with fresh coverage file; never let a non-zero exit code stop the pipeline
               # -------------------------------------------------------------------------
               RAW_TRADING_COVERAGE=$(python scripts/calculate-trading-coverage.py \
-                                       --threshold 90.0 --file coverage-fresh.json 2>/dev/null || true)
+                                       --threshold 90.0 --file coverage-fresh.json --verbose || true)
               
               # -------------------------------------------------------------------------
               # 2. Pick the first line, trim whitespace, keep only 0-9 and dot

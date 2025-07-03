@@ -163,6 +163,23 @@ class TradingCoverageCalculator:
         self.trading_files: Dict[str, Dict] = {}
         self.coverage_data: Dict = {}
         
+        # Pre-compute normalized patterns for efficient matching
+        self._normalised_patterns = [self._normalise(p) for p in self.TRADING_PATTERNS]
+        self._normalised_critical = [self._normalise(p) for p in self.CRITICAL_MODULES]
+        
+    @staticmethod
+    def _normalise(path: str) -> str:
+        """
+        Normalize path for robust cross-platform matching.
+        
+        @param path File path to normalize
+        @returns Normalized path (lowercase, forward slashes)
+        
+        @performance O(n) where n = path length
+        @tradingImpact CRITICAL - Enables accurate file pattern matching
+        """
+        return path.replace('\\', '/').lower()
+        
     def _find_coverage_file(self) -> str:
         """
         Find the most recent coverage JSON file.
@@ -196,10 +213,12 @@ class TradingCoverageCalculator:
         @performance O(k) where k = number of trading patterns
         @tradingImpact Critical for accurate coverage calculation
         """
-        # Check against trading patterns directly (both Unix and Windows paths)
-        for pattern in self.TRADING_PATTERNS:
-            if pattern in filepath:
-                logger.debug(f"File {filepath} matches pattern {pattern}")
+        # Normalize filepath for robust cross-platform matching
+        normalised = self._normalise(filepath)
+        
+        for pattern in self._normalised_patterns:
+            if pattern in normalised:
+                logger.debug(f"Trading match: {filepath} ← {pattern}")
                 return True
                 
         return False
@@ -213,13 +232,8 @@ class TradingCoverageCalculator:
         
         @riskLevel CRITICAL - These modules must have ≥95% coverage
         """
-        normalized_path = filepath.replace('\\', '/')
-        
-        for critical_pattern in self.CRITICAL_MODULES:
-            if critical_pattern in normalized_path:
-                return True
-                
-        return False
+        normalised = self._normalise(filepath)
+        return any(pattern in normalised for pattern in self._normalised_critical)
     
     def load_coverage_data(self) -> None:
         """
