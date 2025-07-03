@@ -27,7 +27,7 @@ databases[postgresql]==0.9.0
 # LOGGING & MONITORING
 structlog==24.2.0  # RESTORED: Required for structured logging in utils/logging.py
 loguru==0.7.3
-prometheus-client==0.21.1
+prometheus-client==0.22.1
 
 # TESTING & QUALITY ASSURANCE
 pytest==8.3.4
