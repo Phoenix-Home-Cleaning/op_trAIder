@@ -539,10 +539,246 @@ jobs:
       - name: 🔧 Install Qlty CLI
         run: |
           echo "::group::Installing Qlty CLI"
-          curl -sSL https://github.com/qltysh/qlty/releases/latest/download/qlty-linux-x86_64.tar.gz | tar -xz
-          sudo mv qlty /usr/local/bin/qlty
-          chmod +x /usr/local/bin/qlty
-          qlty --version
+          
+          # Elite-level installation with GitHub API discovery and validation
+          QLTY_VERSION="${QLTY_VERSION:-latest}"
+          CACHE_DIR="${HOME}/.cache/qlty"
+          INSTALL_DIR="/usr/local/bin"
+          BINARY_NAME="qlty"
+          
+          # Create cache directory
+          mkdir -p "${CACHE_DIR}"
+          
+          # Function to get latest release info from GitHub API
+          get_release_info() {
+            local api_url="https://api.github.com/repos/qltysh/qlty/releases/latest"
+            echo "🔍 Discovering latest Qlty release from GitHub API..."
+            
+            # Get release information with retry logic
+            local release_info
+            for attempt in 1 2 3; do
+              if release_info=$(curl -sSL --fail --connect-timeout 10 --max-time 30 "${api_url}"); then
+                break
+              else
+                echo "⚠️ Attempt ${attempt}/3 failed, retrying in 2 seconds..."
+                sleep 2
+              fi
+            done
+            
+            if [ -z "${release_info}" ]; then
+              echo "❌ Failed to fetch release information from GitHub API"
+              return 1
+            fi
+            
+            echo "${release_info}"
+          }
+          
+          # Function to find the correct Linux asset
+          find_linux_asset() {
+            local release_info="$1"
+            
+            # Look for Linux x86_64 assets with various naming patterns
+            local asset_patterns=(
+              "qlty-linux-x86_64.tar.gz"
+              "qlty-linux-gnu-amd64.tar.gz" 
+              "qlty-linux-amd64.tar.gz"
+              "qlty-x86_64-unknown-linux-gnu.tar.gz"
+            )
+            
+            for pattern in "${asset_patterns[@]}"; do
+              local download_url
+              download_url=$(echo "${release_info}" | jq -r --arg pattern "${pattern}" '.assets[] | select(.name == $pattern) | .browser_download_url')
+              
+              if [ "${download_url}" != "null" ] && [ -n "${download_url}" ]; then
+                echo "✅ Found asset: ${pattern}"
+                echo "${download_url}"
+                return 0
+              fi
+            done
+            
+            echo "❌ No compatible Linux x86_64 asset found"
+            return 1
+          }
+          
+          # Function to validate downloaded file is a gzip archive
+          validate_gzip() {
+            local file="$1"
+            if ! file "${file}" | grep -q "gzip compressed"; then
+              echo "❌ Downloaded file is not a valid gzip archive:"
+              file "${file}"
+              head -c 200 "${file}" | xxd
+              return 1
+            fi
+            return 0
+          }
+          
+          # Function to verify binary functionality
+          verify_binary() {
+            local binary_path="$1"
+            if ! "${binary_path}" --version >/dev/null 2>&1; then
+              echo "❌ Binary verification failed - qlty --version command failed"
+              return 1
+            fi
+            
+            local version_output
+            version_output=$("${binary_path}" --version 2>&1)
+            echo "✅ Binary verified successfully: ${version_output}"
+            return 0
+          }
+          
+          # Main installation logic
+          echo "🚀 Starting elite-level Qlty CLI installation..."
+          
+          # Get release information
+          if ! release_info=$(get_release_info); then
+            echo "🔄 Falling back to pip installation..."
+            python -m pip install --upgrade pip
+            pip install qlty
+            
+            if command -v qlty >/dev/null 2>&1; then
+              echo "✅ Qlty installed successfully via pip"
+              qlty --version
+            else
+              echo "❌ Pip installation failed"
+              exit 1
+            fi
+          else
+            # Extract version and find asset
+            RELEASE_TAG=$(echo "${release_info}" | jq -r '.tag_name')
+            RELEASE_NAME=$(echo "${release_info}" | jq -r '.name')
+            
+            echo "📦 Release: ${RELEASE_NAME} (${RELEASE_TAG})"
+            
+            if ! download_url=$(find_linux_asset "${release_info}"); then
+              echo "🔄 No binary asset found, falling back to pip installation..."
+              python -m pip install --upgrade pip
+              pip install qlty
+              
+              if command -v qlty >/dev/null 2>&1; then
+                echo "✅ Qlty installed successfully via pip"
+                qlty --version
+              else
+                echo "❌ Pip installation failed"
+                exit 1
+              fi
+            else
+              # Generate cache key based on URL and release tag
+              CACHE_KEY=$(echo "${download_url}${RELEASE_TAG}" | sha256sum | cut -d' ' -f1)
+              CACHED_BINARY="${CACHE_DIR}/${BINARY_NAME}-${CACHE_KEY}"
+              
+              # Check if cached binary exists and is valid
+              if [ -f "${CACHED_BINARY}" ] && verify_binary "${CACHED_BINARY}"; then
+                echo "🎯 Using cached binary: ${CACHED_BINARY}"
+                sudo cp "${CACHED_BINARY}" "${INSTALL_DIR}/${BINARY_NAME}"
+                sudo chmod +x "${INSTALL_DIR}/${BINARY_NAME}"
+              else
+                echo "📥 Downloading: ${download_url}"
+                
+                # Download with comprehensive error handling
+                TEMP_ARCHIVE="${CACHE_DIR}/qlty-download-${CACHE_KEY}.tar.gz"
+                
+                if ! curl -sSL --fail --connect-timeout 10 --max-time 120 \
+                     --retry 3 --retry-delay 2 --retry-max-time 300 \
+                     -o "${TEMP_ARCHIVE}" "${download_url}"; then
+                  echo "❌ Download failed, falling back to pip installation..."
+                  python -m pip install --upgrade pip
+                  pip install qlty
+                  
+                  if command -v qlty >/dev/null 2>&1; then
+                    echo "✅ Qlty installed successfully via pip"
+                    qlty --version
+                  else
+                    echo "❌ Pip installation failed"
+                    exit 1
+                  fi
+                else
+                  # Validate downloaded file
+                  if ! validate_gzip "${TEMP_ARCHIVE}"; then
+                    echo "🔄 Invalid archive format, falling back to pip installation..."
+                    python -m pip install --upgrade pip
+                    pip install qlty
+                    
+                    if command -v qlty >/dev/null 2>&1; then
+                      echo "✅ Qlty installed successfully via pip"
+                      qlty --version
+                    else
+                      echo "❌ Pip installation failed"
+                      exit 1
+                    fi
+                  else
+                    # Extract and install
+                    TEMP_EXTRACT_DIR="${CACHE_DIR}/extract-${CACHE_KEY}"
+                    mkdir -p "${TEMP_EXTRACT_DIR}"
+                    
+                    if tar -xzf "${TEMP_ARCHIVE}" -C "${TEMP_EXTRACT_DIR}"; then
+                      # Find the binary in extracted files
+                      EXTRACTED_BINARY=$(find "${TEMP_EXTRACT_DIR}" -name "${BINARY_NAME}" -type f -executable | head -1)
+                      
+                      if [ -n "${EXTRACTED_BINARY}" ] && verify_binary "${EXTRACTED_BINARY}"; then
+                        # Cache the verified binary
+                        cp "${EXTRACTED_BINARY}" "${CACHED_BINARY}"
+                        
+                        # Install to system
+                        sudo cp "${EXTRACTED_BINARY}" "${INSTALL_DIR}/${BINARY_NAME}"
+                        sudo chmod +x "${INSTALL_DIR}/${BINARY_NAME}"
+                        
+                        echo "✅ Qlty CLI installed successfully from binary"
+                        qlty --version
+                      else
+                        echo "❌ Binary not found or verification failed in extracted files"
+                        ls -la "${TEMP_EXTRACT_DIR}"
+                        echo "🔄 Falling back to pip installation..."
+                        python -m pip install --upgrade pip
+                        pip install qlty
+                        
+                        if command -v qlty >/dev/null 2>&1; then
+                          echo "✅ Qlty installed successfully via pip"
+                          qlty --version
+                        else
+                          echo "❌ Pip installation failed"
+                          exit 1
+                        fi
+                      fi
+                    else
+                      echo "❌ Archive extraction failed"
+                      echo "🔄 Falling back to pip installation..."
+                      python -m pip install --upgrade pip
+                      pip install qlty
+                      
+                      if command -v qlty >/dev/null 2>&1; then
+                        echo "✅ Qlty installed successfully via pip"
+                        qlty --version
+                      else
+                        echo "❌ Pip installation failed"
+                        exit 1
+                      fi
+                    fi
+                    
+                    # Cleanup temporary files
+                    rm -rf "${TEMP_ARCHIVE}" "${TEMP_EXTRACT_DIR}"
+                  fi
+                fi
+              fi
+            fi
+          fi
+          
+          # Final verification
+          if ! command -v qlty >/dev/null 2>&1; then
+            echo "❌ Qlty installation failed - binary not found in PATH"
+            exit 1
+          fi
+          
+          # Security verification - ensure binary is in expected location
+          ACTUAL_QLTY_PATH=$(which qlty)
+          if [[ "${ACTUAL_QLTY_PATH}" != "${INSTALL_DIR}/${BINARY_NAME}" ]] && [[ "${ACTUAL_QLTY_PATH}" != *"/.local/bin/qlty" ]]; then
+            echo "⚠️ Qlty binary found at unexpected location: ${ACTUAL_QLTY_PATH}"
+            echo "Expected: ${INSTALL_DIR}/${BINARY_NAME} or ~/.local/bin/qlty"
+          fi
+          
+          # Display final status
+          echo "🎉 Qlty CLI installation completed successfully!"
+          echo "📍 Location: $(which qlty)"
+          echo "🏷️ Version: $(qlty --version)"
           echo "::endgroup::"
           
       - name: 🔧 Initialize Qlty configuration
