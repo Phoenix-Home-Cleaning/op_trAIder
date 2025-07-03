@@ -3,9 +3,6 @@
   "version": "1.0.0-alpha",
   "description": "Institutional-Grade Autonomous Crypto Trading Platform",
   "private": true,
-  "workspaces": [
-    "packages/*"
-  ],
   "type": "module",
   "scripts": {
     "dev": "next dev",
