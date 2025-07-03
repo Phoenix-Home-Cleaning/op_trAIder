@@ -1,0 +1,7 @@
+secrets:
+  - id: generic-password
+    paths:
+      - "backend/config.py"
+      - "backend/api/auth.py"
+    statement: |
+      False positive – these lines only declare environment variable names. No hard-coded secrets are present. 
