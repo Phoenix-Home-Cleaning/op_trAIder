@@ -65,17 +65,6 @@ const mockSystemUtilities = {
 
 // System utilities validation logic (extracted from workflow)
 class SystemUtilitiesValidator {
-  private requiredPackages = [
-    'jq', // JSON processing for GitHub API responses
-    'vim-common', // Provides xxd for hexdump validation
-    'bc', // Arbitrary precision calculator for coverage thresholds
-    'curl', // HTTP client for downloads
-    'tar', // Archive extraction
-    'gzip', // Compression utilities
-    'file', // File type detection for validation
-    'findutils', // Enhanced find utilities
-  ];
-
   /**
    * Validates system utilities installation and functionality
    *
@@ -313,7 +302,7 @@ class SystemUtilitiesValidator {
   private async getCommandVersion(command: string, versionFlag: string): Promise<string> {
     try {
       const output = await this.runCommand(command, [versionFlag]);
-      return output.split('\n')[0].trim();
+      return output?.split('\n')[0]?.trim() || 'unknown';
     } catch (error) {
       throw new Error(`Failed to get version for ${command}: ${error}`);
     }
