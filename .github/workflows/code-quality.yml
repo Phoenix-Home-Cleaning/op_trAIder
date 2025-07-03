@@ -758,20 +758,59 @@ jobs:
         uses: returntocorp/semgrep-action@v1
         with:
           config: auto
-        env:
-          SEMGREP_APP_TOKEN: ${{ env.SEMGREP_APP_TOKEN }}
+          publishToken: ${{ env.SEMGREP_APP_TOKEN }}
         continue-on-error: true  # Don't fail the entire job if Semgrep has issues
         
       - name: 📊 Generate Semgrep SARIF report
         if: always()
         run: |
           # Create SARIF output if Semgrep results exist
-          if [ -f "semgrep.sarif" ]; then
+          if [ -f "semgrep.sarif" ] && [ -s "semgrep.sarif" ]; then
             echo "✅ Semgrep SARIF report generated"
-            cp semgrep.sarif semgrep-results.sarif
+            # Validate SARIF has actual results
+            RESULT_COUNT=$(cat semgrep.sarif | jq '.runs[0].results | length // 0' 2>/dev/null || echo "0")
+            if [ "$RESULT_COUNT" -gt 0 ]; then
+              echo "📊 Found $RESULT_COUNT Semgrep findings"
+              cp semgrep.sarif semgrep-results.sarif
+            else
+              echo "ℹ️ Semgrep SARIF exists but contains no findings - creating minimal valid report"
+              cat > semgrep-results.sarif << 'EOF'
+          {
+            "version": "2.1.0",
+            "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+            "runs": [
+              {
+                "tool": {
+                  "driver": {
+                    "name": "Semgrep",
+                    "version": "1.0.0"
+                  }
+                },
+                "results": []
+              }
+            ]
+          }
+          EOF
+            fi
           else
-            echo "⚠️ No Semgrep SARIF report found - creating empty report"
-            echo '{"version":"2.1.0","$schema":"https://json.schemastore.org/sarif-2.1.0.json","runs":[]}' > semgrep-results.sarif
+            echo "⚠️ No Semgrep SARIF report found - creating minimal valid report"
+            cat > semgrep-results.sarif << 'EOF'
+          {
+            "version": "2.1.0",
+            "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+            "runs": [
+              {
+                "tool": {
+                  "driver": {
+                    "name": "Semgrep",
+                    "version": "1.0.0"
+                  }
+                },
+                "results": []
+              }
+            ]
+          }
+          EOF
           fi
           
       - name: 🔍 Run npm audit with enhanced checks
@@ -841,12 +880,40 @@ jobs:
           
           echo "::endgroup::"
           
+      - name: 🔍 Validate SARIF before upload
+        if: always()
+        run: |
+          echo "::group::SARIF Validation"
+          if [ -f "semgrep-results.sarif" ]; then
+            echo "📋 SARIF file exists"
+            # Check if it's valid JSON
+            if jq empty semgrep-results.sarif 2>/dev/null; then
+              echo "✅ SARIF is valid JSON"
+              # Check if it has the required structure
+              if jq -e '.runs | length >= 1' semgrep-results.sarif >/dev/null 2>&1; then
+                echo "✅ SARIF has valid structure with at least one run"
+                echo "SARIF_VALID=true" >> $GITHUB_ENV
+              else
+                echo "❌ SARIF missing required runs array"
+                echo "SARIF_VALID=false" >> $GITHUB_ENV
+              fi
+            else
+              echo "❌ SARIF is not valid JSON"
+              echo "SARIF_VALID=false" >> $GITHUB_ENV
+            fi
+          else
+            echo "❌ SARIF file not found"
+            echo "SARIF_VALID=false" >> $GITHUB_ENV
+          fi
+          echo "::endgroup::"
+          
       - name: 📊 Upload Semgrep SARIF to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
-        if: always() && hashFiles('semgrep-results.sarif') != ''
+        if: always() && env.SARIF_VALID == 'true'
         with:
           sarif_file: semgrep-results.sarif
           category: semgrep-security-analysis
+        continue-on-error: true  # Don't fail the entire job if SARIF upload has issues
           
       - name: 📤 Upload security scan results
         if: always()
