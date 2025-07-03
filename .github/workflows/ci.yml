@@ -449,9 +449,8 @@ jobs:
             --exclude-dir="tests" --exclude-dir="test" --exclude-dir="node_modules" \
             --exclude="*.test.*" --exclude="*.spec.*" \
             -E "password.*=.*['\"][^'\"]{12,}['\"]" . | \
-            grep -v -E "(test|example|placeholder|demo|DB_PASSWORD.*os\.getenv|description.*Password)" | \
-            grep -v -E "password.*=.*['\"]password['\"]" | \
-            grep -v -E "Password used to generate key" | \
+            # Exclude ENV variable mappings and known placeholders
+            grep -v -E "(test|example|placeholder|demo|DB_PASSWORD.*os\.getenv|description.*Password|Field\(.*env=\"[A-Z_]+_PASSWORD|os\.getenv\(\"[A-Z_]+_PASSWORD)" | \
             grep -v ".trivyignore" | \
             grep -v "test-secret-key" 2>/dev/null; then
             echo "⚠️ Potential hardcoded password found - please review"
