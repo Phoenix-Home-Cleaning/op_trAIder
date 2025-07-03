@@ -684,7 +684,7 @@ jobs:
           QLTY_VERSION="${QLTY_VERSION:-latest}"
           CACHE_DIR="${HOME}/.cache/qlty"
           INSTALL_DIR="/usr/local/bin"
-          BINARY_NAME="qlty"
+          BINARY_NAME="qualytics"
           
           # Create cache directory with proper permissions
           mkdir -p "${CACHE_DIR}"
@@ -692,7 +692,7 @@ jobs:
           
           # Enhanced function to get latest release info from GitHub API
           get_release_info() {
-            local api_url="https://api.github.com/repos/qltysh/qlty/releases/latest"
+            local api_url="https://api.github.com/repos/Qualytics/qualytics-cli/releases/latest"
             echo "🔍 Discovering latest Qlty release from GitHub API..."
             
             # Verify GITHUB_TOKEN is available for authentication
@@ -859,7 +859,7 @@ jobs:
           
           # Enhanced pip installation function
           install_via_pip() {
-            echo "🐍 Installing Qlty via pip with enhanced error handling..."
+            echo "🐍 Installing Qualytics CLI via pip with enhanced error handling..."
             
             # Upgrade pip first
             if ! python -m pip install --upgrade pip --quiet; then
@@ -867,31 +867,15 @@ jobs:
               return 1
             fi
             
-            # Install qlty with retry logic using the correct package source
+            # Install qualytics-cli with retry logic
             for attempt in 1 2 3; do
               echo "🔄 Pip installation attempt ${attempt}/3..."
               
-              # Try multiple installation methods in order of preference
-              local install_methods=(
-                "git+https://github.com/qltysh/qlty.git"
-                "qlty-cli"
-                "git+https://github.com/qltysh/qlty@main"
-              )
-              
-              local install_success=false
-              for method in "${install_methods[@]}"; do
-                echo "🔧 Trying installation method: ${method}"
-                if pip install "${method}" --quiet --no-cache-dir; then
-                  echo "✅ Qlty package installed successfully via pip using: ${method}"
-                  install_success=true
-                  break
-                fi
-              done
-              
-              if [ "$install_success" = true ]; then
+              if pip install qualytics-cli --quiet --no-cache-dir; then
+                echo "✅ Qualytics package installed successfully via pip"
                 break
               else
-                echo "⚠️ Pip installation attempt ${attempt} failed with all methods"
+                echo "⚠️ Pip installation attempt ${attempt} failed"
                 if [ $attempt -eq 3 ]; then
                   echo "❌ All pip installation attempts failed"
                   return 1
@@ -899,42 +883,6 @@ jobs:
                 sleep 2
               fi
             done
-            
-            # Ensure pip binary is accessible - critical fix for PATH issues
-            echo "🔍 Locating qlty binary after pip installation..."
-            
-            # Add common pip installation paths to PATH
-            export PATH="$HOME/.local/bin:$PATH"
-            
-            # Verify pip installation with enhanced path resolution
-            if command -v qlty >/dev/null 2>&1; then
-              local pip_version
-              pip_version=$(qlty --version 2>&1)
-              echo "✅ Qlty found in PATH: $(which qlty)"
-              echo "✅ Qlty installed successfully via pip: ${pip_version}"
-              
-              # Ensure binary is accessible system-wide for subsequent steps
-              local qlty_location
-              qlty_location=$(which qlty)
-              if [[ "${qlty_location}" == *"/.local/bin/"* ]]; then
-                echo "🔧 Promoting qlty binary to system PATH for reliability..."
-                sudo cp "${qlty_location}" /usr/local/bin/qlty
-                sudo chmod +x /usr/local/bin/qlty
-                echo "✅ Qlty binary promoted to /usr/local/bin/qlty"
-              fi
-              
-              return 0
-            else
-              echo "❌ Qlty command not found after pip installation"
-              echo "🔍 Debugging pip installation:"
-              echo "  HOME: ${HOME}"
-              echo "  PATH: ${PATH}"
-              echo "  ~/.local/bin contents:"
-              ls -la "$HOME/.local/bin/" 2>/dev/null || echo "  Directory not found"
-              echo "  pip show qlty:"
-              pip show qlty 2>/dev/null || echo "  Package not found"
-              return 1
-            fi
           }
           
           # Main installation logic
@@ -1018,7 +966,7 @@ jobs:
                         sudo chmod +x "${INSTALL_DIR}/${BINARY_NAME}"
                         
                         echo "✅ Qlty CLI installed successfully from binary"
-                        qlty --version
+                        qualytics --version
                       else
                         echo "❌ Binary not found or verification failed in extracted files"
                         ls -la "${TEMP_EXTRACT_DIR}"
@@ -1050,23 +998,23 @@ jobs:
           fi
           
           # Final verification with enhanced error reporting
-          if ! command -v qlty >/dev/null 2>&1; then
+          if ! command -v qualytics >/dev/null 2>&1; then
             echo "❌ CRITICAL: Qlty installation failed - binary not found in PATH"
             echo "🔍 Debugging information:"
             echo "  PATH: ${PATH}"
             echo "  Available binaries in /usr/local/bin:"
-            ls -la /usr/local/bin/ | grep -E "(qlty|python)" || echo "  No relevant binaries found"
+            ls -la /usr/local/bin/ | grep -E "(qualytics|python)" || echo "  No relevant binaries found"
             echo "  Python packages:"
-            pip list | grep -i qlty || echo "  No qlty package found"
+            pip list | grep -i qualytics || echo "  No qualytics package found"
             echo "💡 This indicates a complete installation failure"
             exit 5
           fi
           
           # Security verification - ensure binary is in expected location
-          ACTUAL_QLTY_PATH=$(which qlty)
-          if [[ "${ACTUAL_QLTY_PATH}" != "${INSTALL_DIR}/${BINARY_NAME}" ]] && [[ "${ACTUAL_QLTY_PATH}" != *"/.local/bin/qlty" ]]; then
+          ACTUAL_QLTY_PATH=$(which qualytics)
+          if [[ "${ACTUAL_QLTY_PATH}" != "${INSTALL_DIR}/${BINARY_NAME}" ]] && [[ "${ACTUAL_QLTY_PATH}" != *"/.local/bin/qualytics" ]]; then
             echo "⚠️ Qlty binary found at unexpected location: ${ACTUAL_QLTY_PATH}"
-            echo "Expected: ${INSTALL_DIR}/${BINARY_NAME} or ~/.local/bin/qlty"
+            echo "Expected: ${INSTALL_DIR}/${BINARY_NAME} or ~/.local/bin/qualytics"
           fi
           
           # Display final status
@@ -1074,8 +1022,8 @@ jobs:
           set -e
           
           echo "🎉 Qlty CLI installation completed successfully!"
-          echo "📍 Location: $(which qlty)"
-          echo "🏷️ Version: $(qlty --version)"
+          echo "📍 Location: $(which qualytics)"
+          echo "🏷️ Version: $(qualytics --version)"
           echo "::endgroup::"
           
       - name: 🔧 Initialize Qlty configuration
@@ -1091,7 +1039,7 @@ jobs:
           mkdir -p quality-reports/qlty
           
           # Validate configuration
-          qlty check --dry-run
+          qualytics check --dry-run
           echo "✅ Qlty configuration validated"
           echo "::endgroup::"
           
@@ -1101,7 +1049,7 @@ jobs:
           echo "::group::Qlty Code Quality Analysis"
           
           # Run Qlty analysis with comprehensive reporting
-          qlty check \
+          qualytics check \
             --config ${{ env.QLTY_CONFIG_FILE }} \
             --output-dir quality-reports/qlty \
             --format json \
