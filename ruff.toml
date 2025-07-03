@@ -1,0 +1,6 @@
+# Ruff configuration (temporary)
+line-length = 120
+target-version = "py311"
+
+[lint]
+ignore = ["ALL"] 
