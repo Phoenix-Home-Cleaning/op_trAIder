@@ -4,6 +4,19 @@
 
 ### Fixed
 
+- **🔧 CRITICAL CI/CD Fix**: CodeQL and SonarQube Workflow Configuration (ADR-012) - 2025-01-27
+  - **Issue**: Code quality workflow failing with "CodeQL analyses from advanced configurations cannot be processed when the default setup is enabled" and "Failed to connect to localhost:9000"
+  - **Root Cause**: Duplicate CodeQL configurations (default + advanced) and missing SonarCloud secrets
+  - **Solution**: Removed duplicate CodeQL steps, configured SonarCloud integration with proper authentication
+  - **Implementation**:
+    - Eliminated custom CodeQL steps from workflow (relying on organization-mandated default setup)
+    - Updated sonar-project.properties with correct project key and organization
+    - Added secrets validation to prevent connection failures
+    - Enhanced error handling and configuration verification
+  - **Impact**: Eliminates CI failures while maintaining comprehensive security scanning coverage
+  - **Compliance**: Preserves institutional-grade quality gates and audit requirements
+  - **Documentation**: Created ADR-012 documenting workflow architecture decisions
+
 - **🔧 CRITICAL CI/CD Fix**: GitHub Actions Output Format Sanitization (ADR-011) - 2025-01-27
   - **Issue**: CI pipeline failing with "Error: Invalid format '0.0'" in coverage threshold enforcement
   - **Root Cause**: Multi-line output from trading coverage calculator creating malformed GitHub Actions output files

@@ -314,58 +314,61 @@ jobs:
           name: coverage-reports
           path: coverage/
           
+      - name: ⛔️ Verify SonarCloud secrets
+        run: |
+          echo "::group::SonarCloud Configuration Validation"
+          if [ -z "${{ secrets.SONAR_TOKEN }}" ]; then
+            echo "::error::SONAR_TOKEN is not configured in repository secrets"
+            echo "Please add SONAR_TOKEN to GitHub repository secrets"
+            exit 1
+          fi
+          
+          if [ -z "${{ secrets.SONAR_HOST_URL }}" ]; then
+            echo "::error::SONAR_HOST_URL is not configured in repository secrets"
+            echo "Please add SONAR_HOST_URL to GitHub repository secrets"
+            exit 1
+          fi
+          
+          echo "✅ SonarCloud secrets are properly configured"
+          echo "Host: ${{ secrets.SONAR_HOST_URL }}"
+          echo "::endgroup::"
+          
       - name: 🔧 Prepare SonarQube project configuration
         run: |
           echo "::group::SonarQube Configuration"
           
-          # Create sonar-project.properties with institutional-grade settings
-          cat > sonar-project.properties << 'EOF'
+          # Use existing sonar-project.properties (already configured)
+          echo "✅ Using existing sonar-project.properties configuration"
+          
+          # Verify the configuration file exists and has correct content
+          if [ ! -f "sonar-project.properties" ]; then
+            echo "::error::sonar-project.properties not found"
+            exit 1
+          fi
+          
+          echo "📋 SonarQube Project Configuration:"
+          grep -E "^sonar\.(projectKey|organization|projectName)" sonar-project.properties || true
+          
+          # Add dynamic values for this CI run
+          cat >> sonar-project.properties << 'EOF'
+          
           # =============================================================================
-          # TRAIDER V1 - SonarQube Project Configuration
-          # Institutional-Grade Trading Platform Analysis
+          # DYNAMIC CI VALUES - APPENDED BY WORKFLOW
           # =============================================================================
           
-          # Project identification
-          sonar.projectKey=traider-v1
-          sonar.projectName=TRAIDER V1 - Autonomous Trading Platform
+          # Dynamic project version and build info
           sonar.projectVersion=${{ github.sha }}
-          sonar.organization=phoenix-home-cleaning
-          
-          # Source code configuration
-          sonar.sources=app,middleware.ts,shared,backend
-          sonar.tests=tests
-          sonar.sourceEncoding=UTF-8
-          
-          # Language-specific configurations
-          sonar.javascript.lcov.reportPaths=coverage/lcov.info
-          sonar.typescript.lcov.reportPaths=coverage/lcov.info
-          sonar.python.coverage.reportPaths=coverage/coverage.xml
-          
-          # Exclusions for better analysis focus
-          sonar.coverage.exclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx,**/*.d.ts,**/node_modules/**,**/.next/**,**/dist/**,**/build/**,**/coverage/**
-          sonar.cpd.exclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
-          sonar.exclusions=**/node_modules/**,**/*.d.ts,**/coverage/**,**/.next/**,**/dist/**,**/build/**,**/__pycache__/**,**/*.pyc
-          
-          # Quality gate and analysis parameters
-          sonar.qualitygate.wait=true
-          sonar.qualitygate.timeout=300
-          
-          # Institutional compliance settings
-          sonar.analysis.mode=publish
           sonar.buildString=${{ github.run_number }}
           sonar.scm.revision=${{ github.sha }}
+          
+          # Pull request analysis (only if this is a PR)
           sonar.pullrequest.key=${{ github.event.pull_request.number }}
           sonar.pullrequest.branch=${{ github.head_ref }}
           sonar.pullrequest.base=${{ github.base_ref }}
           
-          # Trading-specific quality rules
-          sonar.issue.ignore.multicriteria=e1,e2,e3
-          sonar.issue.ignore.multicriteria.e1.ruleKey=typescript:S1481
-          sonar.issue.ignore.multicriteria.e1.resourceKey=**/*test*/**
-          sonar.issue.ignore.multicriteria.e2.ruleKey=typescript:S125
-          sonar.issue.ignore.multicriteria.e2.resourceKey=**/*test*/**
-          sonar.issue.ignore.multicriteria.e3.ruleKey=python:S1481
-          sonar.issue.ignore.multicriteria.e3.resourceKey=**/test_*.py
+          # Quality gate settings
+          sonar.qualitygate.wait=true
+          sonar.qualitygate.timeout=300
           EOF
           
           echo "✅ SonarQube configuration prepared"
@@ -389,7 +392,7 @@ jobs:
           echo "::group::SonarQube Metrics Extraction"
           
           # Extract key metrics from SonarQube API
-          PROJECT_KEY="traider-v1"
+          PROJECT_KEY="Phoenix-Home-Cleaning_op_trAIder"
           SONAR_API_URL="${{ secrets.SONAR_HOST_URL }}/api"
           
           # Get project metrics
@@ -462,7 +465,7 @@ jobs:
         run: |
           echo "## 🔍 SonarQube Comprehensive Analysis Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "🔗 **View detailed report**: [SonarQube Dashboard](${{ secrets.SONAR_HOST_URL }}/dashboard?id=traider-v1)" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 **View detailed report**: [SonarQube Dashboard](${{ secrets.SONAR_HOST_URL }}/dashboard?id=Phoenix-Home-Cleaning_op_trAIder)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📊 Quality Metrics" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -662,7 +665,7 @@ jobs:
   # =============================================================================
   
   advanced-security-scan:
-    name: 🛡️ Advanced Security Analysis
+    name: 🛡️ Advanced Security Analysis (Deps + SAST)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     
@@ -738,18 +741,8 @@ jobs:
       - name: 📥 Install dependencies
         run: npm ci --prefer-offline --no-audit
         
-      - name: 🔒 Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: javascript-typescript
-          
-      - name: 🏗️ Autobuild
-        uses: github/codeql-action/autobuild@v3
-        
-      - name: 🔍 Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-        with:
-          category: "/language:javascript-typescript"
+      # CodeQL analysis removed - using GitHub's default setup to avoid conflicts
+      # The organization has enabled default CodeQL scanning which handles this automatically
           
       - name: 🔧 Setup Python for security tools
         uses: actions/setup-python@v4
