@@ -114,12 +114,12 @@ jobs:
           echo "::group::Backend Coverage"
           # Generate Python backend coverage for trading logic analysis
           cd backend
-          PYTHONPATH=. python -m pytest tests/unit/backend/ --cov=backend --cov-report=json:../coverage-fixed.json --cov-report=term-missing -v || true
+          PYTHONPATH=. python -m pytest tests/unit/backend/ --cov=backend --cov-report=json:../coverage-fresh.json --cov-report=term-missing -v || true
           cd ..
           
           echo "📊 Coverage files generated:"
           ls -la coverage/ || true
-          ls -la coverage-fixed.json || true
+          ls -la coverage-fresh.json || true
           echo "::endgroup::"
           
       - name: 📊 Enforce coverage thresholds
