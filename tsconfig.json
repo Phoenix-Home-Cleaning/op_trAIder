@@ -3,7 +3,7 @@
     // Language and Environment
     "target": "ES2022",
     "lib": ["dom", "dom.iterable", "ES6", "ES2022"],
-    "allowJs": true,
+    "allowJs": false,
     "skipLibCheck": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
