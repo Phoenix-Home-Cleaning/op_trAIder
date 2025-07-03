@@ -24,7 +24,7 @@ jobs:
       SECRET_KEY: regression_dummy_secret
       DASHBOARD_PASSWORD: regression_dashboard_pw
       GUEST_PASSWORD: regression_guest_pw
-      PYTHONPATH: ""
+      PYTHONPATH: "${{ github.workspace }}"
 
     steps:
       - name: 📥 Checkout code
@@ -40,8 +40,13 @@ jobs:
 
       - name: 📦 Install dependencies
         run: |
+          pip install -e .  # Editable install for internal package resolution
           pip install -r backend/requirements.txt
           pip install pytest httpx
+
+      - name: ✅ Import sanity check
+        run: |
+          python scripts/import_sanity.py
 
       - name: ▶️ Run regression smoke tests
         run: |

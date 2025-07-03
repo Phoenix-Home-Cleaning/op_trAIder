@@ -471,4 +471,26 @@ npm update --save-dev vitest
 
 ---
 
+## 🧩 Package Import Sanity Guard (NEW)
+
+As of v0.1.0, the pipeline adds an _early-fail_ job that ensures the internal
+`backend` package is importable in a clean environment. This guard prevents
+silently broken runtime paths from propagating to later jobs.
+
+```yaml
+- name: ✅ Import sanity check
+  run: |
+    python scripts/import_sanity.py
+```
+
+The step relies on an editable installation of the repository root, added in
+the _Install dependencies_ phase:
+
+```bash
+pip install -e .  # Editable install for package resolution
+```
+
+If either action fails, the pipeline aborts immediately with a clear message,
+maintaining institutional reliability standards.
+
 _This pipeline is continuously evolving to meet the demanding requirements of institutional-grade cryptocurrency trading. For questions or suggestions, please contact the TRAIDER DevOps team._

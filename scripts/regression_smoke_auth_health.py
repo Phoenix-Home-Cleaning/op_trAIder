@@ -14,6 +14,9 @@ import httpx
 from fastapi import status
 from fastapi.testclient import TestClient
 
+# Ensure internal packages are importable when executing this script standalone
+import scripts.bootstrap  # noqa: E402
+
 # Ensure project root is on sys.path (already true when running from repo root)
 
 from backend.api.auth import create_access_token  # noqa: E402

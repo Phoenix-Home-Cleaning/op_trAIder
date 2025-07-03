@@ -1,0 +1,46 @@
+name: 🧩 Import Sanity Guard
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+    paths:
+      - '**.py'
+      - '.github/workflows/import-sanity.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  import-sanity:
+    name: ✅ Python Import Sanity Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: 🔄 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 📦 Editable install of project
+        run: |
+          pip install -e .
+
+      - name: ✅ Run import sanity script
+        run: |
+          python scripts/import_sanity.py
+
+      - name: 🔍 Validate script bootstrap compliance
+        run: |
+          python scripts/validate_script_imports.py
+
+      - name: 📝 Summary
+        if: always()
+        run: |
+          echo "Import sanity check completed." >> $GITHUB_STEP_SUMMARY 
