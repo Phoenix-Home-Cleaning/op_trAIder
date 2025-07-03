@@ -203,14 +203,17 @@ jobs:
         SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
 
     - name: SonarQube Quality Gate
+      id: quality-gate
       if: ${{ env.SONAR_HOST_URL != '' && env.SONAR_TOKEN != '' }}
-      uses: sonarsource/sonarqube-quality-gate-action@v1
+      uses: sonarsource/sonarqube-quality-gate-action@v1.2.0
       with:
         scanMetadataReportFile: ${{ steps.sonar_scan.outputs.scanMetadataReportFile }}
+        pollingTimeoutSec: 600
       timeout-minutes: 10
       env:
         SONAR_HOST_URL: ${{ env.SONAR_HOST_URL }}
-        SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
+        SONAR_TOKEN:    ${{ env.SONAR_TOKEN }}
+
     # ------------------------------------------------------------------------
 
     - name: Deployment Readiness Check
