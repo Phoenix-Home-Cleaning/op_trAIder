@@ -867,15 +867,31 @@ jobs:
               return 1
             fi
             
-            # Install qlty with retry logic
+            # Install qlty with retry logic using the correct package source
             for attempt in 1 2 3; do
               echo "🔄 Pip installation attempt ${attempt}/3..."
               
-              if pip install qlty --quiet --no-cache-dir; then
-                echo "✅ Qlty package installed successfully via pip"
+              # Try multiple installation methods in order of preference
+              local install_methods=(
+                "git+https://github.com/qltysh/qlty.git"
+                "qlty-cli"
+                "git+https://github.com/qltysh/qlty@main"
+              )
+              
+              local install_success=false
+              for method in "${install_methods[@]}"; do
+                echo "🔧 Trying installation method: ${method}"
+                if pip install "${method}" --quiet --no-cache-dir; then
+                  echo "✅ Qlty package installed successfully via pip using: ${method}"
+                  install_success=true
+                  break
+                fi
+              done
+              
+              if [ "$install_success" = true ]; then
                 break
               else
-                echo "⚠️ Pip installation attempt ${attempt} failed"
+                echo "⚠️ Pip installation attempt ${attempt} failed with all methods"
                 if [ $attempt -eq 3 ]; then
                   echo "❌ All pip installation attempts failed"
                   return 1
