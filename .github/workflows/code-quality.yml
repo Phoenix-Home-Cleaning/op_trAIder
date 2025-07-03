@@ -1039,7 +1039,7 @@ jobs:
           mkdir -p quality-reports/qlty
           
           # Validate configuration
-          qualytics check --dry-run
+          qualytics show-config --file "${QLTY_CONFIG_FILE}"
           echo "✅ Qlty configuration validated"
           echo "::endgroup::"
           
@@ -1049,7 +1049,7 @@ jobs:
           echo "::group::Qlty Code Quality Analysis"
           
           # Run Qlty analysis with comprehensive reporting
-          qualytics check \
+          qualytics run scan \
             --config ${{ env.QLTY_CONFIG_FILE }} \
             --output-dir quality-reports/qlty \
             --format json \
