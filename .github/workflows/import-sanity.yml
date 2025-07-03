@@ -32,6 +32,10 @@ jobs:
         run: |
           pip install -e .
 
+      - name: 📥 Install backend dependencies
+        run: |
+          pip install -r backend/requirements.txt
+
       - name: ✅ Run import sanity script
         run: |
           python scripts/import_sanity.py

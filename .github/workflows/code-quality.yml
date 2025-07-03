@@ -191,13 +191,17 @@ jobs:
           sonar-${{ runner.os }}-
 
     - name: SonarQube Scan
+      if: ${{ secrets.SONAR_HOST_URL != '' && secrets.SONAR_TOKEN != '' }}
       id: sonar_scan
       uses: sonarsource/sonarqube-scan-action@v2
+      with:
+        projectBaseDir: .
       env:
         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
     - name: SonarQube Quality Gate
+      if: ${{ secrets.SONAR_HOST_URL != '' && secrets.SONAR_TOKEN != '' }}
       uses: sonarsource/sonarqube-quality-gate-action@v1
       with:
         scanMetadataReportFile: ${{ steps.sonar_scan.outputs.scanMetadataReportFile }}
