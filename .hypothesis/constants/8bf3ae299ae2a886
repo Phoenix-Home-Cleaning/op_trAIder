@@ -1,0 +1,4 @@
+# file: C:\Users\jesse\AppData\Roaming\Python\Python313\site-packages\pytest_ruff\__init__.py
+# hypothesis_version: 6.135.14
+
+['--check', '--config={}', '--force-exclude', '--output-format=full', '--quiet', '--ruff', '--ruff-config', '--ruff-format', '.py', 'cache', 'check', 'format', 'general', 'markers', 'ruff', 'ruff/mtimes', 'ruff::format', 'store', 'store_true', 'workerinput']

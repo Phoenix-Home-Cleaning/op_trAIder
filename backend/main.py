@@ -50,6 +50,7 @@ from database import get_database_connection, close_database_connection
 from utils.logging import setup_logging, get_logger
 from utils.monitoring import MetricsCollector
 from utils.exceptions import TradingError
+from backend.config import settings
 
 # =============================================================================
 # APPLICATION CONFIGURATION
@@ -65,6 +66,25 @@ CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
 
 # Security configuration
 security = HTTPBearer(auto_error=False)
+
+# -----------------------------------------------------------------------------
+# Fail-fast configuration validation (production only)
+# -----------------------------------------------------------------------------
+
+if ENVIRONMENT.lower() == "production":
+    # Validate that critical secrets are present.
+    missing_vars = []
+    if not settings.secret_key:
+        missing_vars.append("SECRET_KEY")
+    if not settings.dashboard_password:
+        missing_vars.append("DASHBOARD_PASSWORD")
+
+    if missing_vars:
+        logger.critical(
+            "🔥 Critical configuration missing – application shutting down", extra={"missing": missing_vars}
+        )
+        # Exit immediately to prevent insecure startup
+        raise SystemExit(1)
 
 # =============================================================================
 # LOGGING & MONITORING SETUP

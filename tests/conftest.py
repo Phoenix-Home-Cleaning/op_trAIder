@@ -37,20 +37,26 @@ env_file = project_root / ".env"
 if env_file.exists():
     load_dotenv(env_file)
 
-# Add backend directory to Python path for imports
+# Ensure the project root is in sys.path so Python can resolve the `backend` package
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
+# Keep direct backend path for absolute module imports without package prefix
 backend_path = project_root / "backend"
 if str(backend_path) not in sys.path:
     sys.path.insert(0, str(backend_path))
 
 # Set test environment variables if not already set
-if not os.getenv("SECRET_KEY"):
-    os.environ["SECRET_KEY"] = "test_secret_key_for_unit_testing_only_not_production_use"
+defaults = {
+    "SECRET_KEY": "test_secret_key_for_unit_testing_only_not_production_use",
+    "DASHBOARD_PASSWORD": "test_dashboard_password",
+    "GUEST_PASSWORD": "test_guest_password",
+    "DATABASE_URL": "postgresql://test:test@localhost:5432/traider_test",
+    "TEST_SECRET_KEY": "test_secret_key_for_unit_testing_only",
+}
 
-if not os.getenv("DATABASE_URL"):
-    os.environ["DATABASE_URL"] = "postgresql://test:test@localhost:5432/traider_test"
-
-if not os.getenv("TEST_SECRET_KEY"):
-    os.environ["TEST_SECRET_KEY"] = "test_secret_key_for_unit_testing_only"
+for key, value in defaults.items():
+    os.environ.setdefault(key, value)
 
 # Ensure test mode
 os.environ["TESTING"] = "true"

@@ -45,6 +45,8 @@ env:
   NODE_VERSION: '18'
   FORCE_COLOR: 1
   CI: true
+  DASHBOARD_PASSWORD: ci_dummy_dashboard_password
+  GUEST_PASSWORD: ci_dummy_guest_password
   
   # === Quality & Security Analysis ===
   SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}

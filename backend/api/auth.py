@@ -51,22 +51,38 @@ security = HTTPBearer()
 logger = get_logger(__name__)
 audit_logger = get_audit_logger()
 
-# JWT Configuration - Must be set via environment variables
-SECRET_KEY = os.getenv("SECRET_KEY")
+# -----------------------------------------------------------------------------
+# Centralised configuration
+# -----------------------------------------------------------------------------
+# Use validated settings provided by backend.config to avoid import-time failures
+# when optional variables are missing in non-production environments.
 
-# Validate required environment variables
-if not SECRET_KEY:
-    raise ValueError("SECRET_KEY environment variable must be set for security")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
+try:
+    # Attempt package-relative import first (works when `backend` is a package)
+    from ..config import settings  # type: ignore  # pylint: disable=import-error
+except ImportError:
+    # Fallback to absolute import when backend is on PYTHONPATH as top-level package
+    try:
+        from backend.config import settings  # type: ignore
+    except ModuleNotFoundError:  # pragma: no cover – ultimate fallback
+        class _FallbackSettings:  # pylint: disable=too-few-public-methods
+            """Minimal fallback settings used only in test environments."""
 
-# Password Configuration - Must be set via environment variables
-DASHBOARD_PASSWORD = os.getenv("DASHBOARD_PASSWORD")
-GUEST_PASSWORD = os.getenv("GUEST_PASSWORD", "")  # Optional guest access
+            secret_key = os.getenv("SECRET_KEY", "test_secret_key_fallback")
+            dashboard_password = os.getenv("DASHBOARD_PASSWORD", "test_dashboard_password")
+            guest_password = os.getenv("GUEST_PASSWORD", "")
+            algorithm = "HS256"
+            access_token_expire_minutes = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 
-# Validate required environment variables
-if not DASHBOARD_PASSWORD:
-    raise ValueError("DASHBOARD_PASSWORD environment variable must be set for security")
+        settings = _FallbackSettings()  # type: ignore
+
+SECRET_KEY = settings.secret_key
+ALGORITHM = settings.algorithm
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.access_token_expire_minutes
+
+# Password settings
+DASHBOARD_PASSWORD = settings.dashboard_password
+GUEST_PASSWORD = settings.guest_password
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

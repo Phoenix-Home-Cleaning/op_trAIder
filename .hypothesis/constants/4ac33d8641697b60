@@ -1,0 +1,4 @@
+# file: C:\Users\jesse\AppData\Roaming\Python\Python313\site-packages\structlog\_native.py
+# hypothesis_version: 6.135.14
+
+['aerror', 'aexception', 'afatal', 'ainfo', 'alog', 'amsg', 'awarn', 'awarning', 'error', 'exc_info', 'exception', 'fatal', 'info', 'log', 'msg', 'warn', 'warning']

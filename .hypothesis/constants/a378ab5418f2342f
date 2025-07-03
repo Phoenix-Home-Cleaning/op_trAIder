@@ -1,0 +1,4 @@
+# file: C:\Users\jesse\AppData\Roaming\Python\Python313\site-packages\structlog\tracebacks.py
+# hypothesis_version: 6.135.14
+
+['<', '?', 'Frame', 'Stack', 'SyntaxError_', 'Trace', '__cause__', '__suppress_context__', 'extract', 'safe_str', 'to_repr']
