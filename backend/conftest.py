@@ -40,6 +40,9 @@ sys.path.insert(0, str(root_dir))
 import pytest
 from unittest.mock import Mock, patch
 from typing import Dict, Any, Generator
+from fastapi.testclient import TestClient
+
+from backend.main import app
 
 # Configure Hypothesis for CI environment
 try:
@@ -177,6 +180,21 @@ for key, value in TEST_ENV.items():
 # =============================================================================
 # FIXTURES
 # =============================================================================
+
+@pytest.fixture(scope="session")
+def client() -> Generator[TestClient, None, None]:
+    """
+    TestClient fixture for making API requests.
+    
+    @description
+    Provides a FastAPI TestClient instance for executing API integration tests.
+    It is session-scoped for efficiency, so the client is created once per
+    test session.
+    
+    @returns TestClient instance
+    """
+    with TestClient(app) as test_client:
+        yield test_client
 
 @pytest.fixture(scope="session")
 def test_config() -> Dict[str, Any]:
