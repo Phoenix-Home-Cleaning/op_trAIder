@@ -1,0 +1,58 @@
+name: Coverage Watchdog
+
+on:
+  schedule:
+    # Runs every day at midnight UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch: # Allows manual runs
+
+jobs:
+  monitor-coverage:
+    name: Monitor Backend Test Coverage
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r backend/requirements.txt
+
+      - name: Run tests and generate coverage report
+        run: |
+          cd backend
+          pytest --cov --cov-report=json
+
+      - name: Extract coverage percentage
+        id: coverage
+        run: |
+          # Using jq to parse the coverage.json file
+          # The 'totals.percent_covered' gives a value from 0-100
+          COVERAGE_PERCENT=$(jq '.totals.percent_covered' coverage.json)
+          echo "Total coverage: $COVERAGE_PERCENT%"
+          echo "COVERAGE_PERCENT=$COVERAGE_PERCENT" >> $GITHUB_ENV
+
+      - name: Push coverage metric to Prometheus Pushgateway
+        if: secrets.PROMETHEUS_PUSHGATEWAY_URL
+        run: |
+          # This command sends the coverage metric to the Pushgateway.
+          # Prometheus will then scrape the Pushgateway.
+          # Grafana can then be used to visualize and alert on this metric.
+          cat <<EOF | curl --data-binary @- ${{ secrets.PROMETHEUS_PUSHGATEWAY_URL }}/metrics/job/coverage_watchdog
+          # TYPE code_coverage_percent gauge
+          # HELP code_coverage_percent The total test coverage percentage for the backend.
+          code_coverage_percent{repo="${{ github.repository }}"} ${{ env.COVERAGE_PERCENT }}
+          EOF
+
+      - name: Notify on missing Pushgateway URL
+        if: '!secrets.PROMETHEUS_PUSHGATEWAY_URL'
+        run: |
+          echo "⚠️ PROMETHEUS_PUSHGATEWAY_URL secret is not set."
+          echo "   Skipping metric push. Please configure this secret to enable coverage monitoring." 
