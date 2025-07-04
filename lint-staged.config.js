@@ -1,4 +1,9 @@
 export default {
+  // Add a new check for hardcoded passwords in a wide range of text files
+  '**/*.{ts,tsx,js,jsx,py,json,md,yml,yaml,toml,ini}': [
+    'bash scripts/check-passwords.sh',
+  ],
+
   // TypeScript and React files - Core trading logic (excluding .d.ts files)
   '*.{ts,tsx}': (filenames) => {
     const filteredFiles = filenames.filter(file => !file.endsWith('.d.ts'));
