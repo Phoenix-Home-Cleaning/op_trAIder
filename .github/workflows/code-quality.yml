@@ -37,13 +37,34 @@ jobs:
       TESTING: true
       SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
       SONAR_TOKEN:      ${{ secrets.SONAR_TOKEN }}
-      SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
-      
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
+
+    # ──────────────────────────────────────────────────────────────
+    # Extract Sonar project key from sonar-project.properties
+    # and expose as env variable for all later steps
+    # ──────────────────────────────────────────────────────────────
+    - name: Extract Sonar project key
+      id: extract_sonar_key
+      run: |
+        SONAR_KEY=$(grep -Po '^sonar\.projectKey=\K.*' sonar-project.properties)
+        if [ -z "$SONAR_KEY" ]; then
+          echo "::error::Unable to read sonar.projectKey from sonar-project.properties"
+          exit 1
+        fi
+        echo "SONAR_PROJECT_KEY=$SONAR_KEY" >> "$GITHUB_ENV"
+
+    # Fail fast if any required Sonar variables are missing
+    - name: Validate Sonar environment
+      run: |
+        for var in SONAR_HOST_URL SONAR_TOKEN SONAR_PROJECT_KEY; do
+          if [ -z "${!var}" ]; then
+            echo "::error::$var is not set"; exit 1; fi
+        done
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -199,6 +220,8 @@ jobs:
       uses: sonarsource/sonarqube-scan-action@v2
       with:
         projectBaseDir: .
+        args: >
+          -Dsonar.projectKey=${{ env.SONAR_PROJECT_KEY }}
       env:
         SONAR_HOST_URL: ${{ env.SONAR_HOST_URL }}
         SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
