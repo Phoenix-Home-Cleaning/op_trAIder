@@ -191,6 +191,37 @@ services:
       - --advertise-pandaproxy-addr
       - "localhost:8082"
 
+  # =============================================================================
+  # MARKET DATA SERVICE (Shadow)
+  # =============================================================================
+  market-data-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: traider-market-data-service-dev
+    command: >
+      uvicorn backend.services.market_data_service.main:app --host 0.0.0.0 --port 9000 --workers 2
+    environment:
+      PYTHON_ENV: development
+    networks:
+      - traider-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Nginx mirror to duplicate traffic
+  nginx-mirror:
+    image: nginx:1.25-alpine
+    container_name: traider-nginx-mirror-dev
+    volumes:
+      - ./infrastructure/nginx/mirror.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "8085:8085"
+    networks:
+      - traider-network
+    depends_on:
+      - market-data-service
+
 # =============================================================================
 # NETWORKS & VOLUMES
 # =============================================================================

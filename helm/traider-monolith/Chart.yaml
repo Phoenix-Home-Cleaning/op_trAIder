@@ -1,0 +1,6 @@
+apiVersion: v2
+name: traider-monolith
+description: Helm chart for TRAIDER Monolithic Backend Service
+type: application
+version: 0.1.0
+appVersion: "1.0.0-alpha" 

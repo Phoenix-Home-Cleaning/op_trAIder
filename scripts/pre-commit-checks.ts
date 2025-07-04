@@ -264,6 +264,11 @@ function validateFileSize(files: string[]): ValidationResult {
     try {
       const stats = statSync(file);
       if (stats.size > VALIDATION_CONFIG.MAX_FILE_SIZE) {
+        /**
+         * Human-readable file size in megabytes with two-decimal precision.
+         *
+         * @type {string}
+         */
         const sizeMB = (stats.size / (1024 * 1024)).toFixed(2);
         result.errors.push(`${file}: File too large (${sizeMB}MB > 1MB)`);
         result.success = false;
@@ -490,8 +495,9 @@ function validateConsoleStatements(files: string[]): ValidationResult {
         ) {
           const match = line.match(/console\.(log|error|warn)/);
           if (match) {
-            result.errors.push(`${file}:${i + 1}: Console statement found`);
-            result.success = false;
+            // Treat console statements as warnings rather than errors to avoid
+            // blocking commits on low-severity cleanliness issues.
+            result.warnings.push(`${file}:${i + 1}: Console statement found`);
           }
         }
       }

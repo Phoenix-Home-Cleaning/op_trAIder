@@ -1,0 +1,63 @@
+name: 🧪 Nightly Chaos Tests
+
+on:
+  schedule:
+    # Run daily at 03:00 UTC
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  chaos-tests:
+    name: ⚔️ Chaos Engineering Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    # Docker is pre-installed on ubuntu-latest; dind not required.
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 📦 Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+          pip install pytest psutil docker requests
+
+      - name: 🐳 Start dependent services via Docker Compose
+        run: |
+          docker-compose -f docker-compose.dev.yml pull
+          docker-compose -f docker-compose.dev.yml up -d
+          echo "Waiting for services to become healthy..."
+          docker-compose -f docker-compose.dev.yml ps
+          # Wait for Postgres health check (max 120s)
+          for i in {1..24}; do
+            if docker inspect -f '{{.State.Health.Status}}' traider-postgres-dev | grep -q 'healthy'; then
+              echo "Postgres healthy"; break; fi; sleep 5; done
+
+      - name: ⏲️ Give containers warm-up time
+        run: sleep 30
+
+      - name: ⚔️ Run chaos tests
+        env:
+          PYTHONPATH: ./backend
+        run: |
+          pytest tests/chaos -v --junitxml=chaos-report.xml
+
+      - name: 📤 Upload chaos test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chaos-test-report
+          path: chaos-report.xml
+          retention-days: 30
+
+      - name: 🧹 Teardown docker compose
+        if: always()
+        run: docker-compose -f docker-compose.dev.yml down --volumes --remove-orphans 

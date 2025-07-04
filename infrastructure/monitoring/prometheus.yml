@@ -33,7 +33,7 @@ global:
 
 # Load rules once and periodically evaluate them
 rule_files:
-  # - "alert_rules.yml"
+  - "alert_rules.yml"
   # - "recording_rules.yml"
 
 # Scrape configuration

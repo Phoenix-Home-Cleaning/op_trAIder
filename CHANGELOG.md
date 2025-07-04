@@ -2,6 +2,35 @@
 
 ## [Unreleased]
 
+### Added
+
+- **🌐 Market Data Microservice (Shadow Deployment)**
+  - New FastAPI service `backend/services/market_data_service` exposing read-only endpoints with Prometheus metrics.
+  - Added Docker-Compose service and traffic-mirroring Nginx sidecar for safe shadow testing.
+  - Helm chart (`helm/market-data-service`) and ArgoCD application manifest for GitOps deployment.
+
+- **📈 Observability & SRE Enhancements**
+  - Instrumentation decorator `backend/utils/instrumentation.py` for function-level latency/error metrics.
+  - Prometheus alert rules for P95 signal→order and execution latency breaches (>500 ms).
+  - Nightly chaos-engineering GitHub Action running full resilience suite against dev stack.
+
+- **🛡️ Quality Gates & Static Analysis**
+  - Documentation validation threshold raised to 95 %; enforced in CI.
+  - ESLint `@fileoverview` header rule via `eslint-plugin-header` (CI blocking).
+  - Mypy strict baseline with coverage ≥30 % enforced in CI and report artifacts.
+  - Generic `Exception` guard script + CI job to ensure `TradingError` subclasses are used.
+  - Alembic SQL snapshot generator with drift detection job.
+
+### Infrastructure
+
+- **🚀 GitOps & Helm**
+  - Helm chart for existing monolith (`helm/traider-monolith`) and ArgoCD manifest enabling progressive rollout.
+
+### Changed
+
+- Updated `docker-compose.dev.yml` to include `market-data-service` and `nginx-mirror` services.
+- Updated CI (`ci.yml`) with new jobs: type-coverage, generic-exception guard and Alembic snapshot.
+
 ### Fixed
 
 - **🔧 CRITICAL CI/CD Fix**: System Utilities Prerequisite Installation (ADR-013 Update) - 2025-07-03

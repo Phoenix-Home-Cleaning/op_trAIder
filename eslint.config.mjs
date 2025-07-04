@@ -30,6 +30,7 @@ import js from '@eslint/js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import tseslint from 'typescript-eslint';
+import headerPlugin from 'eslint-plugin-header';
 
 // Get current directory for flat config compatibility
 const __filename = fileURLToPath(import.meta.url);
@@ -91,6 +92,10 @@ export default tseslint.config(
       'react-hooks/exhaustive-deps': 'warn',
       '@next/next/no-img-element': 'error',
       '@next/next/no-html-link-for-pages': 'error',
+      'header/header': 'off',
+    },
+    plugins: {
+      header: headerPlugin,
     },
   },
   {

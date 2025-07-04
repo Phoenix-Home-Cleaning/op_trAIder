@@ -1,14 +1,16 @@
 #!/usr/bin/env tsx
 
+/* eslint-disable no-console */
+
 /**
  * @fileoverview Simple Trivy Configuration Validation
  * @module scripts/validate-trivy-simple
- * 
+ *
  * @description
  * Simplified validation script for TRAIDER V1 Trivy security scanning
  * configurations. Validates key workflow configurations and provides
  * actionable feedback for fixing Trivy issues.
- * 
+ *
  * @author TRAIDER Team
  * @since 1.0.0-alpha
  */
@@ -33,7 +35,7 @@ class SimpleTrivyValidator {
     this.validateTrivyIgnore();
     this.generateReport();
 
-    const errors = this.issues.filter(i => i.type === 'ERROR');
+    const errors = this.issues.filter((i) => i.type === 'ERROR');
     return errors.length === 0;
   }
 
@@ -41,7 +43,7 @@ class SimpleTrivyValidator {
     const workflows = [
       '.github/workflows/trivy-security.yml',
       '.github/workflows/ci.yml',
-      '.github/workflows/security.yml'
+      '.github/workflows/security.yml',
     ];
 
     for (const workflow of workflows) {
@@ -50,14 +52,14 @@ class SimpleTrivyValidator {
       }
 
       const content = readFileSync(workflow, 'utf8');
-      
+
       // Check for @master usage
       const masterUsage = content.match(/aquasecurity\/trivy-action@master/g);
       if (masterUsage) {
         this.issues.push({
           file: workflow,
           type: 'ERROR',
-          message: `Found ${masterUsage.length} Trivy actions using @master. Use @0.30.0 instead.`
+          message: `Found ${masterUsage.length} Trivy actions using @master. Use @0.30.0 instead.`,
         });
       }
 
@@ -70,10 +72,7 @@ class SimpleTrivyValidator {
   }
 
   private validateExitCodes(): void {
-    const workflows = [
-      '.github/workflows/trivy-security.yml',
-      '.github/workflows/ci.yml'
-    ];
+    const workflows = ['.github/workflows/trivy-security.yml', '.github/workflows/ci.yml'];
 
     for (const workflow of workflows) {
       if (!existsSync(workflow)) {
@@ -81,13 +80,13 @@ class SimpleTrivyValidator {
       }
 
       const content = readFileSync(workflow, 'utf8');
-      
+
       // Check for exit-code: '1' which causes failures
       if (content.includes("exit-code: '1'")) {
         this.issues.push({
           file: workflow,
           type: 'ERROR',
-          message: "Found exit-code: '1' which will cause pipeline failures. Use exit-code: '0'."
+          message: "Found exit-code: '1' which will cause pipeline failures. Use exit-code: '0'.",
         });
       }
 
@@ -103,7 +102,8 @@ class SimpleTrivyValidator {
         this.issues.push({
           file: workflow,
           type: 'WARNING',
-          message: 'Consider adding ignore-unfixed: true to reduce noise from unfixable vulnerabilities'
+          message:
+            'Consider adding ignore-unfixed: true to reduce noise from unfixable vulnerabilities',
         });
       }
 
@@ -114,7 +114,7 @@ class SimpleTrivyValidator {
         this.issues.push({
           file: workflow,
           type: 'WARNING',
-          message: 'Consider adding skip-dirs to exclude build artifacts'
+          message: 'Consider adding skip-dirs to exclude build artifacts',
         });
       }
     }
@@ -122,23 +122,23 @@ class SimpleTrivyValidator {
 
   private validateTrivyIgnore(): void {
     const trivyIgnorePath = '.trivyignore';
-    
+
     if (!existsSync(trivyIgnorePath)) {
       this.issues.push({
         file: trivyIgnorePath,
         type: 'WARNING',
-        message: 'File not found. Consider creating one to manage false positives.'
+        message: 'File not found. Consider creating one to manage false positives.',
       });
       return;
     }
 
     const content = readFileSync(trivyIgnorePath, 'utf8');
-    
+
     // Check for essential patterns
     const essentialPatterns = [
       { pattern: 'node_modules', name: 'node_modules exclusion' },
       { pattern: 'coverage', name: 'coverage exclusion' },
-      { pattern: 'test/', name: 'test files exclusion' }
+      { pattern: 'test/', name: 'test files exclusion' },
     ];
 
     for (const { pattern, name } of essentialPatterns) {
@@ -148,12 +148,19 @@ class SimpleTrivyValidator {
         this.issues.push({
           file: trivyIgnorePath,
           type: 'WARNING',
-          message: `Consider adding ${pattern} pattern for ${name}`
+          message: `Consider adding ${pattern} pattern for ${name}`,
         });
       }
     }
 
     // Check for CVE suppressions
+    /**
+     * Number of CVE suppression patterns found within `.trivyignore`.
+     *
+     * @type {number}
+     * @description Used for informational logging to highlight how many CVE IDs
+     * have been explicitly ignored in the current security baseline.
+     */
     const cveCount = (content.match(/CVE-\d{4}-\d+/g) || []).length;
     if (cveCount > 0) {
       console.log(`✅ .trivyignore: Found ${cveCount} CVE suppressions`);
@@ -164,22 +171,22 @@ class SimpleTrivyValidator {
     console.log('\n📊 Validation Summary');
     console.log('====================');
 
-    const errors = this.issues.filter(i => i.type === 'ERROR');
-    const warnings = this.issues.filter(i => i.type === 'WARNING');
+    const errors = this.issues.filter((i) => i.type === 'ERROR');
+    const warnings = this.issues.filter((i) => i.type === 'WARNING');
 
     console.log(`❌ Errors: ${errors.length}`);
     console.log(`⚠️  Warnings: ${warnings.length}`);
 
     if (errors.length > 0) {
       console.log('\n🚨 Critical Issues (Must Fix):');
-      errors.forEach(issue => {
+      errors.forEach((issue) => {
         console.log(`   ${issue.file}: ${issue.message}`);
       });
     }
 
     if (warnings.length > 0) {
       console.log('\n⚠️  Recommendations:');
-      warnings.forEach(issue => {
+      warnings.forEach((issue) => {
         console.log(`   ${issue.file}: ${issue.message}`);
       });
     }
@@ -193,15 +200,21 @@ class SimpleTrivyValidator {
 }
 
 // Main execution
+/**
+ * CLI entry point for the Simple Trivy configuration validator.
+ *
+ * @returns {Promise<void>} Exits the Node.js process with a non-zero status if
+ * critical validation errors are found, making it suitable for CI pipelines.
+ */
 async function main(): Promise<void> {
   const validator = new SimpleTrivyValidator();
   const success = await validator.validate();
-  
+
   process.exit(success ? 0 : 1);
 }
 
 // Run the validation
-main().catch(error => {
+main().catch((error) => {
   console.error('❌ Validation failed:', error);
   process.exit(1);
-}); 
+});

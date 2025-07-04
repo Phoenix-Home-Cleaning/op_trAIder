@@ -138,14 +138,14 @@ class DocumentationValidator {
 
     const coverage = totalFunctions > 0 ? (documentedFunctions / totalFunctions) * 100 : 100;
 
-    if (coverage < 90) {
+    if (coverage < 95) {
       this.results.errors.push(
-        `JSDoc coverage is ${coverage.toFixed(1)}% (${documentedFunctions}/${totalFunctions}). Required: 90%`
+        `JSDoc coverage is ${coverage.toFixed(1)}% (${documentedFunctions}/${totalFunctions}). Required: 95%`
       );
       this.results.passed = false;
-    } else if (coverage < 95) {
+    } else if (coverage < 98) {
       this.results.warnings.push(
-        `JSDoc coverage is ${coverage.toFixed(1)}%. Consider improving to 95%+`
+        `JSDoc coverage is ${coverage.toFixed(1)}%. Consider improving to 98%+`
       );
     }
 
@@ -619,6 +619,16 @@ class DocumentationValidator {
   }
 }
 
+/**
+ * CLI entry point for the documentation validation utility.
+ *
+ * @description Parses CLI flags, instantiates a `DocumentationValidator` with the
+ * appropriate configuration, and exits the Node.js process with an exit code
+ * suitable for use in CI pipelines (0 for success, 1 for validation failure).
+ *
+ * @returns {Promise<void>} Resolves once validation completes and the process
+ * has exited. The returned promise is primarily for internal error handling.
+ */
 async function main() {
   // Check for --coverage-only flag
   const coverageOnly = process.argv.includes('--coverage-only');
