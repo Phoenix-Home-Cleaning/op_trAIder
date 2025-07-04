@@ -115,6 +115,7 @@ jobs:
           tests/unit/backend/test_property_based_trading.py \
           --cov=backend \
           --cov-report=json:coverage-fresh.json \
+          --cov-report=xml:coverage.xml \
           --cov-report=term-missing \
           --tb=short \
           -v || {
