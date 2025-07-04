@@ -21,18 +21,21 @@ from pathlib import Path
 
 
 def parse_total_percentage(report_path: Path) -> float:
+    if not report_path.is_file():
+        raise FileNotFoundError(f"Mypy report file not found: {report_path}")
+
     content = report_path.read_text(encoding="utf-8")
-    # Look for line like: "Total    1150   512   44%" (column 3 is percentage)
-    total_line = None
-    for line in content.splitlines():
-        if line.startswith("Total"):
-            total_line = line
-            break
-    if not total_line:
-        raise ValueError("Total line not found in mypy report")
-    match = re.search(r"(\d+)%", total_line)
+    # Look for a line containing "Total" (allowing leading whitespace)
+    match = re.search(
+        r"^\s*Total.*?(\d+(?:\.\d+)?)%",
+        content,
+        flags=re.MULTILINE
+    )
     if not match:
-        raise ValueError("Percentage not found in total line: " + total_line)
+        raise ValueError(
+            f"Could not find total-coverage line in {report_path}\n"
+            f"Report contents:\n{content}"
+        )
     return float(match.group(1))
 
 
