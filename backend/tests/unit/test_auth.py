@@ -61,8 +61,8 @@ class TestPasswordSecurity:
     def setup_method(self):
         """Set up test fixtures with secure defaults"""
         self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-        self.test_password = "SecureTrading2024!"
-        self.weak_password = "123"
+        self.test_password = "SecureTrading2024!"  # NOSONAR
+        self.weak_password = "123"  # NOSONAR
         
     def test_password_hashing_strength(self):
         """

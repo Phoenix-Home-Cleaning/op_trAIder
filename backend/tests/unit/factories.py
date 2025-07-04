@@ -56,7 +56,8 @@ def random_decimal(min_val: float = 0.0, max_val: float = 100000.0, places: int 
     @tradingImpact LOW - Test data generation
     @riskLevel LOW - Test utility only
     """
-    value = random.uniform(min_val, max_val)
+    # In a test factory, using random.uniform is safe for generating mock data.
+    value = random.uniform(min_val, max_val)  # NOSONAR
     return Decimal(str(round(value, places)))
 
 
@@ -70,7 +71,8 @@ def random_symbol() -> str:
     @sideEffects None
     """
     symbols = ["BTC-USD", "ETH-USD", "AAPL", "GOOGL", "TSLA", "SPY", "QQQ"]
-    return random.choice(symbols)
+    # In a test factory, using random.choice is safe for generating mock data.
+    return random.choice(symbols)  # NOSONAR
 
 
 def make_position(
@@ -184,7 +186,8 @@ def make_trade(
         "notional": notional,
         "fee": random_decimal(0.0, 50.0, 2),
         "fee_currency": "USD",
-        "order_id": f"order_{random.randint(1000, 9999)}",
+        # In a test factory, using random.randint is safe for generating mock data.
+        "order_id": f"order_{random.randint(1000, 9999)}",  # NOSONAR
         "strategy": "test_strategy",
         "exchange": "coinbase",
         "execution_type": "market",

@@ -257,7 +257,7 @@ class TestAuthenticationService:
         assert verify_password(long_password, hashed_long)
         
         # Test with special characters
-        special_password = "pāssw0rd!@#$%^&*()_+-=[]{}|;':\",./<>?"
+        special_password = "pāssw0rd!@#$%^&*()_+-=[]{}|;':\",./<>?"  # NOSONAR
         hashed_special = get_password_hash(special_password)
         assert verify_password(special_password, hashed_special)
         
