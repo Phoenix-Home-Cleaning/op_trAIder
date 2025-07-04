@@ -44,6 +44,10 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Extract Short SHA
+      id: extract_sha
+      run: echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
     # ──────────────────────────────────────────────────────────────
     # Extract Sonar project key from sonar-project.properties
     # and expose as env variable for all later steps
@@ -216,13 +220,13 @@ jobs:
           sonar-${{ runner.os }}-
 
     - name: SonarQube Scan
-      if: ${{ env.SONAR_HOST_URL != '' && env.SONAR_TOKEN != '' }}
       id: sonar_scan
       uses: sonarsource/sonarqube-scan-action@v2
       with:
         projectBaseDir: .
         args: >
           -Dsonar.projectKey=${{ env.SONAR_PROJECT_KEY }}
+          -Dsonar.projectVersion=${{ env.short_sha }}
       env:
         SONAR_HOST_URL: ${{ env.SONAR_HOST_URL }}
         SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
