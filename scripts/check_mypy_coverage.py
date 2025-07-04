@@ -27,7 +27,7 @@ def parse_total_percentage(report_path: Path) -> float:
     content = report_path.read_text(encoding="utf-8")
     # Look for a line containing "Total" (allowing leading whitespace)
     match = re.search(
-        r"^\s*Total.*?(\d+(?:\.\d+)?)%",
+        r"^\s*\|?\s*Total.*?(\d+(?:\.\d+)?)%",
         content,
         flags=re.MULTILINE
     )
