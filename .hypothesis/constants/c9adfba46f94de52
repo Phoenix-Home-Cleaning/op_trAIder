@@ -1,0 +1,4 @@
+# file: C:\Users\jesse\AppData\Roaming\Python\Python313\site-packages\invoke\vendor\fluidity\machine.py
+# hypothesis_version: 6.135.14
+
+['Cannot %s from %s', 'StateMachineBase', 'event %s', 'initial_state', 'is_%s']

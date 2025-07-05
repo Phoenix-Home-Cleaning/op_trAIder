@@ -1,0 +1,4 @@
+# file: C:\Users\jesse\AppData\Roaming\Python\Python313\site-packages\kafka\protocol\fetch.py
+# hypothesis_version: 6.135.14
+
+['aborted_transactions', 'error_code', 'fetch_offset', 'first_offset', 'highwater_offset', 'isolation_level', 'last_stable_offset', 'log_start_offset', 'max_bytes', 'max_wait_time', 'message_set', 'min_bytes', 'offset', 'partition', 'partitions', 'producer_id', 'replica_id', 'throttle_time_ms', 'topic', 'topics', 'utf-8']

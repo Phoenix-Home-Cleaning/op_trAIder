@@ -43,6 +43,9 @@ from unittest.mock import Mock, patch
 from typing import Dict, Any, Generator
 from fastapi.testclient import TestClient
 
+# pylint: disable=wrong-import-position
+from unittest.mock import AsyncMock
+
 # Lazy import of the FastAPI application *after* test environment variables are
 # guaranteed to be set.  This avoids configuration-validation errors during
 # collection when required ENV vars are still missing.
@@ -200,12 +203,36 @@ def client() -> Generator[TestClient, None, None]:
     @returns TestClient instance
     """
     global app  # noqa: PLW0603 – test fixture laziness
-    if app is None:  # Lazy import now that ENV is populated
-        from backend.main import app as _app  # type: ignore
-        app = _app
 
-    with TestClient(app) as test_client:
-        yield test_client
+    # ---------------------------------------------------------------------
+    # Patch database connectivity for integration tests
+    # ---------------------------------------------------------------------
+    # Many CI environments (and local dev on Windows) will not have a running
+    # Postgres/TimescaleDB instance available. Attempting to establish a real
+    # TCP connection results in ConnectionRefusedError during app startup,
+    # failing otherwise unrelated API tests. We therefore patch the database
+    # layer to short-circuit connection attempts and to report a healthy
+    # status so that readiness / liveness probes still succeed.
+    #
+    # NOTE: Patching must occur *before* `backend.main` is imported so that
+    # the FastAPI lifespan events use the patched implementations.
+    # ---------------------------------------------------------------------
+
+    async def _noop(*_args, **_kwargs):  # noqa: D401 – simple helper
+        """Async no-op used to replace DB connection helpers in tests."""
+
+    with patch("backend.database.create_database_engine", new=_noop), \
+         patch("backend.database.create_connection_pool", new=_noop), \
+         patch("backend.database.check_database_health", new=AsyncMock(return_value={"status": "healthy"})), \
+         patch("backend.database.test_database_connectivity", new=_noop), \
+         patch("backend.api.health.check_database_health", new=AsyncMock(return_value={"status": "healthy"})):
+
+        if app is None:  # Lazy import now that ENV is populated and patched
+            from backend.main import app as _app  # type: ignore
+            app = _app
+
+        with TestClient(app) as test_client:
+            yield test_client
 
 @pytest.fixture(scope="session")
 def test_config() -> Dict[str, Any]:

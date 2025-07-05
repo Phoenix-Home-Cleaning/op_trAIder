@@ -1,0 +1,4 @@
+# file: C:\Users\jesse\AppData\Roaming\Python\Python313\site-packages\docker\transport\sshconn.py
+# hypothesis_version: 6.135.14
+
+[b'\n\n', '--', '-l', '-p', ':', '@', 'LD_LIBRARY_PATH', 'Pool is closed.', 'SSL_CERT_FILE', 'hostname', 'identityfile', 'key_filename', 'localhost', 'max_pool_size', 'paramiko', 'pools', 'port', 'proxycommand', 'sock', 'ssh', 'ssh://', 'ssh_client', 'ssh_params', 'timeout', 'user', 'username', '~/.ssh/config']

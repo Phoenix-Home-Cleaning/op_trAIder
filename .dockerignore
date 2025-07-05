@@ -172,7 +172,7 @@ docker-compose*.yml
 .dockerignore
 
 # Infrastructure configs (not needed in app containers)
-infrastructure/
+infra/
 k8s/
 helm/
 terraform/

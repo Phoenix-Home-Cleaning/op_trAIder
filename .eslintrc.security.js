@@ -271,7 +271,7 @@ export default {
     '*.config.js',
     '*.config.ts',
     'apps/backend/',
-    'infrastructure/',
+    'infra/',
     'docs/'
   ]
 }; 

@@ -27,7 +27,7 @@
 
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import RiskPage from '../../../app/risk/page';
+import RiskPage from '../../../apps/frontend/risk/page';
 
 /**
  * Risk management test suite

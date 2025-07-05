@@ -29,7 +29,7 @@ import { NextRequest } from 'next/server';
 import { createStandardTestSuite, assertApiResponses } from '../../utils/sharedTestUtilities';
 
 // Import API routes for testing
-import { POST, GET } from '../../../app/api/route';
+import { POST, GET } from '../../../apps/frontend/api/route';
 
 describe('🔐 Unified API Authentication Tests', () => {
   /**

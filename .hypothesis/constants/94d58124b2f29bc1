@@ -1,0 +1,4 @@
+# file: C:\Users\jesse\AppData\Roaming\Python\Python313\site-packages\kafka\protocol\types.py
+# hypothesis_version: 6.135.14
+
+[b'...', 100, '%s=%s', '(', ')', ', ', '>?', '>b', '>h', '>i', '>q', 'NULL', '[', ']', 'utf-8']

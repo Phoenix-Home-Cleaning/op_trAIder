@@ -1,0 +1,4 @@
+# file: C:\Users\jesse\AppData\Roaming\Python\Python313\site-packages\paramiko\packet.py
+# hypothesis_version: 6.135.14
+
+[128, '${:x}', '>I', '>IB', '>II', 'IN: ', 'Mismatched MAC', 'OUT: ', 'big']

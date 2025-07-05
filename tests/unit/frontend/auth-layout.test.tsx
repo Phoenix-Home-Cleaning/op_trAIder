@@ -20,7 +20,7 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import AuthLayout from '../../../app/(auth)/layout';
+import AuthLayout from '../../../apps/frontend/(auth)/layout';
 
 // Mock Next.js metadata
 vi.mock('next', () => ({

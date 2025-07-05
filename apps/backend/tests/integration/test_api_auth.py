@@ -81,7 +81,7 @@ class TestAuthAPI:
             json={"username": "dashboard", "password": "wrong-password"}
         )
         assert response.status_code == 401
-        assert response.json()["detail"] == "Incorrect username or password"
+        assert response.json()["detail"] == "Invalid username or password"
 
     def test_login_failure_nonexistent_user(self, client: TestClient):
         """
@@ -95,7 +95,7 @@ class TestAuthAPI:
             json={"username": "nonexistent-user", "password": "any-password"}
         )
         assert response.status_code == 401
-        assert response.json()["detail"] == "Incorrect username or password"
+        assert response.json()["detail"] == "Invalid username or password"
 
     def test_get_me_success(self, client: TestClient):
         """
@@ -182,4 +182,4 @@ class TestAuthAPI:
         logout_res = client.post("/api/v1/auth/logout", headers=headers)
 
         assert logout_res.status_code == 200
-        assert logout_res.json() == {"message": "Logout successful"} 
+        assert logout_res.json() == {"message": "Successfully logged out"} 

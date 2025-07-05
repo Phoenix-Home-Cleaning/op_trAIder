@@ -28,7 +28,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import LoginPage from '../../../app/(auth)/login/page';
+import LoginPage from '../../../apps/frontend/(auth)/login/page';
 
 // Mock Next.js router and NextAuth
 vi.mock('next/navigation', () => ({

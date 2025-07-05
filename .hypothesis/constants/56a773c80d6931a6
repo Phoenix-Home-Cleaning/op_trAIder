@@ -1,0 +1,4 @@
+# file: C:\Users\jesse\AppData\Roaming\Python\Python313\site-packages\kafka\protocol\commit.py
+# hypothesis_version: 6.135.14
+
+['consumer_group', 'consumer_id', 'coordinator_id', 'coordinator_key', 'coordinator_type', 'error_code', 'error_message', 'host', 'metadata', 'offset', 'partition', 'partitions', 'port', 'retention_time', 'throttle_time_ms', 'timestamp', 'topic', 'topics', 'utf-8']

@@ -44,8 +44,8 @@ from fastapi.security import HTTPBearer
 from starlette.middleware.base import BaseHTTPMiddleware
 
 # Import custom modules
-from api.health import router as health_router
-from api.auth import router as auth_router
+from backend.api.health import router as health_router
+from backend.api.auth import router as auth_router
 from database import get_database_connection, close_database_connection
 from utils.logging import setup_logging, get_logger
 from utils.monitoring import MetricsCollector
@@ -342,6 +342,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         status_code=exc.status_code,
         content={
             "error": exc.detail,
+            "detail": exc.detail,   # compatibility for test expectations
             "status_code": exc.status_code,
             "timestamp": time.time(),
         }
@@ -351,38 +352,61 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 # API ROUTES
 # =============================================================================
 
-# Health check routes (no authentication required)
+# ---------------------------------------------------------------------------
+# API ROUTING
+# ---------------------------------------------------------------------------
+# In Phase-0 we exposed health endpoints at the root ("/health") path to speed
+# up early-stage smoke testing.  The integration test-suite – as well as our
+# documented public API contract – now expects all first-class routes to be
+# nested under the versioned base path "/api/v1".  To maintain backwards
+# compatibility while satisfying the contract we:
+#   1. Mount versioned routes at "/api/v1/*" (new canonical path).
+#   2. Keep legacy mounts without the version prefix behind the same routers so
+#      that existing monitoring dashboards and external tests continue to work
+#      until they are migrated.  These legacy mounts are explicitly **NOT**
+#      documented and will be removed in the next major version.
+# ---------------------------------------------------------------------------
+
+# Health check routes
 app.include_router(
     health_router,
-    prefix="/health",
+    prefix="/api/v1/health",
     tags=["Health Check"]
 )
 
 # Authentication routes
 app.include_router(
     auth_router,
-    prefix="/api/auth",
+    prefix="/api/v1/auth",
     tags=["Authentication"]
 )
 
-# Root endpoint
+# ---------------------------------------------------------------------------
+# Legacy mounts (to be deprecated)
+# ---------------------------------------------------------------------------
+# WARNING: These mounts exist solely for backwards compatibility with Phase-0
+# scripts.  Do **not** rely on them for new integrations – use the `/api/v1/*`
+# paths instead.
+
+app.include_router(health_router, prefix="/health", tags=["Health Check (Legacy)"])
+app.include_router(auth_router, prefix="/api/auth", tags=["Authentication (Legacy)"])
+
 @app.get("/", tags=["Root"])
 async def root() -> Dict[str, Any]:
     """
-    Root endpoint providing API information and system status.
-    
-    @returns Dict with API version, status, and basic system information
-    
-    @performance <1ms response time
-    @sideEffects None
-    
-    @tradingImpact None - Informational only
-    @riskLevel LOW
+    Root endpoint providing basic API status.
+
+    The integration test-suite expects two fields:
+    1. `message` – human-readable welcome string.
+    2. `version` – semantic version of the running API.
+
+    Additional metadata is still returned for operational dashboards.
     """
-    
+
     return {
-        "name": "TRAIDER V1 API",
+        "message": "Welcome to TRAIDER V1 API",
         "version": API_VERSION,
+        # extended metadata (kept for dashboards / backwards compat)
         "status": "operational",
         "environment": ENVIRONMENT,
         "documentation": "/docs" if DEBUG else "Contact administrator",

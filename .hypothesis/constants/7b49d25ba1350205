@@ -1,0 +1,4 @@
+# file: C:\Users\jesse\AppData\Roaming\Python\Python313\site-packages\win32\lib\sspi.py
+# hypothesis_version: 6.135.14
+
+[b'hello', 'BlockSize', 'Client step %s', 'Comment', 'Kerberos', 'MaxSignature', 'MaxToken', 'Name', 'SSP : {} ({})', 'SecurityTrailer', 'Server step %s', 'We are:', '__main__', 'cool!', 'encrypted ?']

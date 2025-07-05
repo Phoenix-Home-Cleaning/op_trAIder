@@ -11,10 +11,45 @@ Provides consistent access to all database models and user role management.
 @author TRAIDER Team
 """
 
+# Ensure the legacy top-level alias `models` is registered *before* any model
+# sub-modules are imported. This guarantees that a single module object is
+# shared between the canonical package name (``backend.models``) and the
+# legacy alias (``models``), preventing duplicate SQLAlchemy table metadata
+# registration.
+
+import sys as _sys
+
+# Register the legacy alias *immediately* so it's available during submodule
+# resolution that may occur as part of an import statement like
+# ``from models.market_data import MarketData``. We also eagerly import each
+# sub-module under its canonical name and then create the alias in
+# ``sys.modules`` *before* control returns to the caller. This guarantees the
+# import system finds the already-initialised module and avoids a second
+# evaluation that would result in duplicated SQLAlchemy table metadata.
+
+import importlib as _importlib
+
+# Canonical package alias
+_sys.modules.setdefault("models", _sys.modules[__name__])
+
+# Eagerly load all sub-modules once and create alias entries
+for _sub in ("market_data", "signal", "trade", "position", "user"):
+    _canonical_name = f"{__name__}.{_sub}"  # backend.models.market_data etc.
+    _alias_name = f"models.{_sub}"
+
+    if _canonical_name not in _sys.modules:
+        _importlib.import_module(_canonical_name)
+
+    _sys.modules[_alias_name] = _sys.modules[_canonical_name]
+
 from enum import Enum
 from typing import List
 
-# Import all models
+# Import Base declarative class early so sub-models can inherit it without
+# circular import issues.
+from backend.database import Base as Base  # noqa: N812 – keep original name
+
+# Import all models **after** alias registration to avoid double imports.
 from .user import User
 from .market_data import MarketData, OrderBookLevel2
 from .signal import Signal
@@ -76,27 +111,16 @@ __all__ = [
 ]
 
 # ---------------------------------------------------------------------------
-# Compatibility shim for legacy import paths used by tests
+# Legacy import compatibility helpers
 # ---------------------------------------------------------------------------
-# Many unit-test files manipulate *sys.path* and then perform imports such as
-# `from models.market_data import MarketData`.  Inside the application code the
-# canonical import path is `apps.backend.models`.  Without an alias Python
-# treats these two import strings as distinct packages causing the module to
-# be executed twice and SQLAlchemy to attempt to register the same tables
-# twice – leading to `InvalidRequestError: Table 'X' is already defined'.
-#
-# We therefore register a *single* canonical module in `sys.modules['models']`
-# and map sub-modules accordingly.  This guarantees that all subsequent import
-# statements – regardless of the package prefix – resolve to the already
-# initialised module objects.
 
-import sys as _sys
+# Export Base declarative class for callers doing ``from models import Base``
+__all__.append("Base")
 
-# Alias the package itself
-_sys.modules.setdefault("models", _sys.modules[__name__])
-
-# Alias known sub-modules that have already been imported above.
+# Expose already-imported sub-modules under the legacy alias so that imports
+# like ``import models.market_data`` resolve to the canonical modules without
+# causing a second evaluation.
 for _sub in ("market_data", "signal", "trade", "position", "user"):
-    full_name = f"{__name__}.{_sub}"
-    if full_name in _sys.modules:
-        _sys.modules[f"models.{_sub}"] = _sys.modules[full_name] 
+    _canonical = f"{__name__}.{_sub}"
+    if _canonical in _sys.modules:
+        _sys.modules[f"models.{_sub}"] = _sys.modules[_canonical] 

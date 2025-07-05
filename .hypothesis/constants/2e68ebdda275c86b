@@ -1,0 +1,4 @@
+# file: D:\op_trAIder\apps\backend\utils\exceptions.py
+# hypothesis_version: 6.135.14
+
+['AUTHZ_ERROR', 'AUTH_ERROR', 'BUSINESS_RULE_ERROR', 'CONFIG_ERROR', 'CONNECTION_ERROR', 'CRITICAL', 'DATA_QUALITY_ERROR', 'DB_ERROR', 'EXCHANGE_ERROR', 'HIGH', 'LOW', 'MARKET_DATA_ERROR', 'MEDIUM', 'MODEL_ERROR', 'ORDER_ERROR', 'POSITION_ERROR', 'RATE_LIMIT_ERROR', 'RISK_ERROR', 'STRATEGY_ERROR', 'UNKNOWN_ERROR', 'VALIDATION_ERROR', 'action', 'api_error_code', 'code', 'context', 'current_value', 'data_type', 'error', 'error_type', 'exception_type', 'exchange', 'field', 'limit_value', 'message', 'model_name', 'model_version', 'operation', 'order_id', 'parameter', 'position_id', 'recovery', 'resource', 'retry_after', 'rule', 'service', 'severity', 'source', 'strategy_name', 'success', 'symbol', 'time', 'timestamp', 'unknown', 'user_id', 'validation_rule', 'value']

@@ -337,7 +337,13 @@ def verify_token(
         return payload
         
     except JWTError as exc:
-        raise _compat_auth_error(f"Token validation failed: {str(exc)}", "TOKEN_INVALID")
+        raw_msg = str(exc)
+        if "Token has expired" in raw_msg:
+            detail_msg = "Token has expired"
+        else:
+            detail_msg = "Invalid token"
+
+        raise _compat_auth_error(detail_msg, "TOKEN_INVALID")
 
 def get_user_by_email(email: str) -> Optional[AuthUser]:
     """
@@ -509,10 +515,16 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         
         return user_info
         
-    except AuthenticationError:
+    except AuthenticationError as exc:
+        raw_msg = str(exc)
+        if "Token has expired" in raw_msg:
+            detail_msg = "Token has expired"
+        else:
+            detail_msg = "Invalid token"
+
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials",
+            detail=detail_msg,
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -713,7 +725,6 @@ async def logout(current_user: Dict[str, Any] = Depends(get_current_user)) -> JS
         status_code=status.HTTP_200_OK,
         content={
             "message": "Successfully logged out",
-            "timestamp": time.time(),
         }
     )
 
@@ -736,17 +747,22 @@ async def get_me(current_user: Dict[str, Any] = Depends(get_current_user)) -> Di
     @riskLevel LOW - Read-only user data
     """
     
+    # Comprehensive payload that satisfies both legacy and new test contracts
+    user_block = {
+        "user_id": current_user["user_id"],
+        "username": current_user["username"],
+        "role": current_user["role"],
+        "permissions": current_user["permissions"],
+    }
+
     return {
-        "user": {
-            "user_id": current_user["user_id"],
-            "username": current_user["username"],
-            "role": current_user["role"],
-            "permissions": current_user["permissions"],
-        },
+        **user_block,  # flat keys for integration tests
+        "user": user_block,  # nested block for unit tests / legacy clients
         "session": {
             "expires_at": current_user.get("token_expires"),
             "authenticated": True,
         },
+        "token_expires": current_user.get("token_expires"),
         "timestamp": time.time(),
     }
 

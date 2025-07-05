@@ -26,7 +26,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { authenticateWithBackend, _setTestHook_forceAuthenticate } from '../../../app/lib/auth/backend-auth';
+import { authenticateWithBackend, _setTestHook_forceAuthenticate } from '../../../apps/frontend/lib/auth/backend-auth';
 import { 
   setupAuthTestEnvironment,
   createAuthTestUsers,

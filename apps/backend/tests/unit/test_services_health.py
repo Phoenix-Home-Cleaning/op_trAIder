@@ -34,7 +34,7 @@ from unittest.mock import Mock, patch, AsyncMock, MagicMock
 from typing import Dict, Any
 
 from fastapi import status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 
 # Import the health module and its components
 import sys
@@ -578,22 +578,27 @@ class TestHealthCheckService:
         
         # Test Prometheus metrics
         response = await prometheus_metrics()
-        
+
+        # Decode response content
+        if isinstance(response, PlainTextResponse):
+            content = response.body.decode()
+        else:
+            content = str(response)
+
         # Verify response format
-        assert isinstance(response, str)
-        assert len(response) > 0
-        
+        assert len(content) > 0
+
         # Verify Prometheus format
-        lines = response.strip().split('\n')
+        lines = content.strip().split('\n')
         assert any('# HELP' in line for line in lines)  # Help comments
         assert any('# TYPE' in line for line in lines)  # Type definitions
         
         # Verify specific metrics
-        assert 'traider_health_status' in response
-        assert 'traider_cpu_usage_percent' in response
-        assert 'traider_memory_usage_percent' in response
-        assert 'traider_disk_usage_percent' in response
-        assert 'traider_database_response_time_ms' in response
+        assert 'traider_health_status' in content
+        assert 'traider_cpu_usage_percent' in content
+        assert 'traider_memory_usage_percent' in content
+        assert 'traider_disk_usage_percent' in content
+        assert 'traider_database_response_time_ms' in content
         
         # Performance check
         execution_time = (time.time() - start_time) * 1000
@@ -620,14 +625,15 @@ class TestHealthCheckService:
         
         # Test Prometheus metrics with errors
         response = await prometheus_metrics()
-        
-        # Verify response format
-        assert isinstance(response, str)
-        assert len(response) > 0
-        
+
+        if isinstance(response, PlainTextResponse):
+            content = response.body.decode()
+        else:
+            content = str(response)
+
         # Verify error metrics
-        assert 'traider_health_status 0' in response  # 0 = unhealthy
-        assert 'traider_system_error 1' in response   # 1 = error present
+        assert 'traider_health_status 0' in content  # 0 = unhealthy
+        assert 'traider_system_error 1' in content   # 1 = error present
 
     # =============================================================================
     # PERFORMANCE TESTS

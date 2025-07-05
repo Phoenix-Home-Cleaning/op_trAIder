@@ -37,7 +37,7 @@ import {
 import { 
   authenticateWithBackend, 
   _setTestHook_forceAuthenticate 
-} from '../../app/lib/auth/backend-auth';
+} from '../../apps/frontend/lib/auth/backend-auth';
 // User type imported via authTestEnvironment
 
 describe('🛡️ Authentication Testing Guard Rails', () => {
@@ -374,7 +374,7 @@ describe('🛡️ Authentication Testing Guard Rails', () => {
 
     it('should validate that NextAuth route integration points remain stable', async () => {
       // Validate that the dynamic import pattern still works
-      const { authenticateWithBackend: dynamicImport } = await import('../../app/lib/auth/backend-auth');
+      const { authenticateWithBackend: dynamicImport } = await import('../../apps/frontend/lib/auth/backend-auth');
       
       expect(dynamicImport).toBe(authenticateWithBackend);
       expect(typeof dynamicImport).toBe('function');

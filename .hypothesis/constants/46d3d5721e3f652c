@@ -1,0 +1,4 @@
+# file: C:\Users\jesse\AppData\Roaming\Python\Python313\site-packages\kafka\protocol\api.py
+# hypothesis_version: 6.135.14
+
+['api_key', 'api_version', 'client_id', 'correlation_id', 'kafka-python', 'utf-8']

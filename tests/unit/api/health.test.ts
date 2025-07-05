@@ -30,7 +30,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
 // Import the actual route handlers from unified API
-import { GET, HEAD } from '../../../app/api/route';
+import { GET, HEAD } from '../../../apps/frontend/api/route';
 
 describe('Health API Endpoint - Integration Tests', () => {
   /**

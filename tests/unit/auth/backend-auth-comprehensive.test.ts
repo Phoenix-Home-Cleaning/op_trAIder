@@ -24,7 +24,7 @@ import {
   authenticateWithBackend,
   mapBackendRole,
   _setTestHook_forceAuthenticate,
-} from '../../../app/lib/auth/backend-auth';
+} from '../../../apps/frontend/lib/auth/backend-auth';
 
 describe('🔐 Backend Authentication Service', () => {
   const testSuite = createStandardTestSuite({ setupRouter: false });

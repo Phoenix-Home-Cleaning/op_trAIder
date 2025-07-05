@@ -1,0 +1,4 @@
+# file: C:\Users\jesse\AppData\Roaming\Python\Python313\site-packages\nacl\bindings\crypto_aead.py
+# hypothesis_version: 6.135.14
+
+['Decryption failed.', 'Encryption failed.', 'unsigned char[]', 'unsigned long long *']

@@ -1,0 +1,4 @@
+# file: C:\Users\jesse\AppData\Roaming\Python\Python313\site-packages\paramiko\ed25519key.py
+# hypothesis_version: 6.135.14
+
+[256, 'Invalid key', 'OPENSSH', 'bcrypt', 'block-size', 'class', 'key-size', 'mode', 'need a key', 'none', 'r', 'ssh-ed25519']

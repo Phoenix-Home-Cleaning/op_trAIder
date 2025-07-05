@@ -29,7 +29,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
 // Import the actual route handlers from unified API
-import { GET, POST, HEAD } from '../../../app/api/route';
+import { GET, POST, HEAD } from '../../../apps/frontend/api/route';
 
 describe('🚀 Enhanced API Route Coverage Tests', () => {
   beforeEach(() => {

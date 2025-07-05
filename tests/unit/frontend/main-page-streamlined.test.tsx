@@ -21,7 +21,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
-import DashboardPage from '../../../app/page';
+import DashboardPage from '../../../apps/frontend/page';
 import React from 'react';
 
 // Import shared test utilities (even though they have linter issues, the concept is sound)

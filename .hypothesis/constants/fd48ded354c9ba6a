@@ -1,0 +1,4 @@
+# file: C:\Users\jesse\AppData\Roaming\Python\Python313\site-packages\paramiko\sftp_file.py
+# hypothesis_version: 6.135.14
+
+[100, 32768, 'Expected attributes', 'Expected data', 'Expected status', 'check-file', 'chmod({}, {!r})', 'close({})', 'r', 'readv({}, {!r})', 'truncate({}, {!r})', 'utime({}, {!r})']

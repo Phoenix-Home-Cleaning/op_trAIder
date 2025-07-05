@@ -102,8 +102,8 @@ export default defineConfig({
         '**/*.config.{js,ts}',
         '**/types/**',
         '.next/**',
-        'app/**/README.md',
-        'app/globals.css',
+        'apps/frontend/**/README.md',
+        'apps/frontend/globals.css',
         'coverage/**',
         'docs/**',
         'apps/backend/**', // Backend has separate coverage

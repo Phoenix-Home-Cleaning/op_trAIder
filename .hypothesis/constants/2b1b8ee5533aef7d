@@ -1,0 +1,4 @@
+# file: C:\Users\jesse\AppData\Roaming\Python\Python313\site-packages\invoke\completion\complete.py
+# hypothesis_version: 6.135.14
+
+['*.completion', ', ', '-', '--', 'Collection', 'ParseResult', 'Parser', 'ParserContext', '^({}) ', 'r', '|']

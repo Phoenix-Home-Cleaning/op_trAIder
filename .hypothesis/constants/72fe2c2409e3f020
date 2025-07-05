@@ -1,0 +1,4 @@
+# file: C:\Users\jesse\AppData\Roaming\Python\Python313\site-packages\invoke\exceptions.py
+# hypothesis_version: 6.135.14
+
+[' already printed', ', ', '<{}: cmd={!r}{}>', 'ExceptionWrapper', 'ParserContext', 'Result', 'Thread args: {}\n\n{}', 'WatcherError', '__len__', 'args', 'exited', 'stderr', 'stdout', '{}={}']

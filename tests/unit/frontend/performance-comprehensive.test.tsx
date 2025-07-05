@@ -26,7 +26,7 @@
 
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import PerformancePage from '../../../app/performance/page';
+import PerformancePage from '../../../apps/frontend/performance/page';
 
 /**
  * Performance analytics test suite

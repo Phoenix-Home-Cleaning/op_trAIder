@@ -13,7 +13,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   authenticateWithBackend,
   _setTestHook_forceAuthenticate,
-} from '../../../app/lib/auth/backend-auth';
+} from '../../../apps/frontend/lib/auth/backend-auth';
 import { createTestUsers } from '../../setup/prepareAuthTest';
 
 describe('Authentication Test Hook', () => {

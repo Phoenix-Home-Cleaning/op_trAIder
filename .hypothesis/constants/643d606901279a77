@@ -1,0 +1,4 @@
+# file: C:\Users\jesse\AppData\Roaming\Python\Python313\site-packages\invoke\parser\parser.py
+# hypothesis_version: 6.135.14
+
+["'{}'", ', ', '-', '--', '-{}', '=', 'Adding {}', 'Context args: {!r}', 'Context flags: {!r}', 'Handling token: {!r}', 'Moving to flag {!r}', 'ParserContext', 'Saw flag {!r}', 'Starting argv: {!r}', 'complete_context', 'complete_flag', 'context', 'end', 'finish', 'help', 'see_context', 'see_unknown', 'store_only', 'switch_to_context', 'unknown']

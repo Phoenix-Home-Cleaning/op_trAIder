@@ -27,7 +27,7 @@
 
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import SystemPage from '../../../app/system/page';
+import SystemPage from '../../../apps/frontend/system/page';
 
 // Mock timers for testing real-time updates
 vi.mock('react', async () => {

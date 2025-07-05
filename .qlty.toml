@@ -86,9 +86,9 @@ security_rating_min = "A"
 [rules.trading_logic]
 # Enhanced standards for trading-critical code
 paths = [
-    "app/lib/trading/**",
-    "app/lib/risk/**",
-    "app/lib/signals/**",
+    "apps/frontend/lib/trading/**",
+    "apps/frontend/lib/risk/**",
+    "apps/frontend/lib/signals/**",
     "backend/services/trading/**",
     "backend/services/risk/**",
     "backend/ml/**"
@@ -103,7 +103,7 @@ duplication_percentage_max = 1.0
 [rules.market_data]
 # Market data handling standards
 paths = [
-    "app/lib/market-data/**",
+    "apps/frontend/lib/market-data/**",
     "backend/services/market_data/**",
     "backend/models/market_data.py"
 ]
@@ -116,7 +116,7 @@ memory_usage_max = "100MB"
 [rules.authentication]
 # Security-critical authentication code
 paths = [
-    "app/lib/auth/**",
+    "apps/frontend/lib/auth/**",
     "backend/api/auth.py",
     "middleware.ts"
 ]

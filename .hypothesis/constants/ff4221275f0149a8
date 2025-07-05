@@ -1,0 +1,4 @@
+# file: C:\Users\jesse\AppData\Roaming\Python\Python313\site-packages\paramiko\file.py
+# hypothesis_version: 6.135.14
+
+[128, 8192, '+', 'File is closed', 'U', 'a', 'b', 'r', 'utf-8', 'w']

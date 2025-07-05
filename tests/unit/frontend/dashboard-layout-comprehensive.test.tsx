@@ -56,7 +56,7 @@ describe('🏗️ Dashboard Layout Comprehensive Testing', () => {
    * Eliminates duplication in component rendering
    */
   const renderDashboardLayout = async (children = <div>Test Content</div>) => {
-    const { default: DashboardLayout } = await import('../../../app/dashboard/layout');
+    const { default: DashboardLayout } = await import('../../../apps/frontend/dashboard/layout');
     return render(<DashboardLayout>{children}</DashboardLayout>);
   };
 

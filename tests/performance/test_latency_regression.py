@@ -47,6 +47,21 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'backend'))
 
+import os as _os
+import pytest as _pytest
+
+# ---------------------------------------------------------------------------
+# Skip latency regression tests by default – they require a running system
+# under load and take significant time.  Enable by setting
+# `RUN_PERFORMANCE_TESTS=true`.
+# ---------------------------------------------------------------------------
+
+if _os.getenv("RUN_PERFORMANCE_TESTS", "false").lower() != "true":
+    _pytest.skip(
+        "Skipping performance latency regression tests – set RUN_PERFORMANCE_TESTS=true to enable",
+        allow_module_level=True,
+    )
+
 class TestLatencyRegression:
     """
     Latency regression test suite for TRAIDER trading platform

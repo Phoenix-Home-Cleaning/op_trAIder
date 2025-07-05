@@ -21,7 +21,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
-import DashboardPage from '../../../app/dashboard/page';
+import DashboardPage from '../../../apps/frontend/dashboard/page';
 
 // Shared test setup
 const setupTestEnvironment = () => {

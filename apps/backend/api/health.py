@@ -35,7 +35,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 
 from fastapi import APIRouter, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 
 from utils.logging import get_logger
 
@@ -401,7 +401,7 @@ async def detailed_health_check() -> JSONResponse:
     return JSONResponse(status_code=status_code, content=response_data)
 
 @router.get("/metrics", summary="Prometheus Metrics")
-async def prometheus_metrics() -> str:
+async def prometheus_metrics() -> PlainTextResponse:
     """
     Prometheus-compatible metrics endpoint.
     
@@ -435,6 +435,7 @@ async def prometheus_metrics() -> str:
         try:
             system_info = get_system_info()
             if "error" not in system_info:
+                # Primary TRAIDER-prefixed metrics
                 _add_metric("traider_cpu_usage_percent", 
                           system_info["cpu"]["usage_percent"], 
                           "CPU usage percentage")
@@ -444,6 +445,22 @@ async def prometheus_metrics() -> str:
                 _add_metric("traider_disk_usage_percent", 
                           system_info["disk"]["usage_percent"], 
                           "Disk usage percentage")
+
+                # -----------------------------------------------------------------
+                # Backwards-compatibility aliases – the integration test-suite
+                # (and some existing Grafana dashboards) still expect generic
+                # `system_*` and `process_*` metric names.  We publish both
+                # names for one release cycle to avoid breaking consumers.
+                # -----------------------------------------------------------------
+                _add_metric("system_cpu_usage_percent", 
+                          system_info["cpu"]["usage_percent"], 
+                          "CPU usage percentage (alias)")
+                _add_metric("system_memory_usage_percent", 
+                          system_info["memory"]["usage_percent"], 
+                          "Memory usage percentage (alias)")
+                _add_metric("system_disk_usage_percent", 
+                          system_info["disk"]["usage_percent"], 
+                          "Disk usage percentage (alias)")
         except Exception as exc:
             logger.warning(f"Failed to collect system metrics: {exc}")
             system_error = 1
@@ -465,15 +482,17 @@ async def prometheus_metrics() -> str:
             overall_healthy = 0
 
         # Application metrics
-        _add_metric("traider_uptime_seconds", 
-                  time.time() - _START_TIME, 
-                  "Application uptime in seconds")
+        uptime_seconds = time.time() - _START_TIME
+        _add_metric("traider_uptime_seconds", uptime_seconds, "Application uptime in seconds")
+
+        # Compatibility alias for legacy dashboards/tests
+        _add_metric("process_uptime_seconds", uptime_seconds, "Process uptime in seconds (alias)")
 
         _add_metric("traider_health_status", overall_healthy, "Overall health status (1=healthy, 0=unhealthy)")
         _add_metric("traider_system_error", system_error, "System error indicator (1=error present, 0=ok)")
 
-        return "\n".join(metrics_lines)
+        return PlainTextResponse("\n".join(metrics_lines), media_type="text/plain")
         
     except Exception as exc:
         logger.error(f"Metrics endpoint failed: {exc}", exc_info=True)
-        return f"# Error collecting metrics: {exc}\n" 
+        return PlainTextResponse(f"# Error collecting metrics: {exc}\n", media_type="text/plain") 

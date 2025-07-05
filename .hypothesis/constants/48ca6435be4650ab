@@ -1,0 +1,4 @@
+# file: C:\Users\jesse\AppData\Roaming\Python\Python313\site-packages\nacl\bindings\crypto_kx.py
+# hypothesis_version: 6.135.14
+
+['crypto_kx_SEED_BYTES', 'crypto_kx_keypair', 'unsigned char[]']

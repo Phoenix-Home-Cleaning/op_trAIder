@@ -27,7 +27,7 @@
 
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import SignalsPage from '../../../app/signals/page';
+import SignalsPage from '../../../apps/frontend/signals/page';
 
 /**
  * Trading signals test suite
