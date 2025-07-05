@@ -27,7 +27,7 @@ from __future__ import annotations
 import os
 import time
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, AsyncGenerator
 
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -64,7 +64,7 @@ app.add_middleware(
 # ---------------------------------------------------------------------------
 # Dependency
 # ---------------------------------------------------------------------------
-async def db_dep():
+async def db_dep() -> AsyncGenerator[Any, None]:
     async with get_database_connection() as conn:
         yield conn
 

@@ -173,7 +173,7 @@ async def create_connection_pool():
         logger.error(f"Failed to create connection pool: {exc}", exc_info=True)
         raise
 
-async def get_database_connection():
+async def get_database_connection() -> None:
     """
     Initialize all database connections and verify connectivity.
     
@@ -204,7 +204,7 @@ async def get_database_connection():
         logger.error(f"❌ Database connection failed: {exc}", exc_info=True)
         raise
 
-async def close_database_connection():
+async def close_database_connection() -> None:
     """
     Gracefully close all database connections.
     
