@@ -97,8 +97,7 @@ jobs:
       - name: 🔍 Run ESLint with zero warnings policy
         run: |
           echo "::group::ESLint Analysis"
-          cd apps/frontend
-          pnpm exec next lint --max-warnings 0
+          pnpm exec eslint "apps/frontend/**/*.{js,ts,tsx}" --max-warnings 0 --config config/tooling/eslint.config.mjs
           echo "::endgroup::"
           
       - name: 🔧 Run TypeScript compiler check
