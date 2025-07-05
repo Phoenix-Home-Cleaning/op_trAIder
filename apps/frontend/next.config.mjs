@@ -112,7 +112,7 @@ const nextConfig = {
     // Optimize bundle for trading libraries
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@': path.resolve(__dirname, 'apps/frontend'),
+      '@': __dirname,
     };
 
     // Resolve symlink issues on Windows
