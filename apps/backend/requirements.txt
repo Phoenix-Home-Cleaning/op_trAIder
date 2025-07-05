@@ -15,7 +15,7 @@ PyJWT==2.10.1
 python-jose[cryptography]==3.5.0  # RESTORED: Required for JWT handling in auth.py
 passlib[bcrypt]==1.7.4
 bcrypt==4.2.1
-cryptography==44.0.0
+cryptography==44.0.1
 
 # DATABASE & ORM
 sqlalchemy==2.0.36
