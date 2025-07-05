@@ -80,8 +80,6 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-          cache-dependency-path: package-lock.json
-          registry-url: 'https://registry.npmjs.org'
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
           
@@ -265,6 +263,8 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
           
       - name: 📥 Install dependencies
         run: npm install --prefer-offline --no-audit
@@ -367,6 +367,8 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
           
       - name: 📥 Install dependencies
         run: npm install --prefer-offline --no-audit
@@ -478,6 +480,8 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
           
       - name: 📥 Install dependencies
         run: npm install --prefer-offline --no-audit
@@ -590,6 +594,8 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
           
       - name: 📥 Install dependencies
         run: npm install --prefer-offline --no-audit
