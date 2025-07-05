@@ -41,7 +41,7 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 
 from utils.logging import get_logger, get_audit_logger
-from utils.exceptions import AuthenticationError, AuthorizationError, ValidationError
+from backend.utils.exceptions import AuthenticationError, AuthorizationError, ValidationError
 from types import new_class
 
 # =============================================================================
@@ -88,7 +88,7 @@ GUEST_PASSWORD = settings.guest_password
 
 # Logging & exceptions
 from utils.logging import get_logger, get_audit_logger
-from utils.exceptions import AuthenticationError, AuthorizationError, ValidationError
+from backend.utils.exceptions import AuthenticationError, AuthorizationError, ValidationError
 
 # ---------------------------------------------------------------------------
 # CONSTANTS & PASSWORD CONTEXT INITIALISATION
@@ -789,13 +789,23 @@ if _orig_backend_utils_cls and hasattr(_orig_backend_utils_cls, "AuthenticationE
 _candidates = list(dict.fromkeys(_candidates))
 
 def _compat_auth_error(*args, **kwargs):  # noqa: D401 – factory function
-    """Return an AuthenticationError instance compatible with existing class identities."""
+    """Return AuthenticationError instance compatible across import paths."""
 
-    current_cls = sys.modules.get("utils.exceptions").__dict__.get("AuthenticationError")
+    from backend.utils.exceptions import AuthenticationError as _BackAuth  # type: ignore
+    try:
+        from utils.exceptions import AuthenticationError as _UtilsAuth  # type: ignore
+    except ModuleNotFoundError:
+        _UtilsAuth = _BackAuth  # Fallback if alias not yet imported
 
-    if current_cls in _candidates:
-        return current_cls(*args, **kwargs)
+    # If the two references point to the *same* class object, just instantiate.
+    if _BackAuth is _UtilsAuth:
+        return _BackAuth(*args, **kwargs)
 
-    # Create a temporary subclass that inherits from both, ensuring isinstance checks pass.
-    CompatError = new_class("CompatAuthenticationError", (_candidates[0], current_cls))  # type: ignore[misc]
-    return CompatError(*args, **kwargs) 
+    # Otherwise, synthesise a temporary subclass that inherits from both so
+    # `isinstance(exc, _BackAuth)` *and* `isinstance(exc, _UtilsAuth)` are True.
+    CompatAuthError = new_class(
+        "CompatAuthenticationError",
+        (_BackAuth, _UtilsAuth),
+    )  # type: ignore[misc]
+
+    return CompatAuthError(*args, **kwargs) 

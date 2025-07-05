@@ -1,0 +1,4 @@
+# file: D:\op_trAIder\apps\backend\database.py
+# hypothesis_version: 6.135.14
+
+[1000, 3600, '0', '1', '10', '20', '30', '5432', 'DATABASE_URL', 'DB_HOST', 'DB_MAX_OVERFLOW', 'DB_NAME', 'DB_PASSWORD', 'DB_POOL_SIZE', 'DB_POOL_TIMEOUT', 'DB_PORT', 'DB_USER', 'SELECT 1', 'SELECT version()', 'UTC', 'application_name', 'checks', 'connection_pool', 'degraded', 'error', 'healthy', 'localhost', 'max_overflow', 'password', 'pool_free', 'pool_size', 'postgresql://', 'pytest', 'response_time_ms', 'sqlalchemy', 'status', 'timeout', 'timestamp', 'timezone', 'traider', 'traider_v1', 'unavailable', 'unhealthy']

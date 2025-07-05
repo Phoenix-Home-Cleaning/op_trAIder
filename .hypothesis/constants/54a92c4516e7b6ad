@@ -1,0 +1,4 @@
+# file: D:\op_trAIder\apps\backend\__init__.py
+# hypothesis_version: 6.135.14
+
+['.database', 'api', 'backend', 'database', 'utils']

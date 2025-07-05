@@ -332,7 +332,7 @@ class TestAuthenticationService:
         """
         # Create token with short expiration and required sub field
         payload = {"sub": "test-user", "username": "test"}
-        short_expiration = timedelta(seconds=1)
+        short_expiration = timedelta(seconds=5)
         token = create_access_token(payload, expires_delta=short_expiration)
         
         # Token should be valid immediately
@@ -341,7 +341,7 @@ class TestAuthenticationService:
         assert decoded["username"] == "test"
         
         # Wait for expiration
-        time.sleep(2)
+        time.sleep(8)
         
         # Token should now be expired
         with pytest.raises(AuthenticationError):

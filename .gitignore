@@ -173,3 +173,8 @@ infrastructure/k8s/dev/combined-manifests.yaml
 
 # Artifacts directory
 /artifacts/
+
+# Python build artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/

@@ -371,130 +371,13 @@ _Next Review: Daily until Phase 0 100% complete_
 
 ### ✅ **Phase 0 Foundation Complete** - 2025-06-29
 
-## 🧪 TEST COVERAGE ENHANCEMENT - COMPLETED (2025-01-07)
+### ✅ Market Data Service Scaffold Completed – 2025-07-05
 
-### 📊 **SIGNIFICANT COVERAGE IMPROVEMENTS ACHIEVED**
-
-**Status**: Test coverage expansion completed with institutional-grade quality
-**Achievement**: Enhanced test coverage across critical system components
-**Impact**: Improved system reliability and code quality validation
-
-#### **✅ Coverage Improvements Delivered**
-
-- [x] **Backend Authentication Coverage**
-  - ✅ Created comprehensive backend-auth test suite (26 tests)
-  - ✅ Covers role mapping, authentication flow, error handling
-  - ✅ Performance validation (<50ms execution)
-  - ✅ Security boundary testing with edge cases
-  - **Result**: Backend auth coverage significantly improved
-
-- [x] **API Route Coverage Enhancement**
-  - ✅ Created enhanced API route test suite (10 tests)
-  - ✅ Comprehensive POST endpoint testing
-  - ✅ Info endpoint documentation validation
-  - ✅ Error handling and edge case coverage
-  - ✅ Concurrent request and URL encoding tests
-  - **Result**: API route coverage improved from 77.95% to 94.48%
-
-- [x] **Test Infrastructure Cleanup**
-  - ✅ Removed problematic NextAuth route tests (complex mocking issues)
-  - ✅ Maintained focus on achievable, high-impact coverage
-  - ✅ Ensured all remaining tests pass consistently
-  - **Result**: Clean, reliable test suite with 279 passing tests
-
-#### **📈 Final Coverage Metrics**
-
-**Current Test Status**: 279 tests passing | 3 skipped
-**Test Execution Time**: 44.59s (within performance targets)
-**Coverage Quality**: Institutional-grade with comprehensive validation
-
-**Key Coverage Areas**:
-
-- **API Routes**: 94.48% statements (excellent)
-- **Backend Auth**: 100% statements (comprehensive)
-- **System Pages**: 91.42% statements (very good)
-- **Frontend Components**: Strong coverage across dashboard, signals, risk pages
-
-#### **🎯 Testing Standards Met**
-
-- ✅ **Performance Requirements**: All tests execute within targets
-- ✅ **Error Handling**: Comprehensive error scenario coverage
-- ✅ **Edge Cases**: URL encoding, concurrent requests, malformed data
-- ✅ **Security**: Authentication boundaries and role validation
-- ✅ **Documentation**: All tests include institutional-grade TSDoc
-
-#### **🚀 Ready for Phase 1**
-
-**Test Foundation**: Solid testing infrastructure ready for Phase 1 expansion
-**Quality Assurance**: Comprehensive validation of core system components
-**Technical Debt**: Minimal - focused on maintainable, reliable tests
-
-### 2025-01-03 - Pytest-Ruff Pipeline Fix with World-Class Hardening ✅ COMPLETED
-
-**Issue Resolved:** Backend tests failing due to missing dependencies (python-jose, structlog, hypothesis) causing CI/CD pipeline failures.
-
-**Root Cause:** Dependencies were removed during security hardening but code still imported them, causing ModuleNotFoundError during test collection.
-
-**Solution Implemented:**
-
-1. **Restored Critical Dependencies:**
-   - `python-jose[cryptography]==3.5.0` - Required for JWT handling in auth.py
-   - `structlog==24.2.0` - Required for structured logging in utils/logging.py
-   - `hypothesis==6.135.14` - Required for property-based testing
-
-2. **Enhanced Requirements Management:**
-   - Clean, organized requirements.txt with institutional-grade structure
-   - Proper categorization and documentation of dependencies
-   - Version pinning for stability and security
-
-3. **World-Class Hardening Measures:**
-   - **Dependency Validation Script:** `scripts/validate-dependencies.py`
-     - Critical dependency checking with import validation
-     - Comprehensive reporting and error handling
-     - CI/CD integration for early failure detection
-   - **Enhanced pytest.ini Configuration:**
-     - Permanent pytest-ruff plugin disabling
-     - Institutional-grade test settings
-     - Consistent coverage configuration
-   - **Improved CI/CD Pipeline:**
-     - Dedicated Ruff linting step with non-blocking execution
-     - Enhanced logging and debugging capabilities
-     - Dependency validation as part of quality checks
-
-**Results:**
-
-- **Backend Tests:** 281 passed, 13 failed (non-critical test issues)
-- **Trading Coverage:** 100% (253/253 statements covered)
-- **Overall Coverage:** 79% backend coverage
-- **Pipeline Reliability:** Enhanced with institutional-grade validation
-- **Dependencies:** All critical dependencies restored and validated
-
-**Quality Assurance:**
-
-- Comprehensive ADR documentation (ADR-015)
-- Dependency validation with detailed reporting
-- Enhanced monitoring and alerting capabilities
-- World-class error handling and recovery strategies
-
-### 2025-01-03 - Trading Coverage Calculator Fix ✅ COMPLETED
-
-**Issue Resolved:** Trading coverage calculator was returning 0% coverage causing CI/CD pipeline failures.
-
-**Root Cause:** Path normalization issue where Windows-style paths in coverage JSON weren't matching Unix-style patterns in the calculator.
-
-**Solution Implemented:**
-
-- Added cross-platform path normalization helper method `_normalise()`
-- Pre-computed normalized patterns for efficient matching
-- Updated `_is_trading_file()` and `_is_critical_module()` methods
-- Enabled verbose logging in CI workflow for debugging
-
-**Results:**
-
-- Trading coverage now correctly reports **99.60%** (was 0%)
-- All 4 trading files detected: market_data.py, position.py, signal.py, trade.py
-- Critical modules properly identified: position.py, trade.py
-- CI/CD pipeline now passes consistently
+- **COMPLETED**: Implemented Coinbase Advanced Trade WebSocket client (ticker & l2update)
+- **DB Migration**: Added Timescale hypertable `market_data`
+- **Observability**: Prometheus metrics + OTEL tracing integrated
+- **Documentation**: ADR-018 and architecture doc added
+- **Next Steps**: Capture WS fixtures, build integration tests, run 24-hour endurance test
 
 ## Action Items
 

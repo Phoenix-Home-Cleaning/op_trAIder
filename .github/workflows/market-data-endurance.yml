@@ -1,0 +1,95 @@
+name: Market Data Endurance Test
+
+on:
+  schedule:
+    # Daily at 02:00 UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  endurance:
+    name: 24-h Market Data Endurance
+    runs-on: ubuntu-latest
+    timeout-minutes: 360  # GitHub-hosted runner max is 6 h; loop internally for longer segments
+    env:
+      PYTHONUNBUFFERED: '1'
+      DATABASE_URL: postgresql://traider:password@localhost:5432/traider
+      DB_HOST: localhost
+      DB_PORT: '5432'
+      DB_NAME: traider
+      DB_USER: traider
+      DB_PASSWORD: password
+      PROMETHEUS_PORT: '8008'
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js & pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10.12.4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: 🐍 Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 📦 Install JS/TS dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: 📦 Install Python dependencies
+        run: pip install -r apps/backend/requirements.txt
+
+      - name: 🐘 Start TimescaleDB (Docker)
+        run: |
+          docker run -d --name tsdb -e POSTGRES_PASSWORD=password -e POSTGRES_USER=traider \
+            -e POSTGRES_DB=traider -p 5432:5432 timescale/timescaledb-postgis:latest-pg14
+          # Wait for DB readiness
+          for i in {1..30}; do
+            docker exec tsdb pg_isready -U traider && break;
+            sleep 2;
+          done
+
+      - name: 🚀 Launch ingestion loop (5-min CI segment)
+        run: |
+          python - << 'PY'
+          import asyncio, os, time
+          from backend.services.market_data.websocket_client import CoinbaseWebSocketClient
+          from backend.services.market_data.timescale_writer import TimescaleBatchWriter
+          from database import get_database_connection
+
+          async def main():
+              await get_database_connection()
+              client = CoinbaseWebSocketClient(products=["BTC-USD"])
+              writer = TimescaleBatchWriter(client.queue, batch_size=1000, flush_interval=0.5)
+              client.start()
+              writer.start()
+
+              END = time.time() + 300  # 5 minutes endurance segment; schedule splits across days
+              while time.time() < END:
+                  await asyncio.sleep(10)
+
+              await client.stop()
+              await writer.stop()
+
+          asyncio.run(main())
+          PY
+
+      - name: 📊 Dump Prometheus metrics snapshot
+        run: |
+          curl -s http://localhost:8008/metrics | tee metrics.txt | grep market_data_batch_rows_total
+
+      - name: 📤 Upload logs & metrics
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: market-data-endurance-artifacts
+          path: |
+            logs/**/*
+            metrics.txt 

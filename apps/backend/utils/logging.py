@@ -37,6 +37,11 @@ from typing import Any, Dict, Optional
 
 import structlog
 from structlog.types import FilteringBoundLogger
+from prometheus_client import start_http_server
+from opentelemetry import trace
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 
 # =============================================================================
 # CONFIGURATION
@@ -284,6 +289,26 @@ def setup_logging(level: int = logging.INFO) -> None:
     
     logging.config.dictConfig(logging_config)
     
+    # ------------------------------------------------------------------
+    # Observability Stub – Prometheus & OpenTelemetry
+    # ------------------------------------------------------------------
+
+    try:
+        # Start Prometheus HTTP metrics exporter on configured port (default 8008)
+        prom_port = int(os.getenv("PROMETHEUS_PORT", "8008"))
+        start_http_server(prom_port)
+    except Exception as exc:  # noqa: BLE001
+        logging.getLogger(__name__).warning("Unable to start Prometheus server: %s", exc)
+
+    try:
+        # OpenTelemetry tracer provider (console exporter for now)
+        resource = Resource.create({"service.name": "traider-backend"})
+        provider = TracerProvider(resource=resource)
+        provider.add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
+        trace.set_tracer_provider(provider)
+    except Exception as exc:  # noqa: BLE001
+        logging.getLogger(__name__).warning("Unable to init OpenTelemetry: %s", exc)
+
     # Log configuration success
     logger = get_logger(__name__)
     logger.info(

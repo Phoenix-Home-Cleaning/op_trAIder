@@ -1,0 +1,4 @@
+# file: C:\Users\jesse\AppData\Roaming\Python\Python313\site-packages\opentelemetry\sdk\resources\__init__.py
+# hypothesis_version: 6.135.14
+
+[',', '.', ':', '=', 'Resource', 'ResourceDetector', 'attributes', 'final', 'getppid', 'opentelemetry', 'opentelemetry-sdk', 'otel', 'python', 'schema_url', 'solaris', 'sunos', 'unknown_service', 'windows']
