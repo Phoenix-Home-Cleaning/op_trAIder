@@ -26,6 +26,7 @@ databases[postgresql]==0.9.0
 
 # LOGGING & MONITORING
 structlog==24.2.0  # RESTORED: Required for structured logging in utils/logging.py
+python-json-logger==2.0.7  # NEW: Needed by logging formatter in utils/logging.py
 loguru==0.7.3
 prometheus-client==0.21.1
 
