@@ -16,7 +16,19 @@ pipeline.
 
 from __future__ import annotations
 
+import os
 import sys
+
+# ---------------------------------------------------------------------------
+# Provide minimal environment context so that configuration validation does
+# not fail during this lightweight import check.  We intentionally keep the
+# values non-secret because this script runs in CI and *must not* rely on real
+# credentials.
+# ---------------------------------------------------------------------------
+
+os.environ.setdefault("SECRET_KEY", "dummy-secret-key")
+os.environ.setdefault("DASHBOARD_PASSWORD", "dummy-password")
+os.environ.setdefault("CONFIG_VALIDATION_RELAXED", "true")
 
 try:
     import backend  # noqa: F401 – we only check importability

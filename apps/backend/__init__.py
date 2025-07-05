@@ -12,25 +12,25 @@ map the shorter alias to avoid breaking existing tests.
 import sys as _sys
 import importlib
 
-# Lazily import the database sub-module and register alias only if not present
-if "database" not in _sys.modules:
-    _db_mod = importlib.import_module("backend.database")
-    _sys.modules["database"] = _db_mod 
-
 # ---------------------------------------------------------------------------
-# Legacy alias mappings for `utils` and `api` top-level packages referenced in
-# older test suites. These simply forward to the canonical `backend.utils` and
-# `backend.api` modules so imports like `from utils.logging import get_logger`
-# continue to resolve.
+# Legacy alias mappings for `utils` and `api` top-level packages. These must be
+# established **before** we import other sub-modules like `database` because
+# those sub-modules depend on `utils` during their import phase.
 # ---------------------------------------------------------------------------
 
-for _legacy, _canonical in (("utils", "backend.utils"), ("api", "backend.api")):
+for _legacy, _canonical in (("utils", f"{__name__}.utils"), ("api", f"{__name__}.api")):
     if _legacy not in _sys.modules:
         try:
             _mod = importlib.import_module(_canonical)
             _sys.modules[_legacy] = _mod
         except ModuleNotFoundError:
-            # Module might not exist yet (e.g., API package not imported in
-            # backend-only contexts). It will be resolved lazily when first
-            # needed.
-            pass 
+            # Sub-module might not exist yet; it will be resolved lazily.
+            pass
+
+# ---------------------------------------------------------------------------
+# Now we can safely import and alias the database sub-module.
+# ---------------------------------------------------------------------------
+
+if "database" not in _sys.modules:
+    _db_mod = importlib.import_module(".database", package=__name__)
+    _sys.modules["database"] = _db_mod 
