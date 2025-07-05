@@ -9,3 +9,6 @@ backend_name = f"backend.{module_name}"
 
 if backend_name not in sys.modules:
     sys.modules[backend_name] = sys.modules[module_name] 
+
+from .monitoring import MetricsCollector, initialize_metrics, get_metrics_collector  # noqa: F401
+from .exceptions import TradingError, ErrorSeverity  # noqa: F401 

@@ -1,11 +1,34 @@
+from typing import Any, Dict, Optional
 from enum import Enum
-from typing import Any, Dict, Optional, TypedDict
 
-class ErrorSeverity(Enum):
-    LOW: str
-    MEDIUM: str
-    HIGH: str
-    CRITICAL: str
+__all__ = [
+    "ErrorSeverity",
+    "TradingError",
+    "DatabaseError",
+    "ConnectionError",
+    "ConfigurationError",
+    "AuthenticationError",
+    "AuthorizationError",
+    "MarketDataError",
+    "DataQualityError",
+    "OrderError",
+    "RiskManagementError",
+    "PositionError",
+    "StrategyError",
+    "ModelError",
+    "ExchangeError",
+    "RateLimitError",
+    "ValidationError",
+    "BusinessRuleError",
+    "create_error_response",
+    "handle_exception",
+]
+
+class ErrorSeverity(str, Enum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+    CRITICAL = "CRITICAL"
 
 class TradingError(Exception):
     message: str
@@ -14,7 +37,7 @@ class TradingError(Exception):
     recovery: str
     context: Dict[str, Any]
 
-    def __init__(self, message: str, code: str, severity: ErrorSeverity = ErrorSeverity.MEDIUM, recovery: str = ..., context: Optional[Dict[str, Any]] = ...): ...
+    def __init__(self, message: str, code: str, severity: ErrorSeverity = ..., recovery: str = ..., context: Optional[Dict[str, Any]] = ...): ...
     def to_dict(self) -> Dict[str, Any]: ...
 
 class DatabaseError(TradingError): ...
