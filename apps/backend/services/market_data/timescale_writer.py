@@ -39,6 +39,7 @@ from typing import Any, Dict, List
 
 from prometheus_client import Counter, Histogram, Gauge
 from sqlalchemy import insert
+from opentelemetry import trace
 
 # Runtime imports (avoid heavy deps on cold-start) ---------------------------
 from database import get_async_session  # pylint: disable=import-error
@@ -68,6 +69,18 @@ _LAST_FLUSH_SIZE = Gauge(
     "market_data_last_flush_size",
     "Number of rows written in the most recent batch insert.",
 )
+
+# Real-time gauge of queue backlog (shared label matches WebSocket client metric)
+_QUEUE_BACKLOG = Gauge(
+    "market_data_queue_size_writer",
+    "Number of tick messages awaiting DB flush in writer's local batch queue.",
+)
+
+# ---------------------------------------------------------------------------
+# Tracing
+# ---------------------------------------------------------------------------
+
+_tracer = trace.get_tracer(__name__)
 
 # ---------------------------------------------------------------------------
 # Helper – translate raw WS message → MarketData row dict
@@ -154,8 +167,9 @@ class TimescaleBatchWriter:
                     self._queue.get(), timeout=self._flush_interval
                 )
                 md_kwargs = _parse_market_data(msg)
-                if md_kwargs:  # ignore unsupported messages silently
+                if md_kwargs:
                     batch.append(md_kwargs)
+                    _QUEUE_BACKLOG.set(len(batch))
             except asyncio.TimeoutError:
                 pass  # No new message – fall through to flush condition
 
@@ -170,6 +184,7 @@ class TimescaleBatchWriter:
                 await self._flush(batch)
                 batch.clear()
                 last_flush = now
+                _QUEUE_BACKLOG.set(0)
 
         # Drain remaining messages on shutdown
         if batch:
@@ -181,23 +196,30 @@ class TimescaleBatchWriter:
 
     async def _flush(self, rows: List[Dict[str, Any]]) -> None:  # noqa: D401
         attempt = 0
-        while attempt <= self._max_retries:
-            attempt += 1
-            try:
-                start_ns = time.perf_counter_ns()
-                async with get_async_session() as session:
-                    await session.execute(insert(MarketData), rows)
-                    await session.commit()
+        with _tracer.start_as_current_span("db.batch_flush") as span:
+            span.set_attribute("batch_size", len(rows))
+            while attempt <= self._max_retries:
+                attempt += 1
+                try:
+                    start_ns = time.perf_counter_ns()
+                    async with get_async_session() as session:
+                        await session.execute(insert(MarketData), rows)
+                        await session.commit()
 
-                _BATCH_ROWS_TOTAL.inc(len(rows))
-                _LAST_FLUSH_SIZE.set(len(rows))
-                elapsed_ms = (time.perf_counter_ns() - start_ns) / 1_000_000
-                _BATCH_FLUSH_LATENCY_MS.observe(elapsed_ms)
-                return  # success
-            except Exception as exc:  # noqa: BLE001
-                self._logger.warning("Batch insert failed (attempt %s/%s): %s", attempt, self._max_retries, exc)
-                if attempt > self._max_retries:
-                    _BATCH_FAILED_TOTAL.inc(len(rows))
-                    self._logger.error("Exceeded max retries – dropping %s rows", len(rows))
-                    return
-                await asyncio.sleep(0.5 * attempt)  # exponential backoff 
+                    _BATCH_ROWS_TOTAL.inc(len(rows))
+                    _LAST_FLUSH_SIZE.set(len(rows))
+                    elapsed_ms = (time.perf_counter_ns() - start_ns) / 1_000_000
+                    _BATCH_FLUSH_LATENCY_MS.observe(elapsed_ms)
+                    span.set_attribute("latency_ms", elapsed_ms)
+                    return  # success
+                except Exception as exc:  # noqa: BLE001
+                    span.record_exception(exc)
+                    self._logger.warning(
+                        "Batch insert failed (attempt %s/%s): %s", attempt, self._max_retries, exc
+                    )
+                    if attempt > self._max_retries:
+                        _BATCH_FAILED_TOTAL.inc(len(rows))
+                        span.set_attribute("failed_rows", len(rows))
+                        self._logger.error("Exceeded max retries – dropping %s rows", len(rows))
+                        return
+                    await asyncio.sleep(0.5 * attempt)  # exponential backoff 

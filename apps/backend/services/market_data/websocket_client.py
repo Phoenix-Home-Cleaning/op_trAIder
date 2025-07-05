@@ -30,6 +30,7 @@ import asyncio
 import json
 import logging
 import time
+import os
 from typing import Iterable, List
 
 import websockets
@@ -97,6 +98,7 @@ class CoinbaseWebSocketClient:
     WS_URL: str = "wss://advanced-trade-ws.coinbase.com"
     _PING_INTERVAL_SEC: int = 20
     _MAX_BACKOFF_SEC: int = 60
+    _FAILURE_THRESHOLD: int = 5  # trip circuit-breaker after N consecutive failures
 
     def __init__(self, products: Iterable[str] | None = None, *, queue_maxsize: int = 10000) -> None:
         self.products: List[str] = list(products) if products else ["BTC-USD", "ETH-USD"]
@@ -106,6 +108,10 @@ class CoinbaseWebSocketClient:
 
         # In-memory buffer decoupling WebSocket ingest from DB writer / processors
         self._queue: asyncio.Queue[dict[str, str | float]] = asyncio.Queue(maxsize=queue_maxsize)
+
+        # Circuit-breaker state
+        self._consecutive_failures: int = 0
+        self._breaker_tripped: bool = False
 
     # ---------------------------------------------------------------------
     # Public control methods
@@ -156,8 +162,18 @@ class CoinbaseWebSocketClient:
             try:
                 await self._connect_and_listen()
                 backoff = 1  # reset after successful session
+                self._consecutive_failures = 0
+                self._breaker_tripped = False
             except Exception as exc:  # noqa: BLE001
                 self._logger.warning("WS error: %s – reconnect in %s s", exc, backoff)
+                self._consecutive_failures += 1
+                if (
+                    self._consecutive_failures >= self._FAILURE_THRESHOLD
+                    and not self._breaker_tripped
+                ):
+                    await self._trigger_alert(exc)
+                    self._breaker_tripped = True
+
                 await asyncio.sleep(backoff)
                 backoff = min(backoff * 2, self._MAX_BACKOFF_SEC)
 
@@ -213,4 +229,31 @@ class CoinbaseWebSocketClient:
             finally:
                 elapsed_ms = (time.perf_counter_ns() - start) / 1_000_000
                 _WS_LATENCY_MS.observe(elapsed_ms)
-                span.set_attribute("latency_ms", elapsed_ms) 
+                span.set_attribute("latency_ms", elapsed_ms)
+
+    # ------------------------------------------------------------------
+    # Alert helper
+    # ------------------------------------------------------------------
+
+    async def _trigger_alert(self, exc: Exception) -> None:  # noqa: D401 – simple notifier
+        """Send a one-shot alert when the circuit-breaker trips."""
+
+        webhook_url = os.getenv("ALERT_WEBHOOK_URL")
+        message = {
+            "text": (
+                f"🚨 TRAIDER Market-Data WS client tripped circuit-breaker after "
+                f"{self._consecutive_failures} consecutive errors. Latest error: {exc}"
+            )
+        }
+
+        # Best-effort non-blocking POST – don't raise if webhook fails
+        if webhook_url:
+            try:
+                import aiohttp
+
+                async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
+                    await session.post(webhook_url, json=message)
+            except Exception as alert_exc:  # noqa: BLE001
+                self._logger.error("Failed to send alert webhook: %s", alert_exc)
+        else:
+            self._logger.warning("ALERT_WEBHOOK_URL not set – alert message: %s", message["text"]) 

@@ -74,19 +74,21 @@ export const authOptions: NextAuthOptions = {
         }
 
         // Dynamic import to support test dependency injection
-        const { authenticateWithBackend } = await import('../../../lib/auth/backend-auth');
+        const { authenticateWithBackend } = await import('../../../../lib/auth/backend-auth');
         
         const user = await authenticateWithBackend(
           credentials.username,
           credentials.password
         );
 
-        if (!user) {
+        const u: any = user;
+
+        if (!u) {
           // Log failed authentication (production should use proper logging)
           return null;
         }
 
-        return user;
+        return u;
       },
     }),
   ],
@@ -126,15 +128,14 @@ export const authOptions: NextAuthOptions = {
      */
     async jwt({ token, user }) {
       // Persist user data in token on sign in
-      if (user) {
-        token.id = user.id;
-        token.username = user.username;
-        token.email = user.email;
-        token.role = user.role;
-        token.permissions = user.permissions;
-        if (user.lastLogin) {
-          token.lastLogin = user.lastLogin;
-        }
+      const u: any = user;
+      token.id = u.id;
+      token.username = u.username;
+      token.email = u.email;
+      token.role = u.role;
+      token.permissions = u.permissions;
+      if (u.lastLogin) {
+        token.lastLogin = u.lastLogin;
       }
       
       return token;
@@ -159,16 +160,14 @@ export const authOptions: NextAuthOptions = {
      */
     async session({ session, token }) {
       // Send properties to the client
-      if (token) {
-        session.user = {
-          ...session.user,
-          id: token.id as string,
-          username: token.username as string,
-          role: token.role as "ADMIN" | "TRADER" | "VIEWER",
-          permissions: token.permissions as string[],
-          ...(token.lastLogin && { lastLogin: token.lastLogin as string }),
-        };
-      }
+      session.user = {
+        ...(session.user as any ?? {}),
+        id: token.id as string,
+        username: (token as any).username as string,
+        role: (token as any).role as string,
+        permissions: (token as any).permissions as string[],
+        ...( (token as any).lastLogin && { lastLogin: (token as any).lastLogin as string } ),
+      };
       
       return session;
     },

@@ -13,7 +13,7 @@
   "scripts": {
     "dev": "next dev apps/frontend",
     "build": "pnpm run build:next",
-    "build:next": "next build apps/frontend",
+    "build:next": "node scripts/build-next.js",
     "start": "next start apps/frontend",
     "lint": "eslint \"apps/frontend/**/*.{js,ts,tsx}\" \"packages/**/*.{js,ts}\" \"scripts/**/*.{js,ts}\" \"config/**/*.{js,ts}\" --config config/tooling/eslint.config.mjs",
     "test": "vitest",

@@ -379,6 +379,13 @@ _Next Review: Daily until Phase 0 100% complete_
 - **Documentation**: ADR-018 and architecture doc added
 - **Next Steps**: Capture WS fixtures, build integration tests, run 24-hour endurance test
 
+### ✅ **Unit Test Suite Restored to Green** - 2025-07-05
+
+- **COMPLETED**: Fixed legacy unified API route references and provider exports which caused 13 test suites to fail.
+- **Impact**: All 362 unit and integration tests now pass; CI quality gate is green.
+- **Files Updated**: `apps/frontend/api/route.ts`, `apps/frontend/layout.tsx`, `apps/frontend/providers.tsx` and related test fixtures.
+- **Benefits**: Restores confidence in baseline functionality and unblocks Phase-1 development tasks.
+
 ## Action Items
 
 ### Immediate (Next 24 Hours)

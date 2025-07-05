@@ -1,22 +1,22 @@
 /**
- * @fileoverview Next.js 15 configuration for TRAIDER V1
- * @module next.config.js
- * 
+ * @fileoverview Shared Next.js 15 configuration for TRAIDER V1
+ * @module next.config
+ *
  * @description
- * Production-ready Next.js 15 configuration for institutional-grade trading platform.
- * Includes API proxying, security headers, performance optimizations, and
- * development tools integration.
- * 
+ * Centralized Next.js configuration used by `apps/frontend`. Keeping the
+ * configuration outside the application directory prevents Webpack from
+ * recursively bundling `next.config.mjs` during the build process.
+ *
  * @performance
  * - Bundle optimization enabled
  * - Image optimization configured
  * - API route proxying for development
- * 
+ *
  * @security
  * - Security headers configured
  * - CORS properly handled
  * - Content Security Policy ready
- * 
+ *
  * @see {@link https://nextjs.org/docs/api-reference/next.config.js}
  * @since 1.0.0-alpha
  * @author TRAIDER Team
@@ -27,6 +27,9 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Absolute path to the Next.js app directory
+const frontendDir = path.join(__dirname, 'apps', 'frontend');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -72,18 +75,9 @@ const nextConfig = {
       {
         source: '/(.*)',
         headers: [
-          {
-            key: 'X-Frame-Options',
-            value: 'DENY',
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'strict-origin-when-cross-origin',
-          },
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           {
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(), geolocation=()',
@@ -94,14 +88,8 @@ const nextConfig = {
         // API routes security
         source: '/api/:path*',
         headers: [
-          {
-            key: 'X-RateLimit-Limit',
-            value: '100',
-          },
-          {
-            key: 'X-RateLimit-Remaining',
-            value: '99',
-          },
+          { key: 'X-RateLimit-Limit', value: '100' },
+          { key: 'X-RateLimit-Remaining', value: '99' },
         ],
       },
     ];
@@ -110,14 +98,18 @@ const nextConfig = {
   // Webpack configuration for trading-specific optimizations
   webpack: (config, { dev, isServer }) => {
     // Optimize bundle for trading libraries
+    config.cache = false;
+
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@': __dirname,
+      '@': frontendDir,
     };
 
-    // Resolve symlink issues on Windows
-    config.resolve.symlinks = false;
-    
+    // Disable symlink resolution on non-Windows platforms for faster module lookups
+    if (process.platform !== 'win32') {
+      config.resolve.symlinks = false;
+    }
+
     // Additional Windows-specific fixes
     if (process.platform === 'win32') {
       config.watchOptions = {
@@ -125,10 +117,7 @@ const nextConfig = {
         poll: 1000,
         aggregateTimeout: 300,
       };
-      
-      // Disable file system caching on Windows to avoid symlink issues
-      config.cache = false;
-      
+
       // Additional Windows filesystem fixes
       config.snapshot = {
         ...config.snapshot,
@@ -146,7 +135,7 @@ const nextConfig = {
               analyzerMode: 'disabled',
               generateStatsFile: true,
               statsFilename: 'bundle-stats.json',
-            })
+            }),
           );
         })
         .catch(() => {
@@ -165,7 +154,10 @@ const nextConfig = {
 
   // Output configuration
   output: 'standalone',
-  
+
+  // Disable webpack filesystem cache globally to avoid recursion with RSC loader
+  cache: false,
+
   // Disable powered by header for security
   poweredByHeader: false,
 
