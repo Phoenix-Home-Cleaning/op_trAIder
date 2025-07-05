@@ -267,15 +267,12 @@ jobs:
           cache: 'npm'
           
       - name: 📥 Install dependencies
-        run: npm ci --prefer-offline --no-audit
+        run: npm install --prefer-offline --no-audit
         
       - name: 🧪 Run unit tests with coverage
         run: |
           echo "::group::Unit Tests - Shard ${{ matrix.shard }}/2"
-          npm run test:run -- \
-            --coverage \
-            --reporter=verbose \
-            --shard=${{ matrix.shard }}/2
+          pnpm run test:run -- --coverage --reporter=verbose --shard=${{ matrix.shard }}/2
           echo "::endgroup::"
         env:
           NODE_ENV: test
@@ -372,7 +369,7 @@ jobs:
           cache: 'npm'
           
       - name: 📥 Install dependencies
-        run: npm ci --prefer-offline --no-audit
+        run: npm install --prefer-offline --no-audit
         
       - name: 🗄️ Setup test database
         run: |
@@ -439,7 +436,7 @@ jobs:
           EOF
           fi
           
-          npm run test -- tests/integration --run
+          pnpm run test -- tests/integration --run
           echo "::endgroup::"
         env:
           NODE_ENV: test
@@ -483,12 +480,12 @@ jobs:
           cache: 'npm'
           
       - name: 📥 Install dependencies
-        run: npm ci --prefer-offline --no-audit
+        run: npm install --prefer-offline --no-audit
         
       - name: 🔍 Run npm audit
         run: |
           echo "::group::NPM Security Audit"
-          npm audit --audit-level=moderate --json > npm-audit.json || true
+          pnpm audit --json > npm-audit.json || true
           
           # Check for high/critical vulnerabilities
           HIGH_VULNS=$(cat npm-audit.json | jq '.metadata.vulnerabilities.high // 0')
@@ -595,12 +592,12 @@ jobs:
           cache: 'npm'
           
       - name: 📥 Install dependencies
-        run: npm ci --prefer-offline --no-audit
+        run: npm install --prefer-offline --no-audit
         
       - name: 🏗️ Build application
         run: |
           echo "::group::Production Build"
-          time npm run build
+          time pnpm run build
           echo "::endgroup::"
         env:
           NODE_ENV: production
