@@ -1,0 +1,4 @@
+# file: D:\op_trAIder\apps\backend\api\health.py
+# hypothesis_version: 6.135.14
+
+[0.0, 0.1, 100, 1000, 1024, '/', '/detailed', '/live', '/metrics', '/ready', '1.0.0-alpha', 'Basic Health Check', 'CPU usage percentage', 'High CPU usage', 'High disk usage', 'High memory usage', 'Liveness Probe', 'PYTHON_ENV', 'Prometheus Metrics', 'Readiness Probe', 'SELECT 1', 'TRAIDER V1 API', 'active', 'alive', 'available_gb', 'bytes_recv', 'bytes_sent', 'checks', 'connection_pool', 'count', 'cpu', 'database', 'degraded', 'dependencies', 'development', 'disk', 'environment', 'error', 'free_gb', 'gauge', 'getloadavg', 'healthy', 'idle', 'last_check', 'load_avg', 'memory', 'name', 'network', 'not_ready', 'packets_recv', 'packets_sent', 'platform', 'ready', 'response_time_ms', 'service', 'service_info', 'status', 'system', 'timestamp', 'total', 'total_gb', 'traider_system_error', 'unhealthy', 'uptime_seconds', 'usage_percent', 'used_gb', 'version', 'warnings']

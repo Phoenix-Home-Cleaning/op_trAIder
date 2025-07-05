@@ -120,9 +120,9 @@ class DocumentationGenerator {
       console.warn('⚠️ TypeDoc generation failed, trying fallback approach...');
       try {
         // Fallback: Generate basic documentation without plugins
-        execSync('npx typedoc --out docs/api app/lib --plugin none --readme none', { 
+        execSync('npx typedoc --out docs/api apps/frontend/lib --plugin none --readme none', { 
           stdio: 'inherit',
-          cwd: this.projectRoot 
+          cwd: join(this.projectRoot, 'apps/frontend/api') 
         });
         console.log('✅ TypeDoc documentation generated (fallback mode)');
       } catch {
@@ -168,7 +168,7 @@ const response = await fetch('/api/protected-endpoint', {
 
 ## 📖 Available Modules
 
-### Authentication (\`app/lib/auth\`)
+### Authentication (\`apps/frontend/lib/auth\`)
 - **Purpose**: User authentication and session management
 - **Key Functions**: \`signIn\`, \`signOut\`, \`validateSession\`
 - **Security**: JWT-based authentication with secure session handling
@@ -270,7 +270,7 @@ For technical support with API documentation:
     this.writeFile('diagrams/frontend-dependencies.mmd', frontendGraph);
 
     // Backend dependencies (when backend exists)
-    const backendDeps = dependencies.filter(d => d.path.startsWith('backend/'));
+    const backendDeps = dependencies.filter(d => d.path.startsWith('apps/backend/'));
     if (backendDeps.length > 0) {
       const backendGraph = this.generateDependencyGraph();
       this.writeFile('diagrams/backend-dependencies.mmd', backendGraph);
@@ -699,7 +699,7 @@ ${coverage.recommendations.map((rec: any) => `- ${rec}`).join('\n')}
 
   private async getModuleStructure(): Promise<any[]> {
     const appFiles = await glob('app/**/*.{ts,tsx}');
-    const backendFiles = await glob('backend/**/*.py');
+    const backendFiles = await glob('apps/backend/**/*.py');
     
     const modules = [
       ...appFiles.map(file => ({ path: file, type: 'frontend' })),

@@ -1,0 +1,4 @@
+# file: D:\op_trAIder\apps\backend\models\position.py
+# hypothesis_version: 6.135.14
+
+['avg_cost', 'extra_data', 'first_trade_at', 'last_updated', 'market_value', 'positions', 'quantity', 'realized_pnl', 'risk_metrics', 'symbol', 'total_pnl', 'unrealized_pnl']

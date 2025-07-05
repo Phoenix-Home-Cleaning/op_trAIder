@@ -49,11 +49,11 @@ const COVERAGE_CONFIG = {
     functions: 90,
     statements: 90,
     paths: [
-      'app/lib/trading/**',
-      'app/lib/risk/**',
-      'app/lib/signals/**',
-      'app/lib/execution/**',
-      'app/lib/market-data/**'
+      'apps/frontend/lib/trading/**',
+      'apps/frontend/lib/risk/**',
+      'apps/frontend/lib/signals/**',
+      'apps/frontend/lib/execution/**',
+      'apps/frontend/lib/market-data/**'
     ]
   },
   
@@ -64,6 +64,7 @@ const COVERAGE_CONFIG = {
     functions: 100,
     statements: 100,
     paths: [
+      'apps/backend/utils/risk',
       'app/lib/risk/engine/**',
       'app/lib/risk/limits/**',
       'app/lib/risk/validation/**'

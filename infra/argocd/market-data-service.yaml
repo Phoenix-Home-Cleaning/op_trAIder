@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: market-data-service
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/your-org/traider.git
+    targetRevision: main
+    path: helm/market-data-service
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: traider
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true 

@@ -1,0 +1,4 @@
+# file: D:\op_trAIder\apps\backend\models\signal.py
+# hypothesis_version: 6.135.14
+
+['0.5', '0.7', 'EXECUTED', 'FLAT', 'GENERATED', 'LONG', 'SHORT', 'confidence', 'direction', 'entry', 'executed', 'execution_price', 'execution_timestamp', 'exit', 'extra_data', 'features', 'id', 'max_adverse', 'max_favorable', 'model_version', 'notes', 'pnl', 'rebalance', 'signal_strength', 'signal_type', 'signals', 'status', 'stop_loss', 'strategy', 'symbol', 'take_profit', 'target_price', 'timestamp']

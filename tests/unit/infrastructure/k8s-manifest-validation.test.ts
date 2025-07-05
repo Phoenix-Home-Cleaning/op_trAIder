@@ -20,7 +20,7 @@
  * - Audit requirements: Yes - All manifest validations logged
  * - Data retention: Test results retained for compliance auditing
  * 
- * @see {@link infrastructure/k8s/dev/README.md}
+ * @see {@link infra/k8s/dev/README.md}
  * @since 1.0.0-alpha
  * @author TRAIDER Team
  */
@@ -31,7 +31,7 @@ import path from 'path';
 import yaml from 'js-yaml';
 
 // Test configuration constants
-const K8S_DEV_PATH = 'infrastructure/k8s/dev';
+const K8S_DEV_PATH = 'infra/k8s/dev';
 const TRAIDER_NAMESPACE = 'traider-dev';
 
 /**

@@ -19,7 +19,7 @@
  * - Audit requirements: Yes - All K8s validations logged
  * - Data retention: Test results retained for 30 days
  *
- * @see {@link infrastructure/k8s/dev/README.md}
+ * @see {@link infra/k8s/dev/README.md}
  * @since 1.0.0-alpha
  * @author TRAIDER Team
  */

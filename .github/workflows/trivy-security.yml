@@ -23,7 +23,7 @@ on:
       - 'Dockerfile*'
       - 'infrastructure/**'
       - 'app/**'
-      - 'backend/**'
+      - 'apps/backend/**'
       - '.github/workflows/**'
   pull_request:
     branches: [main, develop]

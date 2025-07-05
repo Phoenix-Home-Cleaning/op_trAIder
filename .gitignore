@@ -170,3 +170,6 @@ security-reports/
 
 # Kubernetes generated manifests (too large for GitHub)
 infrastructure/k8s/dev/combined-manifests.yaml
+
+# Artifacts directory
+/artifacts/

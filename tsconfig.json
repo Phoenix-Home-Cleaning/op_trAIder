@@ -39,14 +39,14 @@
     // Module Resolution
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./app/*"],
-      "@/components/*": ["./app/components/*"],
-      "@/lib/*": ["./app/lib/*"],
-      "@/hooks/*": ["./app/hooks/*"],
-      "@/types/*": ["./app/types/*"],
-      "@/utils/*": ["./app/utils/*"],
-      "@/config/*": ["./app/config/*"],
-      "@/styles/*": ["./app/styles/*"]
+      "@/*": ["./apps/frontend/*"],
+      "@/components/*": ["./apps/frontend/components/*"],
+      "@/lib/*": ["./apps/frontend/lib/*"],
+      "@/hooks/*": ["./apps/frontend/hooks/*"],
+      "@/types/*": ["./apps/frontend/types/*"],
+      "@/utils/*": ["./apps/frontend/utils/*"],
+      "@/config/*": ["./apps/frontend/config/*"],
+      "@/styles/*": ["./apps/frontend/styles/*"]
     },
 
     // Next.js Plugin

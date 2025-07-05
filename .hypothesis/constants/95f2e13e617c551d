@@ -1,0 +1,4 @@
+# file: C:\Users\jesse\AppData\Roaming\Python\Python313\site-packages\pythonjsonlogger\core.py
+# hypothesis_version: 6.135.14
+
+['%', '%\\((.+?)\\)', '.', '\\$\\{(.+?)\\}', '\\{(.+?)\\}', '_', 'args', 'asctime', 'created', 'exc_info', 'exc_text', 'filename', 'funcName', 'levelname', 'levelno', 'lineno', 'message', 'module', 'msecs', 'msg', 'name', 'pathname', 'process', 'processName', 'relativeCreated', 'stack_info', 'startswith', 'taskName', 'thread', 'threadName', 'timestamp']

@@ -45,10 +45,10 @@ export default defineConfig({
 
     // Test discovery for performance tests only
     include: [
-      'tests/performance/**/*.{test,spec}.{js,ts}',
-      'tests/benchmarks/**/*.{test,spec}.{js,ts}',
+      'tests/**/*.{test,spec}.{js,ts,jsx,tsx}',
+      'apps/frontend/**/*.{test,spec}.{js,ts,jsx,tsx}',
     ],
-    exclude: ['node_modules', 'dist', '.next', 'coverage'],
+    exclude: ['node_modules/**', 'dist/**', '.next/**', 'coverage/**', 'apps/backend/**'],
 
     // Extended timeouts for performance tests
     testTimeout: 60000, // 60 seconds for complex benchmarks
@@ -87,10 +87,10 @@ export default defineConfig({
   // Path resolution
   resolve: {
     alias: {
-      '@': resolve(__dirname, './app'),
-      '@/lib': resolve(__dirname, './app/lib'),
-      '@/utils': resolve(__dirname, './app/utils'),
-      '@/config': resolve(__dirname, './app/config'),
+      '@': resolve(__dirname, './apps/frontend'),
+      '@/lib': resolve(__dirname, './apps/frontend/lib'),
+      '@/utils': resolve(__dirname, './apps/frontend/utils'),
+      '@/config': resolve(__dirname, './apps/frontend/config'),
     },
   },
 

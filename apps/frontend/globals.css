@@ -1,0 +1,293 @@
+/**
+ * TRAIDER V1 Global Styles
+ * Institutional-grade trading platform design system
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * CSS Custom Properties (CSS Variables)
+ * Defines the TRAIDER design system color palette and spacing
+ */
+@layer base {
+  :root {
+    /* Color System - Light Mode */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
+
+    /* Trading-specific colors */
+    --success: 142.1 76.2% 36.3%;
+    --success-foreground: 355.7 100% 97.3%;
+    --warning: 32.9 94.6% 43.7%;
+    --warning-foreground: 355.7 100% 97.3%;
+    --danger: 0 84.2% 60.2%;
+    --danger-foreground: 210 40% 98%;
+    
+    /* Trading status colors */
+    --profit: 142.1 76.2% 36.3%;
+    --loss: 0 84.2% 60.2%;
+    --neutral: 215.4 16.3% 46.9%;
+    
+    /* Chart colors */
+    --chart-1: 142.1 76.2% 36.3%; /* Green */
+    --chart-2: 0 84.2% 60.2%;     /* Red */
+    --chart-3: 221.2 83.2% 53.3%; /* Blue */
+    --chart-4: 32.9 94.6% 43.7%;  /* Orange */
+    --chart-5: 271.5 81.3% 55.9%; /* Purple */
+  }
+
+  .dark {
+    /* Color System - Dark Mode */
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 84% 4.9%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 94.1%;
+
+    /* Trading-specific colors - Dark Mode */
+    --success: 142.1 70.6% 45.3%;
+    --success-foreground: 144.9 80.4% 10%;
+    --warning: 32.9 94.6% 43.7%;
+    --warning-foreground: 20.5 90.2% 4.3%;
+    --danger: 0 62.8% 30.6%;
+    --danger-foreground: 210 40% 98%;
+    
+    /* Trading status colors - Dark Mode */
+    --profit: 142.1 70.6% 45.3%;
+    --loss: 0 62.8% 30.6%;
+    --neutral: 215 20.2% 65.1%;
+  }
+}
+
+/**
+ * Base styles and resets
+ */
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  /* Typography improvements for trading data */
+  .font-mono {
+    font-family: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+  }
+  
+  /* Improve number readability */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+  
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-muted;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/30 rounded-md;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/50;
+  }
+}
+
+/**
+ * Component layer - Reusable component styles
+ */
+@layer components {
+  /* Trading-specific components */
+  .price-positive {
+    @apply text-success;
+  }
+  
+  .price-negative {
+    @apply text-danger;
+  }
+  
+  .price-neutral {
+    @apply text-neutral;
+  }
+  
+  /* Status indicators */
+  .status-online {
+    @apply bg-success text-success-foreground;
+  }
+  
+  .status-offline {
+    @apply bg-danger text-danger-foreground;
+  }
+  
+  .status-warning {
+    @apply bg-warning text-warning-foreground;
+  }
+  
+  /* Trading cards */
+  .trading-card {
+    @apply bg-card text-card-foreground rounded-lg border shadow-sm;
+  }
+  
+  .trading-card-header {
+    @apply border-b p-4 font-semibold;
+  }
+  
+  .trading-card-content {
+    @apply p-4;
+  }
+  
+  /* Data tables */
+  .data-table {
+    @apply w-full border-collapse border-spacing-0;
+  }
+  
+  .data-table th {
+    @apply bg-muted text-muted-foreground text-left p-3 text-sm font-medium border-b;
+  }
+  
+  .data-table td {
+    @apply p-3 text-sm border-b tabular-nums;
+  }
+  
+  .data-table tr:hover {
+    @apply bg-muted/50;
+  }
+  
+  /* Form elements */
+  .form-input {
+    @apply flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  
+  .form-label {
+    @apply text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70;
+  }
+  
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
+  }
+  
+  .btn-primary {
+    @apply btn bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2;
+  }
+  
+  .btn-secondary {
+    @apply btn bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-4 py-2;
+  }
+  
+  .btn-danger {
+    @apply btn bg-danger text-danger-foreground hover:bg-danger/90 h-10 px-4 py-2;
+  }
+  
+  .btn-success {
+    @apply btn bg-success text-success-foreground hover:bg-success/90 h-10 px-4 py-2;
+  }
+  
+  /* Navigation */
+  .nav-link {
+    @apply flex items-center space-x-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground;
+  }
+  
+  .nav-link.active {
+    @apply bg-accent text-accent-foreground;
+  }
+}
+
+/**
+ * Utility layer - Custom utilities
+ */
+@layer utilities {
+  /* Animation utilities */
+  .animate-pulse-fast {
+    animation: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  .animate-blink {
+    animation: blink 1s step-end infinite;
+  }
+  
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+  
+  /* Text utilities */
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
+  }
+  
+  /* Layout utilities */
+  .container-dashboard {
+    @apply container mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  /* Focus utilities for accessibility */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background;
+  }
+  
+  /* Trading-specific utilities */
+  .profit-glow {
+    @apply shadow-lg shadow-success/25;
+  }
+  
+  .loss-glow {
+    @apply shadow-lg shadow-danger/25;
+  }
+  
+  /* Loading states */
+  .skeleton {
+    @apply animate-pulse bg-muted rounded;
+  }
+  
+  /* Grid utilities for trading layouts */
+  .trading-grid {
+    @apply grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+  }
+  
+  .trading-grid-wide {
+    @apply grid gap-6 grid-cols-1 lg:grid-cols-2;
+  }
+} 

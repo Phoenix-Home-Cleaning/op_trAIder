@@ -53,9 +53,9 @@ export default defineConfig({
     setupFiles: ['./tests/setup.ts'],
 
     // Test file patterns
-    include: ['tests/**/*.{test,spec}.{js,ts,jsx,tsx}', 'app/**/*.{test,spec}.{js,ts,jsx,tsx}'],
+    include: ['tests/**/*.{test,spec}.{js,ts,jsx,tsx}', 'apps/frontend/**/*.{test,spec}.{js,ts,jsx,tsx}'],
 
-    exclude: ['node_modules/**', 'dist/**', '.next/**', 'coverage/**', 'backend/**'],
+    exclude: ['node_modules/**', 'dist/**', '.next/**', 'coverage/**', 'apps/backend/**'],
 
     // Global test configuration
     globals: true,
@@ -93,7 +93,7 @@ export default defineConfig({
       },
 
       // Include/exclude patterns
-      include: ['app/**/*.{js,ts,jsx,tsx}', 'shared/**/*.{js,ts}', 'middleware.ts'],
+      include: ['apps/frontend/**/*.{js,ts,jsx,tsx}', 'shared/**/*.{js,ts}', 'middleware.ts'],
 
       exclude: [
         'node_modules/**',
@@ -106,8 +106,8 @@ export default defineConfig({
         'app/globals.css',
         'coverage/**',
         'docs/**',
-        'backend/**', // Backend has separate coverage
-        'infrastructure/**',
+        'apps/backend/**', // Backend has separate coverage
+        'infra/**',
         'scripts/**',
       ],
     },
@@ -143,9 +143,9 @@ export default defineConfig({
   // Path resolution for imports
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './app'),
-      '@/components': path.resolve(__dirname, './app/components'),
-      '@/lib': path.resolve(__dirname, './app/lib'),
+      '@': path.resolve(__dirname, './apps/frontend'),
+      '@/components': path.resolve(__dirname, './apps/frontend/components'),
+      '@/lib': path.resolve(__dirname, './apps/frontend/lib'),
       '@/types': path.resolve(__dirname, './types'),
       '@/shared': path.resolve(__dirname, './shared'),
       '@/tests': path.resolve(__dirname, './tests'),

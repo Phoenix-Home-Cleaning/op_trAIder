@@ -1,0 +1,573 @@
+# 🚀 TRAIDER V1 - Production Docker Compose
+# Complete containerized trading platform with institutional-grade security
+#
+# Services included:
+# - Frontend (Next.js) with reverse proxy
+# - Backend (FastAPI) with auto-scaling
+# - Database (PostgreSQL + TimescaleDB) with backup
+# - Cache (Redis) with persistence
+# - Message Queue (Redpanda) for real-time data
+# - Monitoring (Prometheus + Grafana + Jaeger)
+# - Security (Vault, Nginx with SSL)
+# - Log aggregation (ELK Stack)
+#
+# Usage:
+#   docker-compose up -d
+#   docker-compose down
+#   docker-compose logs -f [service]
+
+version: '3.8'
+
+# =============================================================================
+# APPLICATION SERVICES
+# =============================================================================
+
+services:
+  # Frontend - Next.js Application
+  frontend:
+    build:
+      context: .
+      dockerfile: config/Dockerfile.frontend
+      args:
+        NODE_ENV: production
+    container_name: traider-frontend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - NEXTAUTH_URL=https://traider.local
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - "3000:3000"
+    networks:
+      - traider-network
+      - traider-internal
+    depends_on:
+      backend:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`traider.local`)"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+
+  # Backend - FastAPI Application
+  backend:
+    build:
+      context: .
+      dockerfile: config/Dockerfile.backend
+      args:
+        PYTHON_ENV: production
+    container_name: traider-backend
+    restart: unless-stopped
+    environment:
+      - PYTHON_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - COINBASE_API_KEY=${COINBASE_API_KEY}
+      - COINBASE_API_SECRET=${COINBASE_API_SECRET}
+    ports:
+      - "8000:8000"
+    networks:
+      - traider-network
+      - traider-internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '1.0'
+          memory: 512M
+    volumes:
+      - backend_logs:/app/logs
+      - backend_data:/app/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`api.traider.local`)"
+      - "traefik.http.services.backend.loadbalancer.server.port=8000"
+
+# =============================================================================
+# DATABASE SERVICES
+# =============================================================================
+
+  # PostgreSQL with TimescaleDB
+  postgres:
+    image: timescale/timescaledb:latest-pg15
+    container_name: traider-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - postgres_backup:/backup
+      - ./apps/backend/sql/init:/docker-entrypoint-initdb.d/
+      - ./infra/postgres/postgresql.conf:/etc/postgresql/postgresql.conf
+    networks:
+      - traider-internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+    command: >
+      postgres
+      -c config_file=/etc/postgresql/postgresql.conf
+      -c shared_preload_libraries=timescaledb
+      -c max_connections=200
+      -c shared_buffers=512MB
+      -c effective_cache_size=2GB
+      -c maintenance_work_mem=128MB
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=32MB
+      -c default_statistics_target=100
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+      -c work_mem=8MB
+      -c min_wal_size=2GB
+      -c max_wal_size=8GB
+      -c log_statement=all
+      -c log_duration=on
+
+  # Redis for caching and session storage
+  redis:
+    image: redis:7-alpine
+    container_name: traider-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./infra/redis/redis.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      - traider-internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    command: redis-server /usr/local/etc/redis/redis.conf
+
+# =============================================================================
+# MESSAGE QUEUE & STREAMING
+# =============================================================================
+
+  # Redpanda for high-performance message streaming
+  redpanda:
+    image: vectorized/redpanda:latest
+    container_name: traider-redpanda
+    restart: unless-stopped
+    ports:
+      - "9092:9092"
+      - "9644:9644"
+      - "29092:29092"
+    volumes:
+      - redpanda_data:/var/lib/redpanda/data
+    networks:
+      - traider-internal
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '1.0'
+          memory: 512M
+    command:
+      - redpanda
+      - start
+      - --smp
+      - "2"
+      - --reserve-memory
+      - "512M"
+      - --overprovisioned
+      - --node-id
+      - "0"
+      - --kafka-addr
+      - "PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092"
+      - --advertise-kafka-addr
+      - "PLAINTEXT://redpanda:29092,OUTSIDE://localhost:9092"
+      - --pandaproxy-addr
+      - "0.0.0.0:8082"
+      - --advertise-pandaproxy-addr
+      - "localhost:8082"
+
+# =============================================================================
+# REVERSE PROXY & LOAD BALANCER
+# =============================================================================
+
+  # Traefik as reverse proxy and load balancer
+  traefik:
+    image: traefik:v3.0
+    container_name: traider-traefik
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"  # Dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./infrastructure/traefik/traefik.yml:/etc/traefik/traefik.yml
+      - ./infrastructure/traefik/dynamic:/etc/traefik/dynamic
+      - traefik_certs:/certs
+    networks:
+      - traider-network
+      - traider-internal
+    environment:
+      - TRAEFIK_API_DASHBOARD=true
+      - TRAEFIK_API_INSECURE=true
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+# =============================================================================
+# MONITORING & OBSERVABILITY
+# =============================================================================
+
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: traider-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infrastructure/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - traider-internal
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # Grafana for metrics visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: traider-grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: false
+      GF_SECURITY_SECRET_KEY: ${GRAFANA_SECRET_KEY}
+      GF_DATABASE_TYPE: postgres
+      GF_DATABASE_HOST: postgres:5432
+      GF_DATABASE_NAME: grafana
+      GF_DATABASE_USER: ${POSTGRES_USER}
+      GF_DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infrastructure/monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./infrastructure/monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - traider-internal
+    depends_on:
+      - prometheus
+      - postgres
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  # Jaeger for distributed tracing
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: traider-jaeger
+    restart: unless-stopped
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+    environment:
+      COLLECTOR_OTLP_ENABLED: true
+      SPAN_STORAGE_TYPE: badger
+      BADGER_EPHEMERAL: false
+      BADGER_DIRECTORY_VALUE: /badger/data
+      BADGER_DIRECTORY_KEY: /badger/key
+    volumes:
+      - jaeger_data:/badger
+    networks:
+      - traider-internal
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+# =============================================================================
+# LOGGING & ANALYTICS
+# =============================================================================
+
+  # Elasticsearch for log storage
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: traider-elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - traider-internal
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # Logstash for log processing
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.0
+    container_name: traider-logstash
+    restart: unless-stopped
+    volumes:
+      - ./infrastructure/logging/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+      - backend_logs:/logs
+    networks:
+      - traider-internal
+    depends_on:
+      - elasticsearch
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  # Kibana for log visualization
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: traider-kibana
+    restart: unless-stopped
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    networks:
+      - traider-internal
+    depends_on:
+      - elasticsearch
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+# =============================================================================
+# SECURITY SERVICES
+# =============================================================================
+
+  # HashiCorp Vault for secrets management
+  vault:
+    image: vault:latest
+    container_name: traider-vault
+    restart: unless-stopped
+    ports:
+      - "8200:8200"
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_ROOT_TOKEN}
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    volumes:
+      - vault_data:/vault/data
+      - ./infrastructure/vault/config.hcl:/vault/config/config.hcl
+    networks:
+      - traider-internal
+    cap_add:
+      - IPC_LOCK
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+# =============================================================================
+# BACKUP & MAINTENANCE
+# =============================================================================
+
+  # Database backup service
+  postgres-backup:
+    image: postgres:15-alpine
+    container_name: traider-postgres-backup
+    restart: unless-stopped
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_backup:/backup
+      - ./scripts/backup-postgres.sh:/backup.sh
+    networks:
+      - traider-internal
+    depends_on:
+      - postgres
+    command: >
+      sh -c "
+        while true; do
+          sleep 3600
+          /backup.sh
+        done
+      "
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+
+# =============================================================================
+# NETWORKS & VOLUMES
+# =============================================================================
+
+networks:
+  traider-network:
+    driver: bridge
+    external: true
+  traider-internal:
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  postgres_data:
+    driver: local
+  postgres_backup:
+    driver: local
+  redis_data:
+    driver: local
+  redpanda_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  jaeger_data:
+    driver: local
+  elasticsearch_data:
+    driver: local
+  vault_data:
+    driver: local
+  traefik_certs:
+    driver: local
+  backend_logs:
+    driver: local
+  backend_data:
+    driver: local
+
+# =============================================================================
+# CONFIGURATION NOTES
+# =============================================================================
+
+# Environment Variables Required:
+# - DATABASE_URL=postgresql://user:pass@postgres:5432/traider
+# - POSTGRES_DB=traider
+# - POSTGRES_USER=traider
+# - POSTGRES_PASSWORD=secure_password
+# - NEXTAUTH_SECRET=your_nextauth_secret
+# - JWT_SECRET=your_jwt_secret
+# - ENCRYPTION_KEY=your_encryption_key
+# - GRAFANA_ADMIN_USER=admin
+# - GRAFANA_ADMIN_PASSWORD=secure_password
+# - GRAFANA_SECRET_KEY=your_grafana_secret
+# - VAULT_ROOT_TOKEN=your_vault_token
+# - COINBASE_API_KEY=your_coinbase_key
+# - COINBASE_API_SECRET=your_coinbase_secret
+
+# Production Deployment Commands:
+# docker network create traider-network
+# docker-compose up -d
+# docker-compose logs -f
+# docker-compose down 

@@ -169,14 +169,14 @@ class DocumentationValidator {
     console.log('🔌 Validating API documentation...');
 
     const apiFiles = await glob('**/route.{ts,js}', {
-      cwd: join(this.projectRoot, 'app/api'),
+      cwd: join(this.projectRoot, 'apps/frontend/api'),
       ignore: ['node_modules/**'],
     });
 
     const undocumentedRoutes: string[] = [];
 
     for (const file of apiFiles) {
-      const content = readFileSync(join(this.projectRoot, 'app/api', file), 'utf-8');
+      const content = readFileSync(join(this.projectRoot, 'apps/frontend/api', file), 'utf-8');
       const httpMethods = this.extractHTTPMethods(content);
 
       for (const method of httpMethods) {
@@ -207,7 +207,7 @@ class DocumentationValidator {
   private async validateModuleREADMEs(): Promise<void> {
     console.log('📚 Validating module README files...');
 
-    const directories = await this.getDirectories('app');
+    const directories = await this.getDirectories('apps/frontend');
     const missingREADMEs: string[] = [];
 
     for (const dir of directories) {

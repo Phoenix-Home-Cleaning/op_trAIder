@@ -28,7 +28,7 @@ import { vi, type Mock } from 'vitest';
 import { render, type RenderOptions } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import type { Session } from 'next-auth';
-import { _setTestHook_forceAuthenticate } from '../../app/lib/auth/backend-auth';
+import { _setTestHook_forceAuthenticate } from '../../apps/frontend/lib/auth/backend-auth';
 
 // =============================================================================
 // CONSTANTS & TYPES

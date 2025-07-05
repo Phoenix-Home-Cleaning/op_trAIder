@@ -1,0 +1,4 @@
+# file: C:\Users\jesse\AppData\Roaming\Python\Python313\site-packages\starlette\middleware\gzip.py
+# hypothesis_version: 6.135.14
+
+[500, 'Accept-Encoding', 'Content-Encoding', 'Content-Length', 'body', 'content-encoding', 'gzip', 'headers', 'http', 'http.response.body', 'http.response.start', 'more_body', 'type', 'wb']

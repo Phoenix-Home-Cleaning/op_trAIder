@@ -23,7 +23,7 @@ def main():
     alembic_ini = os.path.join(repo_root, 'backend', 'alembic.ini')
     cfg = Config(alembic_ini)
     # Ensure script location
-    cfg.set_main_option('script_location', 'backend/migrations')
+    cfg.set_main_option('script_location', 'apps/backend/migrations')
     script_dir = ScriptDirectory.from_config(cfg)
 
     snapshots_dir = os.path.join(repo_root, 'backend', 'sql', 'migrations_snapshots')

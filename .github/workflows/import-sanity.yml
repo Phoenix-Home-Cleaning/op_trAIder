@@ -34,7 +34,7 @@ jobs:
 
       - name: 📥 Install backend dependencies
         run: |
-          pip install -r backend/requirements.txt
+          pip install -r apps/backend/requirements.txt
 
       - name: ✅ Run import sanity script
         run: |

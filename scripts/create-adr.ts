@@ -202,7 +202,7 @@ Examples:
   const command = args[0];
 
   switch (command) {
-    case 'new':
+    case 'new': {
       const title = args.slice(1).join(' ');
       if (!title) {
         console.error('❌ Please provide a title for the ADR');
@@ -223,7 +223,8 @@ Examples:
       } catch {
         console.log('💡 Tip: Open the file in your editor to complete the ADR');
       }
-      break;
+    }
+    break;
 
     case 'list':
       generator.listADRs();

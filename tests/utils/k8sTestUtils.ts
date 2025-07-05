@@ -101,7 +101,7 @@ export const K8S_CONSTANTS = {
     'app.kubernetes.io/part-of': 'traider-platform',
     'app.kubernetes.io/managed-by': 'helm',
   },
-  MANIFEST_DIRECTORY: 'infrastructure/k8s/dev',
+  MANIFEST_DIRECTORY: 'infra/k8s/dev',
   REQUIRED_FILES: [
     'namespace.yaml',
     'postgres-dev.yaml',

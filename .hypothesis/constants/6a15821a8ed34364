@@ -1,0 +1,4 @@
+# file: D:\op_trAIder\apps\backend\models\market_data.py
+# hypothesis_version: 6.135.14
+
+['MarketData', 'None', 'OrderBookLevel2', 'ask', 'bid', 'exchange', 'extra_data', 'market_data', 'order_book_level2', 'order_count', 'price', 'price_level', 'sequence', 'side', 'size', 'spread', 'symbol', 'timestamp', 'trade_count', 'volume', 'vwap']

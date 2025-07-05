@@ -19,19 +19,24 @@ TRAIDER is designed as an **AI-first codebase**, meaning every architectural dec
 
 ### 2.1 · Root Directory Structure
 
-```
+```plaintext
 traider/
-├── app/                    # Next.js App Router (frontend)
-├── backend/                # FastAPI services (Python)
-├── docs/                   # Project documentation (ADRs, guides)
-├── infrastructure/         # Terraform, Docker, K8s configs
-├── tests/                  # Unit, integration, and E2E tests
+├── apps/                   # Frontend and backend apps
+│   ├── frontend/           # Next.js frontend (App Router)
+│   └── backend/            # FastAPI backend services
+├── services/               # Independent microservices (market-data-service, etc.)
+├── packages/               # Shared packages (shared, tooling)
+├── infra/                  # Helm charts and infrastructure configs
+├── config/                 # Docker and tooling config files
 ├── scripts/                # Automation and utility scripts
+├── artifacts/              # Generated artifacts (coverage, reports, etc.)
+├── docs/                   # Project documentation (ADRs, guides)
 ├── .github/                # CI/CD workflows and issue templates
-└── shared/                 # Shared types, constants, and utilities
+├── tests/                  # Unit, integration, and E2E tests
+└── package.json, pnpm-workspace.yaml, tsconfig.base.json, .npmrc, .gitignore
 ```
 
-### 2.2 · Frontend Structure (`app/`)
+### 2.2 · Frontend Structure (`apps/frontend`)
 
 ```
 app/

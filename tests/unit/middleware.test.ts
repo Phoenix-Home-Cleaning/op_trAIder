@@ -54,7 +54,7 @@ describe('Middleware', () => {
   describe('Route Protection', () => {
     it('should have proper configuration for protected routes', async () => {
       // Import the config to test the matcher
-      const { config } = await import('../../middleware');
+      const { config } = await import('../../apps/frontend/middleware');
 
       expect(config).toBeDefined();
       expect(config.matcher).toBeDefined();
@@ -63,7 +63,7 @@ describe('Middleware', () => {
     });
 
     it('should exclude authentication routes from protection', async () => {
-      const { config } = await import('../../middleware');
+      const { config } = await import('../../apps/frontend/middleware');
       const matcher = config.matcher?.[0];
 
       // The matcher should exclude api/auth routes
@@ -80,7 +80,7 @@ describe('Middleware', () => {
   describe('Authorization Logic', () => {
     it('should allow users with valid roles', async () => {
       // Import the middleware
-      const middleware = await import('../../middleware');
+      const middleware = await import('../../apps/frontend/middleware');
 
       // Test that the middleware module loads correctly
       expect(middleware.default).toBeDefined();
@@ -104,7 +104,7 @@ describe('Middleware', () => {
     it('should load middleware configuration quickly', async () => {
       const startTime = performance.now();
 
-      await import('../../middleware');
+      await import('../../apps/frontend/middleware');
 
       const endTime = performance.now();
       const loadTime = endTime - startTime;
@@ -116,7 +116,7 @@ describe('Middleware', () => {
 
   describe('Security Configuration', () => {
     it('should have secure default configuration', async () => {
-      const { config } = await import('../../middleware');
+      const { config } = await import('../../apps/frontend/middleware');
 
       // Should have matcher configuration
       expect(config.matcher).toBeDefined();

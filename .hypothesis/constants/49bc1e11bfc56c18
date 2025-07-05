@@ -1,0 +1,4 @@
+# file: C:\Users\jesse\AppData\Roaming\Python\Python313\site-packages\httpx\_utils.py
+# hypothesis_version: 6.135.14
+
+['"', '*', '*.', ',', '/', ':', '://', 'all', 'false', 'http', 'https', 'localhost', 'no', 'true', 'utf-8']

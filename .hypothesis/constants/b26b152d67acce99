@@ -1,0 +1,4 @@
+# file: D:\op_trAIder\apps\backend\models\user.py
+# hypothesis_version: 6.135.14
+
+[255, 'admin', 'created_at', 'email', 'id', 'is_active', 'last_login', 'login_attempts', 'notes', 'permissions', 'profile', 'role', 'trader', 'trading', 'updated_at', 'username', 'users', 'viewer']

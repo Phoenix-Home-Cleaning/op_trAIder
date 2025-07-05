@@ -18,8 +18,6 @@ import argparse
 import re
 import sys
 from pathlib import Path
-import os
-from prometheus_client import CollectorRegistry, Gauge, push_to_gateway
 
 
 def parse_total_percentage(report_path: Path) -> float:
@@ -49,14 +47,6 @@ def main() -> None:
 
     percentage = parse_total_percentage(args.report)
     print(f"mypy typed coverage: {percentage:.1f}% (threshold {args.minimum}%)")
-
-    # Push typed coverage metric if PUSHGATEWAY_URL is set
-    push_url = os.getenv("PUSHGATEWAY_URL")
-    if push_url:
-        registry = CollectorRegistry()
-        gauge = Gauge("traider_typed_coverage_percent", "Typed code coverage percentage", registry=registry)
-        gauge.set(percentage)
-        push_to_gateway(push_url, job="typed_coverage", registry=registry)
 
     if percentage < args.minimum - 0.01:  # small epsilon
         print("::error::Mypy typed-coverage below threshold")

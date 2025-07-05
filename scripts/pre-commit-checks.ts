@@ -408,7 +408,7 @@ function validateTimerCleanup(files: string[]): ValidationResult {
   const reactFiles = files.filter(
     (file) =>
       (file.endsWith('.tsx') || file.endsWith('.ts')) &&
-      (file.includes('component') || file.includes('hook') || file.includes('app/'))
+      (file.includes('component') || file.includes('hook') || file.includes('apps/frontend/'))
   );
 
   for (const file of reactFiles) {

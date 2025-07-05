@@ -1,8 +1,9 @@
 {
   "name": "TRAIDER V1 API Documentation",
   "entryPoints": [
-    "app/lib/**/*.ts",
-    "app/lib/**/*.tsx"
+    "apps/frontend/lib",
+    "apps/frontend/hooks",
+    "apps/frontend/components"
   ],
   "entryPointStrategy": "expand",
   "out": "docs/api",
@@ -90,5 +91,11 @@
   "textContentMappings": {
     "title.indexPage": "TRAIDER V1 API Documentation",
     "title.memberPage": "{name}"
-  }
+  },
+  "exclude": [
+    "**/node_modules/**",
+    "apps/backend/**",
+    "tests/**",
+    "coverage/**"
+  ]
 } 

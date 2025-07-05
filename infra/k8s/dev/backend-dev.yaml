@@ -1,0 +1,220 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: traider-dev
+data:
+  # Database Configuration
+  DATABASE_URL: "postgresql://traider:REPLACE_WITH_DB_PASSWORD@postgres-dev:5432/traider"
+  DB_HOST: "postgres-dev"
+  DB_PORT: "5432"
+  DB_NAME: "traider"
+  DB_USER: "traider"
+  DB_PASSWORD: "REPLACE_WITH_DB_PASSWORD"
+  DB_POOL_SIZE: "20"
+  DB_MAX_OVERFLOW: "10"
+  DB_POOL_TIMEOUT: "30"
+  
+  # Application Configuration
+  ENVIRONMENT: "development"
+  API_HOST: "0.0.0.0"
+  API_PORT: "8000"
+  API_WORKERS: "1"
+  CORS_ORIGINS: "http://localhost:3000,http://frontend-dev:3000"
+  
+  # Redis Configuration
+  REDIS_URL: "redis://redis-dev:6379/0"
+  REDIS_HOST: "redis-dev"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
+  CACHE_TTL: "300"
+  CACHE_PREFIX: "traider:"
+  
+  # Logging Configuration
+  LOG_LEVEL: "INFO"
+  LOG_FORMAT: "json"
+  
+  # Monitoring Configuration
+  PROMETHEUS_PORT: "8001"
+  PROMETHEUS_PATH: "/metrics"
+  
+  # Development Configuration
+  DEBUG: "true"
+  RELOAD: "true"
+  
+  # Trading Configuration
+  PAPER_TRADING: "true"
+  MAX_POSITION_SIZE: "1000.0"
+  MAX_DAILY_LOSS: "500.0"
+  MAX_LEVERAGE: "3.0"
+  
+  # Feature Flags
+  ENABLE_LIVE_TRADING: "false"
+  ENABLE_SIGNAL_GENERATION: "true"
+  ENABLE_METRICS: "true"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backend-secrets
+  namespace: traider-dev
+type: Opaque
+stringData:
+  # JWT Configuration
+  SECRET_KEY: "REPLACE_WITH_ACTUAL_SECRET_IN_PRODUCTION"
+  JWT_SECRET_KEY: "REPLACE_WITH_ACTUAL_JWT_SECRET_IN_PRODUCTION"
+  JWT_ALGORITHM: "HS256"
+  ACCESS_TOKEN_EXPIRE_MINUTES: "60"
+  
+  # Dashboard Authentication
+  DASHBOARD_PASSWORD: "REPLACE_WITH_SECURE_PASSWORD"
+  
+  # Exchange API (Development placeholders)
+  BINANCE_API_KEY: "REPLACE_WITH_BINANCE_API_KEY"
+  BINANCE_SECRET_KEY: "REPLACE_WITH_BINANCE_SECRET_KEY"
+  COINBASE_API_KEY: "REPLACE_WITH_COINBASE_API_KEY"
+  COINBASE_PRIVATE_KEY: "REPLACE_WITH_COINBASE_PRIVATE_KEY"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-dev
+  namespace: traider-dev
+  labels:
+    app: backend-dev
+    component: api
+    environment: development
+    app.kubernetes.io/name: backend
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: traider-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend-dev
+  template:
+    metadata:
+      labels:
+        app: backend-dev
+        component: api
+    spec:
+      securityContext:
+        runAsUser: 65534
+        runAsGroup: 65534
+        fsGroup: 65534
+      containers:
+        - name: backend
+          image: traider/backend:dev
+          imagePullPolicy: Always
+          securityContext:
+            runAsUser: 65534
+            runAsGroup: 65534
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 8000
+              name: http
+            - containerPort: 8001
+              name: metrics
+          envFrom:
+            - configMapRef:
+                name: backend-config
+            - secretRef:
+                name: backend-secrets
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:15-alpine
+          imagePullPolicy: Always
+          command: ['sh', '-c']
+          args:
+            - |
+              until pg_isready -h postgres-dev -p 5432 -U traider; do
+                echo "Waiting for PostgreSQL..."
+                sleep 2
+              done
+              echo "PostgreSQL is ready!"
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsUser: 65534
+            runAsGroup: 65534
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+        - name: wait-for-redis
+          image: redis:7-alpine
+          imagePullPolicy: Always
+          command: ['sh', '-c']
+          args:
+            - |
+              until redis-cli -h redis-dev -p 6379 ping; do
+                echo "Waiting for Redis..."
+                sleep 2
+              done
+              echo "Redis is ready!"
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsUser: 65534
+            runAsGroup: 65534
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-dev
+  namespace: traider-dev
+  labels:
+    app: backend-dev
+    component: api
+    environment: development
+    app.kubernetes.io/name: backend
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: traider-platform
+spec:
+  selector:
+    app: backend-dev
+  ports:
+    - port: 8000
+      targetPort: 8000
+      name: http
+    - port: 8001
+      targetPort: 8001
+      name: metrics
+  type: ClusterIP 

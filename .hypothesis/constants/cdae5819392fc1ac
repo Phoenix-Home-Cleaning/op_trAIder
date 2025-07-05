@@ -1,0 +1,4 @@
+# file: C:\Users\jesse\AppData\Roaming\Python\Python313\site-packages\uvicorn\_subprocess.py
+# hypothesis_version: 6.135.14
+
+['config', 'sockets', 'spawn', 'stdin_fileno', 'target']

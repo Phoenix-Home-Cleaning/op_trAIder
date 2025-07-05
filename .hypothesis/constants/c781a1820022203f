@@ -1,0 +1,4 @@
+# file: D:\op_trAIder\apps\backend\utils\monitoring.py
+# hypothesis_version: 6.135.14
+
+[0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, -5000, 100, 1000, 3600, 10000, 'api', 'comparison', 'component', 'connection_type', 'count', 'current_value', 'duration_seconds', 'endpoint', 'equal', 'error_type', 'gauge', 'greater', 'last_triggered', 'less', 'max', 'mean', 'median', 'method', 'metric_name', 'min', 'operation_type', 'p95', 'p99', 'request_duration_', 'severity', 'status', 'status_code', 'symbol', 'threshold', 'timestamp', 'traider_errors_total', 'utf-8', 'warning']

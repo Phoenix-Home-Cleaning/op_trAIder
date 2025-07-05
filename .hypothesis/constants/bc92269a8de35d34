@@ -1,0 +1,4 @@
+# file: D:\op_trAIder\apps\backend\api\auth.py
+# hypothesis_version: 6.135.14
+
+[100, '/login', '/logout', '/me', '/validate', '12', '60', 'BCRYPT_ROUNDS', 'Bearer', 'DASHBOARD_PASSWORD', 'DATABASE_URL', 'GUEST_PASSWORD', 'Get Current User', 'HS256', 'INVALID_TOKEN', 'Invalid token format', 'JWT access token', 'Password', 'Permission denied', 'SECRET_KEY', 'TOKEN_EXPIRED', 'TOKEN_INVALID', 'Token has expired', 'Token type', 'User Login', 'User Logout', 'User information', 'User logout', 'Username', 'Validate Token', 'WWW-Authenticate', 'admin', 'api.auth', 'authenticated', 'bcrypt', 'bearer', 'exp', 'expires_at', 'iat', 'id', 'invalid_credentials', 'ip_address', 'is_active', 'iss', 'message', 'password_hash', 'permissions', 'postgres', 'reason', 'remember_me', 'required_permission', 'role', 'rounds', 'session', 'sub', 'success', 'timestamp', 'token_expires', 'traider-v1', 'unknown', 'user', 'user_agent', 'user_id', 'user_permissions', 'username']

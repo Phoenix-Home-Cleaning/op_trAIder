@@ -1,0 +1,4 @@
+# file: D:\op_trAIder\apps\backend\models\trade.py
+# hypothesis_version: 6.135.14
+
+[100, '0.00000001', 'BUY', 'FILLED', 'SELL', 'USD', 'coinbase', 'exchange', 'execution_type', 'extra_data', 'fee', 'fee_currency', 'id', 'ix_trades_pnl', 'market', 'notes', 'notional', 'order_id', 'pnl', 'price', 'quantity', 'side', 'signal_id', 'status', 'strategy', 'symbol', 'timestamp', 'trades']

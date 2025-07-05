@@ -116,7 +116,7 @@ class DependencyValidator:
         'more-itertools': 'more_itertools',
     }
     
-    def __init__(self, requirements_file: str = 'backend/requirements.txt'):
+    def __init__(self, requirements_file: str = 'apps/backend/requirements.txt'):
         """
         Initialize dependency validator.
         

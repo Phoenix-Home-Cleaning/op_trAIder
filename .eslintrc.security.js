@@ -176,10 +176,11 @@ export default {
     {
       // Stricter rules for trading logic
       files: [
-        'app/lib/trading/**/*.ts',
-        'app/lib/risk/**/*.ts',
-        'app/lib/signals/**/*.ts',
-        'app/lib/execution/**/*.ts'
+        'packages/tooling/**',
+        'apps/frontend/lib/trading/**/*.ts',
+        'apps/frontend/lib/risk/**/*.ts',
+        'apps/frontend/lib/signals/**/*.ts',
+        'apps/frontend/lib/execution/**/*.ts'
       ],
       rules: {
         // Zero tolerance for any type in trading logic
@@ -202,7 +203,7 @@ export default {
     
     {
       // API route security
-      files: ['app/api/**/*.ts'],
+      files: ['apps/frontend/api/**/*.ts'],
       rules: {
         // Strict input validation
         'security/detect-object-injection': 'error',
@@ -236,6 +237,15 @@ export default {
         // Allow non-null assertions in tests
         '@typescript-eslint/no-non-null-assertion': 'warn'
       }
+    },
+    
+    {
+      // Backend files - relaxed rules
+      files: ['apps/backend/**'],
+      rules: {
+        // Allow console in backend
+        'no-console': 'off'
+      }
     }
   ],
   
@@ -247,7 +257,8 @@ export default {
         'detect-hardcoded-credentials': true,
         'detect-sql-injection': true,
         'detect-xss': true
-      }
+      },
+      rulesDir: ['apps/frontend/lib/trading/**/*.ts', 'apps/frontend/lib/risk/**/*.ts', 'apps/frontend/lib/signals/**/*.ts', 'apps/frontend/lib/execution/**/*.ts']
     }
   },
   
@@ -259,7 +270,7 @@ export default {
     'coverage/',
     '*.config.js',
     '*.config.ts',
-    'backend/',
+    'apps/backend/',
     'infrastructure/',
     'docs/'
   ]

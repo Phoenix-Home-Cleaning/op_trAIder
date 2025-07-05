@@ -20,7 +20,7 @@
  */
 
 import { afterEach, beforeEach, vi } from 'vitest';
-import { _setTestHook_forceAuthenticate } from '../../app/lib/auth/backend-auth';
+import { _setTestHook_forceAuthenticate } from '../../apps/frontend/lib/auth/backend-auth';
 import type { User } from 'next-auth';
 
 /**

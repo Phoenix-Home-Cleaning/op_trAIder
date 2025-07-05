@@ -22,8 +22,8 @@ PATTERNS = [
 ]
 
 EXCLUDE_PATHS = [
-    "backend/tests",
-    "backend/__init__.py",
+    "apps/backend/tests",
+    "apps/backend/__init__.py",
 ]
 
 
