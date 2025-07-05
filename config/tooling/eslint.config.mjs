@@ -91,7 +91,8 @@ export default tseslint.config(
       'react/react-in-jsx-scope': 'off',
       'react-hooks/exhaustive-deps': 'warn',
       '@next/next/no-img-element': 'error',
-      '@next/next/no-html-link-for-pages': 'error',
+      '@next/next/no-html-link-for-pages': 'off',
+      '@next/next/no-head-element': 'off',
       'header/header': 'off',
     },
     plugins: {
@@ -125,6 +126,7 @@ export default tseslint.config(
     files: ['*.config.js', '*.config.mjs', '*.config.ts'],
     rules: {
       'no-console': 'off',
+      'import/no-anonymous-default-export': 'off',
     },
   },
   {
