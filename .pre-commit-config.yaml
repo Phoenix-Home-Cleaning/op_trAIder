@@ -1,0 +1,9 @@
+repos:
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.6.0  # use the pinned mypy version
+    hooks:
+    - id: mypy
+      name: mypy (type check Python files)
+      entry: mypy --config-file mypy.ini
+      language: system
+      types: [python] 

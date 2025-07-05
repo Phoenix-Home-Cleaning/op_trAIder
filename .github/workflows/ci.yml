@@ -96,7 +96,7 @@ jobs:
       - name: 🔍 Run ESLint with zero warnings policy
         run: |
           echo "::group::ESLint Analysis"
-          npx next lint --max-warnings 0
+          npx next lint apps/frontend --max-warnings 0
           echo "::endgroup::"
           
       - name: 🔧 Run TypeScript compiler check
@@ -129,14 +129,23 @@ jobs:
               ],
               "baseUrl": ".",
               "paths": {
-                "@/*": ["./app/*"],
-                "@/components/*": ["./app/components/*"],
-                "@/lib/*": ["./app/lib/*"],
-                "@/hooks/*": ["./app/hooks/*"],
-                "@/types/*": ["./app/types/*"]
+                "@/*": ["./apps/frontend/*"],
+                "@/components/*": ["./apps/frontend/components/*"],
+                "@/lib/*": ["./apps/frontend/lib/*"],
+                "@/hooks/*": ["./apps/frontend/hooks/*"],
+                "@/types/*": ["./apps/frontend/types/*"]
               }
             },
-            "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+            "include": [
+              "next-env.d.ts",
+              "apps/frontend/**/*.ts",
+              "apps/frontend/**/*.tsx",
+              "packages/**/*.ts",
+              "scripts/**/*.ts",
+              "tests/**/*.ts",
+              "types/**/*.ts",
+              ".next/types/**/*.ts"
+            ],
             "exclude": ["node_modules"]
           }
           EOF
@@ -172,20 +181,26 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
 
+      - name: Cache mypy cache
+        uses: actions/cache@v3
+        with:
+          path: .mypy_cache
+          key: ${{ runner.os }}-mypy-cache-${{ hashFiles('apps/backend/**/*.py') }}
+
       - name: 📦 Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r backend/requirements.txt
+          pip install -r apps/backend/requirements.txt
           pip install mypy
 
       - name: 🧰 Run mypy with strict settings and generate coverage report
         run: |
           mkdir -p build/mypy
-          mypy --strict --ignore-missing-imports --txt-report build/mypy backend || true
+          mypy --config-file mypy.ini --cache-dir .mypy_cache --txt-report build/mypy apps/backend || true
 
-      - name: 📊 Check coverage threshold (30%)
+      - name: 📊 Check coverage threshold (35%)
         run: |
-          python scripts/check_mypy_coverage.py --report build/mypy/index.txt --min 30
+          python scripts/check_mypy_coverage.py --report build/mypy/index.txt --min 35
 
       - name: 📤 Upload mypy report
         if: always()
@@ -238,7 +253,7 @@ jobs:
       - name: 🧩 Generate SQL snapshots
         run: python scripts/freeze_alembic_sql.py
       - name: 🔍 Check for drift
-        run: git diff --exit-code backend/sql/migrations_snapshots
+        run: git diff --exit-code apps/backend/sql/migrations_snapshots
 
   # =============================================================================
   # PHASE 2: UNIT & INTEGRATION TESTS
@@ -562,7 +577,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
           exit-code: '0'
           ignore-unfixed: true
-          skip-dirs: 'node_modules,coverage,dist,build,.next'
+          skip-dirs: 'node_modules,coverage,dist,build,apps/frontend/.next'
           
       - name: 📊 Upload security scan results
         if: always()
@@ -611,14 +626,14 @@ jobs:
           npm install --no-save @next/bundle-analyzer
           
           # Create basic bundle analysis
-          if [ -d ".next" ]; then
-            du -sh .next/static/chunks/* | sort -h | tail -10
+          if [ -d "apps/frontend/.next" ]; then
+            du -sh apps/frontend/.next/static/chunks/* | sort -h | tail -10
             
             # Check for large bundles (>1MB)
-            LARGE_BUNDLES=$(find .next/static/chunks -name "*.js" -size +1M | wc -l)
+            LARGE_BUNDLES=$(find apps/frontend/.next/static/chunks -name "*.js" -size +1M | wc -l)
             if [ "$LARGE_BUNDLES" -gt 0 ]; then
               echo "⚠️ Found $LARGE_BUNDLES bundles larger than 1MB"
-              find .next/static/chunks -name "*.js" -size +1M -exec ls -lh {} \;
+              find apps/frontend/.next/static/chunks -name "*.js" -size +1M -exec ls -lh {} \;
             fi
             
             echo "✅ Bundle analysis completed"
@@ -664,7 +679,7 @@ jobs:
         with:
           name: frontend-build
           path: |
-            .next/
+            apps/frontend/.next/
             public/
           retention-days: 7
 

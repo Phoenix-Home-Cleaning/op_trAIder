@@ -1,5 +1,4 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
+#!/usr/bin/env bash
 
 echo "🚀 TRAIDER V1 Pre-commit Quality Gates"
 echo "======================================"
@@ -56,7 +55,7 @@ npx tsx scripts/pre-commit-checks.ts
 if [ $? -eq 0 ]; then
   echo ""
   echo "🔍 Running lint-staged checks..."
-  npx lint-staged
+  npm run lint:staged --silent
 else
   echo "❌ Custom quality checks failed - aborting commit"
   exit 1
@@ -76,12 +75,12 @@ fi
 # Validate documentation freshness
 echo ""
 echo "📚 Validating documentation..."
-npm run docs:validate --silent
+npx tsx scripts/validate-docs.ts --silent
 
 # Check JSDoc coverage for TypeScript changes
 if git diff --cached --name-only | grep -E '\.(ts|tsx)$' > /dev/null; then
   echo "📖 Checking JSDoc coverage..."
-  npm run docs:coverage --silent
+  npx tsx packages/tooling/src/validate-docs.ts --coverage-only --silent
 fi
 
 # Final success message
