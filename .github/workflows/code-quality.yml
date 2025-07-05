@@ -75,6 +75,8 @@ jobs:
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
 
     - name: Setup Python
       uses: actions/setup-python@v5
@@ -85,7 +87,7 @@ jobs:
     - name: Install dependencies
       run: |
         echo "::group::Node.js Dependencies"
-        npm ci
+        pnpm install --frozen-lockfile --prefer-offline
         echo "::endgroup::"
         
         echo "::group::Python Dependencies"

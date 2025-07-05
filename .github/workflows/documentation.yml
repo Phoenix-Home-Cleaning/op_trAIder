@@ -32,9 +32,11 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
       
       - name: 📥 Install dependencies
-        run: npm ci --prefer-offline --no-audit
+        run: pnpm install --frozen-lockfile --prefer-offline
       
       - name: 🔍 Validate documentation
         run: npx tsx scripts/validate-docs.ts
@@ -68,11 +70,13 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
       
       - name: 📥 Install dependencies
         run: |
-          npm ci --prefer-offline --no-audit
-          npm install typedoc-plugin-markdown typedoc-plugin-mermaid
+          pnpm install --frozen-lockfile --prefer-offline
+          pnpm install typedoc-plugin-markdown typedoc-plugin-mermaid --no-save
       
       - name: 🏗️ Generate documentation
         run: npx tsx scripts/generate-docs.ts
@@ -192,9 +196,11 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
       
       - name: 📥 Install dependencies
-        run: npm ci --prefer-offline --no-audit
+        run: pnpm install --frozen-lockfile --prefer-offline
       
       - name: 📊 Generate coverage report
         run: |
@@ -243,9 +249,11 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
       
       - name: 📥 Install dependencies
-        run: npm ci --prefer-offline --no-audit
+        run: pnpm install --frozen-lockfile --prefer-offline
       
       - name: ⚡ Run performance benchmarks
         run: |

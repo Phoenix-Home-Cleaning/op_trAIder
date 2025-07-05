@@ -82,6 +82,8 @@ jobs:
           cache: 'npm'
           cache-dependency-path: package-lock.json
           registry-url: 'https://registry.npmjs.org'
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
           
       - name: 🔧 Configure npm for performance
         run: |
@@ -90,8 +92,7 @@ jobs:
           npm config set fund false
           
       - name: 📥 Install dependencies
-        run: |
-          npm ci --prefer-offline --no-audit --no-fund
+        run: pnpm install --frozen-lockfile --prefer-offline
           
       - name: 🔍 Run ESLint with zero warnings policy
         working-directory: apps/frontend
