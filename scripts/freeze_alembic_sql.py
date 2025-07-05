@@ -20,13 +20,17 @@ from alembic.script import ScriptDirectory
 
 def main():
     repo_root = os.getcwd()
-    alembic_ini = os.path.join(repo_root, 'backend', 'alembic.ini')
+    # Updated paths to reflect monorepo reorganization (ADR-017)
+    backend_dir = os.path.join(repo_root, 'apps', 'backend')
+    alembic_ini = os.path.join(backend_dir, 'alembic.ini')
+
     cfg = Config(alembic_ini)
-    # Ensure script location
-    cfg.set_main_option('script_location', 'apps/backend/migrations')
+    # Ensure script location (relative to backend_dir)
+    cfg.set_main_option('script_location', os.path.join(backend_dir, 'migrations'))
     script_dir = ScriptDirectory.from_config(cfg)
 
-    snapshots_dir = os.path.join(repo_root, 'backend', 'sql', 'migrations_snapshots')
+    # Save snapshots alongside other SQL resources inside apps/backend/sql
+    snapshots_dir = os.path.join(backend_dir, 'sql', 'migrations_snapshots')
     os.makedirs(snapshots_dir, exist_ok=True)
 
     # Walk revisions from oldest to newest
