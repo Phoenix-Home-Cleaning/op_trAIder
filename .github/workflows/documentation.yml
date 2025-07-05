@@ -76,7 +76,8 @@ jobs:
       - name: 📥 Install dependencies
         run: |
           pnpm install --frozen-lockfile --prefer-offline
-          pnpm add typedoc-plugin-markdown typedoc-plugin-mermaid --save-dev
+          # Install documentation plugins at the workspace root (order of flags matters for pnpm>=10)
+          pnpm add -Dw typedoc-plugin-markdown typedoc-plugin-mermaid
       
       - name: 🏗️ Generate documentation
         run: npx tsx scripts/generate-docs.ts
