@@ -538,7 +538,7 @@ jobs:
             --exclude="*.test.*" --exclude="*.spec.*" \
             -E "password.*=.*['\"][^'\"]{12,}['\"]" . | \
             # Exclude ENV variable mappings and known placeholders
-            grep -v -E "(test|example|placeholder|demo|DB_PASSWORD.*os\.getenv|description.*Password|Field\(.*env=\"[A-Z_]+_PASSWORD|os\.getenv\(\"[A-Z_]+_PASSWORD)" | \
+            grep -v -E "(test|example|placeholder|demo|DB_PASSWORD.*os\\.getenv|description.*Password|Field\\(.*env=\\\"[A-Z_]+_PASSWORD|os\\.(getenv|environ\\.get)\\(\\\"[A-Z_]+_PASSWORD\\\")" | \
             grep -v ".trivyignore" | \
             grep -v "test-secret-key" 2>/dev/null; then
             echo "⚠️ Potential hardcoded password found - please review"
