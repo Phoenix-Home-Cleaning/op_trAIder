@@ -6,9 +6,11 @@
  * Optimized for institutional-grade trading platform styling requirements.
  */
 
-export default {
+const postcssConfig = {
   plugins: {
     '@tailwindcss/postcss': {},
     autoprefixer: {},
   },
-}; 
+};
+
+export default postcssConfig; 

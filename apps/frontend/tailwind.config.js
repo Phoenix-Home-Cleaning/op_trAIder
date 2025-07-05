@@ -22,7 +22,7 @@
  */
 
 /** @type {import('tailwindcss').Config} */
-export default {
+const tailwindConfig = {
   content: [
     './**/*.{js,ts,jsx,tsx,mdx}',
     '../../packages/shared/**/*.{js,ts,jsx,tsx,mdx}',
@@ -256,4 +256,6 @@ export default {
   // Tailwind CSS 4 doesn't need explicit plugins configuration
   // Built-in support for forms, typography, and aspect-ratio
   plugins: [],
-}; 
+};
+
+export default tailwindConfig; 
