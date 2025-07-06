@@ -223,7 +223,7 @@ jobs:
 
     - name: SonarQube Scan
       id: sonar_scan
-      uses: sonarsource/sonarqube-scan-action@v2
+      uses: sonarsource/sonarqube-scan-action@v5
       with:
         projectBaseDir: .
         args: >
