@@ -69,7 +69,7 @@ type EnrichedUser = {
  * @tradingImpact Manages access to all trading functionality
  * @riskLevel CRITICAL - Platform security foundation
  */
-export const authOptions: NextAuthOptions = {
+const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       id: 'credentials',

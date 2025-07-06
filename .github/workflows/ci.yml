@@ -603,7 +603,7 @@ jobs:
       - name: 🏗️ Build application
         run: |
           echo "::group::Production Build"
-          time pnpm run build
+          time pnpm run build | tee build-output.log
           echo "::endgroup::"
         env:
           NODE_ENV: production
@@ -671,6 +671,16 @@ jobs:
             .next/
             public/
           retention-days: 7
+
+      - name: 📤 Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            build-output.log
+            logs/
+          retention-days: 30
 
   # =============================================================================
   # PHASE 5: QUALITY GATE & DEPLOYMENT READINESS
