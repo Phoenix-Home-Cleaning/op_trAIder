@@ -29,21 +29,13 @@ import NextAuth, { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import type { User as NextAuthUser } from 'next-auth';
 import type { JWT } from 'next-auth/jwt';
+import type { Session } from 'next-auth';
 
 interface ExtendedUser extends NextAuthUser {
   id: string;
   username: string;
   role: 'ADMIN' | 'TRADER' | 'VIEWER';
   permissions: string[];
-  lastLogin?: string;
-}
-
-interface ExtendedToken extends JWT {
-  id?: string;
-  username?: string;
-  email?: string;
-  role?: 'ADMIN' | 'TRADER' | 'VIEWER';
-  permissions?: string[];
   lastLogin?: string;
 }
 
@@ -142,7 +134,7 @@ export const authOptions: NextAuthOptions = {
      * @riskLevel HIGH - Token security and user data integrity
      */
     async jwt({ token, user }) {
-      const t = token as ExtendedToken;
+      const t = token as JWT;
 
       // Persist user data in token on sign in
       if (user) {
@@ -178,19 +170,20 @@ export const authOptions: NextAuthOptions = {
      * @riskLevel MEDIUM - Session data exposure control
      */
     async session({ session, token }) {
-      const t = token as ExtendedToken;
+      const t = token as JWT & { role?: 'ADMIN' | 'TRADER' | 'VIEWER'; permissions?: string[] };
 
-      // Send properties to the client
-      session.user = {
-        id: t.id ?? '',
-        username: t.username ?? '',
-        name: session.user?.name ?? (t.username ?? ''),
-        email: t.email ?? '',
+      const enrichedUser: Session['user'] = {
+        id: (t as any).id ?? '',
+        username: (t as any).username ?? '',
+        name: session.user?.name ?? (t as any).username ?? '',
+        email: (t as any).email ?? '',
         role: t.role ?? 'VIEWER',
         permissions: t.permissions ?? [],
         ...(t.lastLogin ? { lastLogin: t.lastLogin } : {}),
-      } as typeof session.user;
-      
+      } as unknown as Session['user'];
+
+      session.user = enrichedUser;
+
       return session;
     },
   },
