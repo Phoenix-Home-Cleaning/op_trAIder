@@ -1,7 +1,7 @@
 """market data hypertable
 
 Revision ID: 0001_market_data_hypertable
-Revises: 22e918203dcb_initial_database_schema
+Revises: 22e918203dcb
 Create Date: 2025-07-05 12:00:00.000000
 """
 from __future__ import annotations
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "0001_market_data_hypertable"
-down_revision = "22e918203dcb_initial_database_schema"
+down_revision = "22e918203dcb"
 branch_labels = None
 depends_on = None
 
