@@ -27,8 +27,25 @@
 
 import NextAuth, { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import type { User as NextAuthUser } from 'next-auth';
+import type { JWT } from 'next-auth/jwt';
 
+interface ExtendedUser extends NextAuthUser {
+  id: string;
+  username: string;
+  role: 'ADMIN' | 'TRADER' | 'VIEWER';
+  permissions: string[];
+  lastLogin?: string;
+}
 
+interface ExtendedToken extends JWT {
+  id?: string;
+  username?: string;
+  email?: string;
+  role?: 'ADMIN' | 'TRADER' | 'VIEWER';
+  permissions?: string[];
+  lastLogin?: string;
+}
 
 /**
  * NextAuth.js configuration options
@@ -81,14 +98,12 @@ export const authOptions: NextAuthOptions = {
           credentials.password
         );
 
-        const u: any = user;
-
-        if (!u) {
+        if (!user) {
           // Log failed authentication (production should use proper logging)
           return null;
         }
 
-        return u;
+        return user;
       },
     }),
   ],
@@ -127,18 +142,22 @@ export const authOptions: NextAuthOptions = {
      * @riskLevel HIGH - Token security and user data integrity
      */
     async jwt({ token, user }) {
+      const t = token as ExtendedToken;
+
       // Persist user data in token on sign in
-      const u: any = user;
-      token.id = u.id;
-      token.username = u.username;
-      token.email = u.email;
-      token.role = u.role;
-      token.permissions = u.permissions;
-      if (u.lastLogin) {
-        token.lastLogin = u.lastLogin;
+      if (user) {
+        const u = user as ExtendedUser;
+        t.id = u.id;
+        t.username = u.username;
+        t.email = u.email ?? undefined;
+        t.role = u.role;
+        t.permissions = u.permissions;
+        if (u.lastLogin) {
+          t.lastLogin = u.lastLogin;
+        }
       }
-      
-      return token;
+
+      return t;
     },
     
     /**
@@ -159,15 +178,18 @@ export const authOptions: NextAuthOptions = {
      * @riskLevel MEDIUM - Session data exposure control
      */
     async session({ session, token }) {
+      const t = token as ExtendedToken;
+
       // Send properties to the client
       session.user = {
-        ...(session.user as any ?? {}),
-        id: token.id as string,
-        username: (token as any).username as string,
-        role: (token as any).role as string,
-        permissions: (token as any).permissions as string[],
-        ...( (token as any).lastLogin && { lastLogin: (token as any).lastLogin as string } ),
-      };
+        id: t.id ?? '',
+        username: t.username ?? '',
+        name: session.user?.name ?? (t.username ?? ''),
+        email: t.email ?? '',
+        role: t.role ?? 'VIEWER',
+        permissions: t.permissions ?? [],
+        ...(t.lastLogin ? { lastLogin: t.lastLogin } : {}),
+      } as typeof session.user;
       
       return session;
     },
