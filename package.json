@@ -116,7 +116,7 @@
     "tailwindcss": "^4.1.11",
     "@tailwindcss/postcss": "^4.1.11",
     "tsx": "^4.20.3",
-    "typedoc": "^0.28.6",
+    "typedoc": "^0.28.7",
     "typedoc-plugin-markdown": "^4.7.0",
     "typescript-eslint": "^8.35.0",
     "vitest": "^2.1.8",
