@@ -28,6 +28,7 @@ const result = spawnSync(process.execPath, [
   shimPath,
   nextCli,
   'build',
+  path.resolve(__dirname, '../apps/frontend'),
 ], {
   stdio: 'inherit',
   env,
