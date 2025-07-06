@@ -39,6 +39,16 @@ interface ExtendedUser extends NextAuthUser {
   lastLogin?: string;
 }
 
+type EnrichedUser = {
+  id: string;
+  username: string;
+  name: string;
+  email: string;
+  role: 'ADMIN' | 'TRADER' | 'VIEWER';
+  permissions: string[];
+  lastLogin?: string;
+};
+
 /**
  * NextAuth.js configuration options
  * 
@@ -172,17 +182,17 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       const t = token as JWT & { role?: 'ADMIN' | 'TRADER' | 'VIEWER'; permissions?: string[] };
 
-      const enrichedUser: Session['user'] = {
-        id: (t as any).id ?? '',
-        username: (t as any).username ?? '',
-        name: session.user?.name ?? (t as any).username ?? '',
-        email: (t as any).email ?? '',
-        role: t.role ?? 'VIEWER',
-        permissions: t.permissions ?? [],
-        ...(t.lastLogin ? { lastLogin: t.lastLogin } : {}),
-      } as unknown as Session['user'];
+      const enrichedUser: EnrichedUser = {
+        id: (t as { id?: string }).id ?? '',
+        username: (t as { username?: string }).username ?? '',
+        name: session.user?.name ?? ((t as { username?: string }).username ?? ''),
+        email: (t as { email?: string }).email ?? '',
+        role: (t as { role?: 'ADMIN' | 'TRADER' | 'VIEWER' }).role ?? 'VIEWER',
+        permissions: (t as { permissions?: string[] }).permissions ?? [],
+        ...(t as { lastLogin?: string }).lastLogin ? { lastLogin: (t as { lastLogin?: string }).lastLogin } : {},
+      };
 
-      session.user = enrichedUser;
+      session.user = enrichedUser as unknown as Session['user'];
 
       return session;
     },
