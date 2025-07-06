@@ -1,0 +1,23 @@
+/* TRAIDER Documentation Styles */
+:root {
+  --color-primary: #2563eb;
+  --color-secondary: #64748b;
+  --color-accent: #10b981;
+  --color-danger: #ef4444;
+}
+
+.tsd-page-title {
+  color: var(--color-primary);
+  border-bottom: 2px solid var(--color-primary);
+}
+
+.tsd-signature {
+  background: #f8fafc;
+  border-left: 4px solid var(--color-primary);
+}
+
+.tsd-comment {
+  background: #f1f5f9;
+  border-radius: 4px;
+  padding: 1rem;
+}
