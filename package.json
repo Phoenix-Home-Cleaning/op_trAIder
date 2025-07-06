@@ -114,6 +114,7 @@
     "prettier": "^3.6.2",
     "sonarqube-scanner": "^4.2.0",
     "tailwindcss": "^4.1.11",
+    "@tailwindcss/postcss": "^4.1.11",
     "tsx": "^4.20.3",
     "typedoc": "^0.28.6",
     "typedoc-plugin-markdown": "^4.7.0",
