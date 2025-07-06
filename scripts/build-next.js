@@ -8,7 +8,7 @@ import { spawnSync } from 'child_process';
 // Always preload the shim via NODE_OPTIONS so the child Node process inherits it.
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const shimPath = path.resolve(__dirname, 'win-readlink-shim.js');
+const shimPath = path.resolve(__dirname, 'win-readlink-shim.cjs');
 
 const env = { ...process.env };
 const requireFlag = `--require ${shimPath}`;
